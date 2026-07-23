@@ -56,6 +56,12 @@ target-version = "py310"
 select = ["E", "F", "I", "UP", "B"]
 ignore = ["B008"]  # FastAPI uses function-call defaults (Query(...)) by design
 
+[tool.ruff.lint.per-file-ignores]
+# These files are dominated by long human-readable content strings (curated
+# prose and inline HTML for the dashboard); wrapping them hurts readability.
+"geroquery/ui/streamlit_app.py" = ["E501"]
+"geroquery/knowledge/aging_knowledge.py" = ["E501"]
+
 [tool.black]
 line-length = 100
 target-version = ["py310"]

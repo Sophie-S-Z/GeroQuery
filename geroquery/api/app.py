@@ -116,30 +116,21 @@ def create_app(service: GeroService | None = None) -> FastAPI:
 
     # ---- gene queries ----------------------------------------------------
 
-    @app.get(f"{API_PREFIX}/gene/{{gene_id}}/signature")
-    def gene_signature(
-        gene_id: str,
-        species: str | None = None,
-        tissue: str | None = None,
-        omic_layer: str | None = None,
-        sex: str | None = None,
-        limit: int | None = Query(None, ge=1),
-        offset: int = Query(0, ge=0),
-        format: str = Query("json", pattern="^(json|csv|parquet)$"),
-    ):
-        result = svc().gene_signature(gene_id, species, tissue, omic_layer, sex)
-        result["signatures"] = _paginate(result["signatures"], limit, offset)
-        if format != "json":
-            return _formatted(result["signatures"], format, f"{gene_id}_signatures")
-        return result
+    @app.get(f"{API_PREFIX}/gene/{{gene_id}}/report")
+    def gene_report(gene_id: str, species: str | None = None):
+        return svc().gene_report(gene_id, species)
 
     @app.get(f"{API_PREFIX}/gene/{{gene_id}}/card")
     def gene_card(gene_id: str, species: str | None = None):
-        return svc().gene_card(gene_id, species)
+        return svc().gene_report(gene_id, species)
 
-    @app.post(f"{API_PREFIX}/geneset/signature")
-    def geneset_signature(req: GeneSetRequest):
-        return svc().geneset_signature(req.genes, req.species, req.omic_layer)
+    @app.get(f"{API_PREFIX}/genes")
+    def genes():
+        return {"genes": svc().list_curated_genes()}
+
+    @app.post(f"{API_PREFIX}/geneset/summary")
+    def geneset_summary(req: GeneSetRequest):
+        return svc().geneset_summary(req.genes, req.species)
 
     # ---- clocks ----------------------------------------------------------
 
@@ -183,16 +174,16 @@ def create_app(service: GeroService | None = None) -> FastAPI:
 
     # ---- provenance ------------------------------------------------------
 
-    @app.get(f"{API_PREFIX}/studies")
-    def studies(
+    @app.get(f"{API_PREFIX}/references")
+    def references(
         limit: int | None = Query(None, ge=1),
         offset: int = Query(0, ge=0),
         format: str = Query("json", pattern="^(json|csv|parquet)$"),
     ):
-        rows = _paginate(svc().studies(), limit, offset)
+        rows = _paginate(svc().references(), limit, offset)
         if format != "json":
-            return _formatted(rows, format, "studies")
-        return {"studies": rows, "n": len(rows)}
+            return _formatted(rows, format, "references")
+        return {"references": rows, "n": len(rows)}
 
     @app.get(f"{API_PREFIX}/sources")
     def sources():

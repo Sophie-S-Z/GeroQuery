@@ -1,13 +1,18 @@
 """M4 store — analytical storage & query.
 
-Storage split, per the PRD:
-  * large harmonized matrices/signatures  -> Parquet (partitioned) read by DuckDB
-  * small relational metadata (studies, curated flags, interventions, datasets)
-    -> SQLite
+Storage split:
+  * phenotype/clinical datasets (the simulated example cohort, or any uploaded
+    matrix persisted for reuse) -> Parquet, read directly by pandas/DuckDB.
+  * small relational metadata (curated flags, interventions, dataset registry)
+    -> SQLite.
 
-Callers see only the small interface below; whether a query hits Parquet via
-DuckDB or a SQLite row is hidden. Swapping SQLite for Postgres, or local Parquet
-for S3/HF, would not change this surface.
+Callers see only the small interface below. Swapping SQLite for Postgres, or
+local Parquet for S3/HF, would not change this surface.
+
+Note: earlier versions kept a partitioned Parquet table of fabricated aging
+"signatures". That has been removed — the gene-level aging evidence GeroQuery
+serves is real, curated, and cited, and lives in :mod:`geroquery.knowledge`,
+not in a generated data table.
 """
 
 from __future__ import annotations
@@ -16,13 +21,12 @@ import hashlib
 import sqlite3
 from pathlib import Path
 
-import duckdb
 import pandas as pd
 
 from .. import DATA_VERSION, config
 from ..exceptions import GeroQueryError
-from ..models import AgingSignature, CuratedFlag, Intervention, Study
-from ..sources import CuratedKnowledgeSource, InterventionSource, LocalSignatureSource
+from ..models import CuratedFlag, Intervention
+from ..sources import CuratedKnowledgeSource, InterventionSource, LocalEvidenceSource
 
 
 class DatasetNotFoundError(GeroQueryError):
@@ -30,70 +34,59 @@ class DatasetNotFoundError(GeroQueryError):
     http_status = 404
 
 
+# The clinical example cohort shipped for trying the clock/resilience tools.
+_EXAMPLE_COHORT_CSV = "example_cohort_simulated.csv"
+_EXAMPLE_COHORT_ID = "example_cohort_simulated"
+
+
 class GeroStore:
     def __init__(self, data_home: Path | None = None):
         self.data_home = Path(data_home or config.DATA_HOME)
-        self.sig_dir = self.data_home / "signatures"  # partitioned parquet
         self.ds_dir = self.data_home / "datasets"
         self.meta_db = self.data_home / "metadata.sqlite"
 
     # ---- build -----------------------------------------------------------
 
     def is_built(self) -> bool:
-        return self.meta_db.exists() and self.sig_dir.exists()
+        return self.meta_db.exists() and self.ds_dir.exists()
 
     def ensure_built(self) -> GeroStore:
         if not self.is_built():
             self.build()
         return self
 
-    def build(self, clinical_csv: Path | None = None) -> GeroStore:
+    def build(self, cohort_csv: Path | None = None) -> GeroStore:
         """(Re)materialize the store from the bundled source adapters."""
         self.data_home.mkdir(parents=True, exist_ok=True)
-        self.sig_dir.mkdir(parents=True, exist_ok=True)
         self.ds_dir.mkdir(parents=True, exist_ok=True)
 
-        sig_source = LocalSignatureSource()
         # Licence gate: only persist what may be redistributed.
-        sig_source.assert_cacheable()
-
-        signatures = sig_source.signatures()
-        sig_df = pd.DataFrame([s.to_dict() for s in signatures])
-
-        con = duckdb.connect()
-        try:
-            con.register("sig", sig_df)
-            # Partitioned Parquet by species + omic_layer (predicate pushdown).
-            con.execute(
-                f"COPY (SELECT * FROM sig) TO '{self.sig_dir.as_posix()}' "
-                "(FORMAT PARQUET, PARTITION_BY (species, omic_layer), OVERWRITE_OR_IGNORE 1)"
-            )
-        finally:
-            con.close()
+        LocalEvidenceSource().assert_cacheable()
 
         # Clinical / phenotype datasets -> one parquet each, registered below.
-        clinical_csv = clinical_csv or (config.SOURCES_DATA / "clinical_nhanes_slice.csv")
+        cohort_csv = cohort_csv or (config.SOURCES_DATA / _EXAMPLE_COHORT_CSV)
         dataset_registry = []
-        if clinical_csv.exists():
-            df = pd.read_csv(clinical_csv)
-            out = self.ds_dir / "clinical_nhanes_slice.parquet"
+        if cohort_csv.exists():
+            df = pd.read_csv(cohort_csv)
+            out = self.ds_dir / f"{_EXAMPLE_COHORT_ID}.parquet"
             df.to_parquet(out, index=False)
             dataset_registry.append(
                 {
-                    "dataset_id": "clinical_nhanes_slice",
+                    "dataset_id": _EXAMPLE_COHORT_ID,
                     "kind": "clinical",
                     "n_rows": len(df),
                     "columns": ",".join(df.columns),
                     "path": out.name,
-                    "description": "NHANES-style clinical marker slice (demo) with age strata.",
+                    "description": "SIMULATED example cohort — nine PhenoAge clinical markers, "
+                    "age and sex. A transparent worked example for the clock and resilience "
+                    "tools; not real patient data.",
                 }
             )
 
-        self._build_metadata(sig_source, dataset_registry)
+        self._build_metadata(dataset_registry)
         return self
 
-    def _build_metadata(self, sig_source: LocalSignatureSource, dataset_registry: list[dict]):
-        studies = sig_source.studies()
+    def _build_metadata(self, dataset_registry: list[dict]):
         curated = CuratedKnowledgeSource().flags()
         interventions = InterventionSource().interventions()
 
@@ -102,10 +95,7 @@ class GeroStore:
         con = sqlite3.connect(self.meta_db)
         try:
             con.executescript(
-                "CREATE TABLE studies (study_id TEXT PRIMARY KEY, source TEXT, omic_layer TEXT,"
-                " species TEXT, tissue TEXT, sample_size INTEGER, processing_method TEXT,"
-                " license TEXT, url TEXT, version TEXT);"
-                " CREATE TABLE curated_knowledge (gene_id TEXT, database TEXT, assertion TEXT,"
+                "CREATE TABLE curated_knowledge (gene_id TEXT, database TEXT, assertion TEXT,"
                 " url TEXT);"
                 " CREATE TABLE interventions (intervention_id TEXT PRIMARY KEY, name TEXT,"
                 " itype TEXT, source TEXT, organism TEXT, lifespan_effect_pct REAL,"
@@ -114,22 +104,6 @@ class GeroStore:
                 " columns TEXT, path TEXT, description TEXT);"
                 " CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);"
                 " CREATE INDEX idx_curated_gene ON curated_knowledge(gene_id);"
-            )
-            con.executemany(
-                "INSERT INTO studies VALUES (:study_id,:source,:omic_layer,:species,:tissue,"
-                ":sample_size,:processing_method,:license,:url,:version)",
-                [
-                    s.to_dict()
-                    | {
-                        "tissue": s.tissue,
-                        "sample_size": s.sample_size,
-                        "processing_method": s.processing_method,
-                        "license": s.license,
-                        "url": s.url,
-                        "version": s.version,
-                    }
-                    for s in studies
-                ],
             )
             con.executemany(
                 "INSERT INTO curated_knowledge VALUES (:gene_id,:database,:assertion,:url)",
@@ -171,66 +145,14 @@ class GeroStore:
             con.close()
 
     def _compute_version(self) -> str:
-        """DATA_VERSION plus a short content hash of the signature parquet."""
+        """DATA_VERSION plus a short content hash of the bundled source files."""
         h = hashlib.sha256()
-        for p in sorted(self.sig_dir.rglob("*.parquet")):
-            h.update(p.name.encode())
-            h.update(str(p.stat().st_size).encode())
+        for name in ("curated_knowledge.csv", "interventions.csv", _EXAMPLE_COHORT_CSV):
+            p = config.SOURCES_DATA / name
+            if p.exists():
+                h.update(name.encode())
+                h.update(p.read_bytes())
         return f"{DATA_VERSION}+{h.hexdigest()[:12]}"
-
-    # ---- query -----------------------------------------------------------
-
-    def _sig_glob(self) -> str:
-        return (self.sig_dir / "**" / "*.parquet").as_posix()
-
-    def query_signatures(
-        self,
-        gene_id: str | None = None,
-        species: str | None = None,
-        tissue: str | None = None,
-        omic_layer: str | None = None,
-        sex: str | None = None,
-    ) -> list[AgingSignature]:
-        self.ensure_built()
-        clauses, params = [], []
-        for col, val in [
-            ("gene_id", gene_id),
-            ("species", species),
-            ("omic_layer", omic_layer),
-            ("tissue", tissue),
-            ("sex", sex),
-        ]:
-            if val is not None:
-                clauses.append(f"{col} = ?")
-                params.append(val)
-        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
-        sql = (
-            f"SELECT gene_id, study_id, omic_layer, species, tissue, sex, age_range, "
-            f"effect_size, direction, p_value, q_value, standard_error, source "
-            f"FROM read_parquet('{self._sig_glob()}', hive_partitioning=true){where} "
-            f"ORDER BY gene_id, omic_layer, study_id"
-        )
-        con = duckdb.connect()
-        try:
-            rows = con.execute(sql, params).fetchall()
-        finally:
-            con.close()
-        cols = [
-            "gene_id",
-            "study_id",
-            "omic_layer",
-            "species",
-            "tissue",
-            "sex",
-            "age_range",
-            "effect_size",
-            "direction",
-            "p_value",
-            "q_value",
-            "standard_error",
-            "source",
-        ]
-        return [AgingSignature(**dict(zip(cols, r, strict=True))) for r in rows]
 
     # ---- relational metadata --------------------------------------------
 
@@ -239,22 +161,6 @@ class GeroStore:
         con = sqlite3.connect(self.meta_db)
         con.row_factory = sqlite3.Row
         return con
-
-    def list_studies(self) -> list[Study]:
-        con = self._meta_con()
-        try:
-            rows = con.execute("SELECT * FROM studies ORDER BY study_id").fetchall()
-        finally:
-            con.close()
-        return [Study(**dict(r)) for r in rows]
-
-    def get_study(self, study_id: str) -> Study | None:
-        con = self._meta_con()
-        try:
-            row = con.execute("SELECT * FROM studies WHERE study_id = ?", (study_id,)).fetchone()
-        finally:
-            con.close()
-        return Study(**dict(row)) if row else None
 
     def curated_flags(self, gene_id: str) -> list[CuratedFlag]:
         con = self._meta_con()

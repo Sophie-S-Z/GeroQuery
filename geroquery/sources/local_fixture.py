@@ -1,8 +1,13 @@
-"""Cached, redistributable local sources backed by the bundled CSV slice.
+"""Cached, redistributable local sources backed by the bundled data slice.
 
-These read the harmonized demonstration data produced by the ETL. They stand in
-for the cache tier of GEO/GTEx/HAGR/etc.: same shape the federated adapters will
-return, so the store and API never learn where a row came from.
+These stand in for the cache tier of the open aging databases (HAGR/GenAge,
+CellAge, LongevityMap, OpenGenes, DrugAge, NIA ITP). They expose only real,
+redistributable curated facts — database memberships and lifespan interventions
+— with the same adapter contract the federated sources use, so the store and API
+never learn where a row came from.
+
+The fabricated per-study "signature" adapter that earlier versions shipped has
+been removed: GeroQuery no longer synthesises effect sizes or GEO accessions.
 """
 
 from __future__ import annotations
@@ -11,7 +16,7 @@ import csv
 from pathlib import Path
 
 from ..config import SOURCES_DATA
-from ..models import AgingSignature, CuratedFlag, Intervention, Study
+from ..models import CuratedFlag, Intervention
 from .base import Capabilities, License, SourceAdapter
 
 
@@ -22,8 +27,14 @@ def _read_csv(path: Path) -> list[dict]:
         return list(csv.DictReader(fh))
 
 
-class LocalSignatureSource(SourceAdapter):
-    name = "local-harmonized"
+class LocalEvidenceSource(SourceAdapter):
+    """The cached, redistributable tier: curated aging knowledge + interventions.
+
+    Kept as a first-class adapter so the licence/cache gate and the ``/sources``
+    provenance view still describe a real cached source.
+    """
+
+    name = "local-curated"
 
     def __init__(self, data_dir: Path | None = None):
         self.data_dir = data_dir or SOURCES_DATA
@@ -31,58 +42,20 @@ class LocalSignatureSource(SourceAdapter):
     def capabilities(self) -> Capabilities:
         return Capabilities(
             source_name=self.name,
-            omics=("transcriptome", "methylome", "proteome"),
+            omics=("annotation", "intervention"),
             species=("human", "mouse"),
             federated=False,
             cacheable=True,
-            notes="Bundled harmonized aging-signature slice (GEO-derived demo).",
+            notes="Bundled curated aging knowledge (GenAge/CellAge/LongevityMap/OpenGenes) "
+            "and lifespan interventions (DrugAge/NIA ITP). Real, cited, redistributable.",
         )
 
     def license(self) -> License:
         return License(
-            "public-attribute", redistributable=True, attribution="NCBI GEO / harmonized"
+            "HAGR/OpenGenes (free, attribute)",
+            redistributable=True,
+            attribution="HAGR (GenAge, CellAge, LongevityMap, DrugAge), OpenGenes, NIA ITP",
         )
-
-    def signatures(self) -> list[AgingSignature]:
-        out = []
-        for r in _read_csv(self.data_dir / "signatures.csv"):
-            out.append(
-                AgingSignature(
-                    gene_id=r["gene_id"],
-                    study_id=r["study_id"],
-                    omic_layer=r["omic_layer"],
-                    species=r["species"],
-                    effect_size=float(r["effect_size"]),
-                    direction=r["direction"],
-                    tissue=r.get("tissue") or None,
-                    sex=r.get("sex") or None,
-                    age_range=r.get("age_range") or None,
-                    p_value=float(r["p_value"]) if r.get("p_value") else None,
-                    q_value=float(r["q_value"]) if r.get("q_value") else None,
-                    standard_error=float(r["standard_error"]) if r.get("standard_error") else None,
-                    source=r.get("source"),
-                )
-            )
-        return out
-
-    def studies(self) -> list[Study]:
-        out = []
-        for r in _read_csv(self.data_dir / "studies.csv"):
-            out.append(
-                Study(
-                    study_id=r["study_id"],
-                    source=r["source"],
-                    omic_layer=r["omic_layer"],
-                    species=r["species"],
-                    tissue=r.get("tissue") or None,
-                    sample_size=int(r["sample_size"]) if r.get("sample_size") else None,
-                    processing_method=r.get("processing_method"),
-                    license=r.get("license"),
-                    url=r.get("url"),
-                    version=r.get("version"),
-                )
-            )
-        return out
 
 
 class CuratedKnowledgeSource(SourceAdapter):

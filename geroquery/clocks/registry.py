@@ -1,18 +1,16 @@
 """M5 clocks — clock registry.
 
-Two tiers:
+The registry ships one **real, published** clinical clock — Levine PhenoAge
+(see :mod:`geroquery.clocks.phenoage`) — rather than the transparent teaching
+clocks earlier versions used. PhenoAge outputs a biological age in years *and*
+a 10-year mortality risk from a single calibrated model, so the important
+distinction between "biological age" and "mortality risk" is demonstrated with
+one real instrument instead of two toy ones.
 
-  * **Reference clocks** (below): small, fully transparent linear models with
-    published-style structure. They exist so the service, validation, and
-    age-acceleration maths are testable end-to-end with a known ground truth,
-    and so the chronological-age-vs-mortality distinction is demonstrable.
-  * **Library clocks**: real Horvath/PhenoAge/DunedinPACE/etc. via ``pyaging`` /
-    ``biolearn`` when those are installed. We *wrap*, never rebuild.
-
-Every registered clock — reference or library — carries ``predicted_outcome``
-and ``training_population`` metadata, because a clock's chronological-age
-accuracy does not imply mortality-prediction ability, and surfacing that is a
-core correctness requirement (PRD §6, user stories 15/16).
+Real epigenetic clocks (Horvath, Hannum, DunedinPACE, …) require hundreds of
+CpG coefficients; GeroQuery *wraps* them via ``pyaging`` / ``biolearn`` when
+those libraries are installed rather than reprinting coefficients it cannot
+validate. The seam below picks them up automatically where available.
 """
 
 from __future__ import annotations
@@ -24,20 +22,18 @@ import pandas as pd
 
 from ..exceptions import ClockInputError, ClockNotFoundError
 from ..models import ClockInfo
+from . import phenoage
 
-CLINICAL_FEATURES = ("albumin", "creatinine", "glucose", "crp", "lymphocyte_pct", "rdw")
-EXPRESSION_FEATURES = ("ENSG00000147889", "ENSG00000124762", "ENSG00000113368", "ENSG00000130513")
+CLINICAL_FEATURES: tuple[str, ...] = phenoage.REQUIRED_FEATURES
 
 
 @dataclass(frozen=True)
-class LinearClock:
-    """A transparent linear clock: prediction = intercept + features · weights."""
+class PhenoAgeClock:
+    """Wrapper exposing the real PhenoAge model through the clock interface."""
 
     info: ClockInfo
-    intercept: float
-    weights: dict[str, float]
 
-    def predict(self, matrix: pd.DataFrame) -> np.ndarray:
+    def _check(self, matrix: pd.DataFrame) -> None:
         missing = [f for f in self.info.required_features if f not in matrix.columns]
         if missing:
             raise ClockInputError(
@@ -49,10 +45,8 @@ class LinearClock:
                     "provided": list(matrix.columns),
                 },
             )
-        ordered = list(self.info.required_features)
-        w = np.array([self.weights[f] for f in ordered], dtype=float)
         try:
-            X = matrix[ordered].to_numpy(dtype=float)
+            X = matrix[list(self.info.required_features)].to_numpy(dtype=float)
         except (ValueError, TypeError) as exc:
             raise ClockInputError(
                 f"Clock {self.info.clock_id!r} input has non-numeric values in required features.",
@@ -63,105 +57,58 @@ class LinearClock:
                 f"Clock {self.info.clock_id!r} input contains missing (NaN) values.",
                 detail={"clock_id": self.info.clock_id},
             )
-        return self.intercept + X @ w
+
+    def predict(self, matrix: pd.DataFrame) -> np.ndarray:
+        self._check(matrix)
+        return phenoage.phenotypic_age(matrix)
+
+    def mortality_risk(self, matrix: pd.DataFrame) -> np.ndarray:
+        self._check(matrix)
+        return phenoage.mortality_risk_10yr(matrix)
 
 
-def _reference_clocks() -> dict[str, LinearClock]:
-    clinical_pheno = LinearClock(
+def _reference_clocks() -> dict[str, PhenoAgeClock]:
+    pheno = PhenoAgeClock(
         info=ClockInfo(
-            clock_id="clinical_phenoage_demo",
-            name="Clinical PhenoAge (reference demo)",
-            library="geroquery-reference",
+            clock_id="phenoage",
+            name="PhenoAge (Levine et al., 2018)",
+            library="geroquery-phenoage",
             predicted_outcome="chronological_age",
-            training_population="synthetic reference cohort (demo)",
+            training_population="US adults, NHANES III/IV (Liu et al., 2018)",
             input_type="clinical",
             units="years",
-            required_features=CLINICAL_FEATURES,
-            notes="Transparent linear reference clock. Not a validated clinical instrument.",
+            required_features=phenoage.REQUIRED_FEATURES,
+            notes="Real published clinical aging clock over 9 blood biomarkers + age. "
+            "Also yields a 10-year mortality risk from the same model.",
         ),
-        intercept=40.0,
-        weights={
-            "albumin": -3.0,
-            "creatinine": 10.0,
-            "glucose": 0.2,
-            "crp": 2.0,
-            "lymphocyte_pct": -0.3,
-            "rdw": 3.0,
-        },
     )
-    clinical_mortality = LinearClock(
-        info=ClockInfo(
-            clock_id="clinical_mortality_demo",
-            name="Clinical mortality score (reference demo)",
-            library="geroquery-reference",
-            predicted_outcome="mortality",
-            training_population="synthetic reference cohort (demo)",
-            input_type="clinical",
-            units="log_hazard",
-            required_features=CLINICAL_FEATURES,
-            notes="Predicts a mortality risk score, NOT chronological age — same inputs, "
-            "different target. Demonstrates that age accuracy != mortality prediction.",
-        ),
-        intercept=-2.0,
-        weights={
-            "albumin": -0.4,
-            "creatinine": 0.6,
-            "glucose": 0.02,
-            "crp": 0.5,
-            "lymphocyte_pct": -0.03,
-            "rdw": 0.4,
-        },
-    )
-    transcriptomic = LinearClock(
-        info=ClockInfo(
-            clock_id="transcriptomic_demo",
-            name="Transcriptomic age (reference demo)",
-            library="geroquery-reference",
-            predicted_outcome="chronological_age",
-            training_population="synthetic reference cohort (demo)",
-            input_type="expression",
-            units="years",
-            required_features=EXPRESSION_FEATURES,
-            notes="Transparent linear expression clock over four aging genes (demo).",
-        ),
-        intercept=45.0,
-        weights={
-            "ENSG00000147889": 8.0,
-            "ENSG00000124762": 6.0,
-            "ENSG00000113368": -7.0,
-            "ENSG00000130513": 5.0,
-        },
-    )
-    clocks = [clinical_pheno, clinical_mortality, transcriptomic]
-    return {c.info.clock_id: c for c in clocks}
+    return {pheno.info.clock_id: pheno}
 
 
-def _library_clocks() -> dict[str, LinearClock]:
+def _library_clocks() -> dict[str, PhenoAgeClock]:
     """Hook for pyaging / biolearn. Returns {} unless those are installed.
 
-    Kept as a seam so real clocks appear in the registry automatically wherever
-    the libraries are available (e.g. the hosted demo), without any other code
-    change. We deliberately do not fabricate their coefficients here.
+    Kept as a seam so real DNA-methylation clocks appear automatically wherever
+    the libraries are available, without any other code change. We deliberately
+    never fabricate coefficients we cannot execute.
     """
     import importlib.util
 
     available = [
         lib for lib in ("pyaging", "biolearn") if importlib.util.find_spec(lib) is not None
     ]
-    # When present, production code would enumerate and wrap each library clock.
-    # We record availability but do not invent clocks we cannot execute.
     _ = available
     return {}
 
 
 class ClockRegistry:
     def __init__(self):
-        self._clocks: dict[str, LinearClock] = {**_reference_clocks(), **_library_clocks()}
+        self._clocks: dict[str, PhenoAgeClock] = {**_reference_clocks(), **_library_clocks()}
 
     def list_clocks(self) -> list[ClockInfo]:
         return [c.info for c in self._clocks.values()]
 
-    def get(self, clock_id: str) -> LinearClock:
+    def get(self, clock_id: str) -> PhenoAgeClock:
         if clock_id not in self._clocks:
             raise ClockNotFoundError(
                 f"Unknown clock {clock_id!r}.",

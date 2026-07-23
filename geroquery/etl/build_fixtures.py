@@ -1,56 +1,47 @@
-"""Deterministically build the bundled harmonized data slice.
+"""Deterministically build the bundled, honest data slice.
 
 Run: ``python -m geroquery.etl.build_fixtures``
 
-Everything is seeded, so re-running produces byte-identical CSVs — a property the
-reproducibility test relies on. The *directions* of effect encode established
-aging biology (p16/CDKN2A up, LMNB1 down, GDF15 up in plasma, klotho/IGF1 down);
-magnitudes and per-study scatter are synthetic and clearly labelled as a
-demonstration slice. The production ETL replaces the generators, not the schema.
+What this writes is intentionally, verifiably real:
+
+* ``curated_knowledge.csv`` — real membership of each gene in the HAGR/OpenGenes
+  curated databases (GenAge, CellAge, LongevityMap, OpenGenes). These are
+  genuine curated facts, linked back to the source portal.
+* ``interventions.csv`` — real lifespan-affecting interventions (rapamycin,
+  caloric restriction, metformin, senolytics, …) with approximate reported
+  rodent effect sizes and a link to the primary publication. Generated from the
+  curated knowledge base so numbers and citations stay in sync.
+* ``example_cohort_simulated.csv`` — a **clearly-labelled simulated** cohort of
+  nine clinical-chemistry markers (the exact inputs of the real PhenoAge clock)
+  plus age and sex. It exists only so the clock and resilience tools can be
+  tried without uploading data; it is a transparent worked example, never
+  presented as measurements of real people. Upload-your-own is the first-class
+  path.
+
+There are **no fabricated GEO accessions, effect sizes, or p-values** here — the
+earlier "demo signature slice" that invented those has been removed. Everything
+GeroQuery asserts about a gene's relationship to aging now comes from the cited
+knowledge base in :mod:`geroquery.knowledge`.
+
+Everything is seeded, so re-running produces byte-identical CSVs.
 """
 
 from __future__ import annotations
 
 import csv
-import math
 from pathlib import Path
 
 import numpy as np
 
 from ..config import SOURCES_DATA
 from ..idmap import get_resolver
+from ..knowledge import INTERVENTIONS, REFERENCES
 
 SEED = 20240117
 
-# ortholog_group -> per-omic "true" standardized age effect (+ up with age).
-TRUE_EFFECTS: dict[str, dict[str, float]] = {
-    "CDKN2A": {"transcriptome": 1.20, "methylome": 0.60},
-    "CDKN1A": {"transcriptome": 0.90},
-    "LMNB1": {"transcriptome": -1.00, "methylome": -0.40},
-    "GDF15": {"transcriptome": 0.70, "proteome": 1.10},
-    "SIRT1": {"transcriptome": -0.50, "methylome": -0.30},
-    "TERT": {"transcriptome": -0.80},
-    "KL": {"transcriptome": -0.90, "proteome": -0.60},
-    "FOXO3": {"transcriptome": -0.20},
-    "IGF1": {"transcriptome": -0.60, "proteome": -0.70},
-    "TP53": {"transcriptome": 0.30},
-    "MTOR": {"transcriptome": 0.25},
-    "IGF1R": {"transcriptome": -0.30},
-}
-
-TISSUES_BY_OMIC = {
-    "transcriptome": ["blood", "brain", "muscle"],
-    "methylome": ["blood"],
-    "proteome": ["plasma"],
-}
-# proteome/methylome are human-only in this slice; transcriptome covers both.
-SPECIES_BY_OMIC = {
-    "transcriptome": ["human", "mouse"],
-    "methylome": ["human"],
-    "proteome": ["human"],
-}
-
-CURATED = {
+# Real HAGR / OpenGenes curated-database memberships, keyed by ortholog group.
+# ortholog_group -> [(database, assertion)]
+CURATED: dict[str, list[tuple[str, str]]] = {
     "CDKN2A": [("GenAge", "human ageing-associated gene"), ("CellAge", "senescence inducer")],
     "CDKN1A": [("CellAge", "senescence inducer"), ("GenAge", "ageing-associated")],
     "TP53": [("GenAge", "human ageing-associated gene"), ("CellAge", "senescence regulator")],
@@ -77,85 +68,26 @@ CURATED = {
     "LMNB1": [("CellAge", "senescence marker (down)")],
 }
 
-# name -> (type, source, organism, lifespan_effect_pct, [ortholog_groups])
-INTERVENTIONS = {
-    "rapamycin": ("drug", "ITP", "mouse", 14.0, ["MTOR"]),
-    "caloric_restriction": ("dietary", "GenDR", "mouse", 30.0, ["IGF1", "MTOR", "SIRT1", "FOXO3"]),
-    "metformin": ("drug", "DrugAge", "mouse", 6.0, ["MTOR", "GDF15"]),
-    "resveratrol": ("drug", "DrugAge", "mouse", 4.0, ["SIRT1"]),
-    "dasatinib_quercetin": ("drug", "DrugAge", "mouse", 9.0, ["CDKN2A", "CDKN1A"]),
-    "nmn": ("drug", "DrugAge", "mouse", 5.0, ["SIRT1"]),
-    "17a_estradiol": ("drug", "ITP", "mouse", 12.0, ["IGF1"]),
+# Reference marker profile for the simulated example cohort, in conventional US
+# clinical units. (base_young, base_old, worsening_loading). The loading sign
+# encodes the direction a marker moves as health declines; a shared aging factor
+# with age-growing variance drives all markers, reproducing the critical-slowing
+# -down signature the resilience tool looks for.
+_MARKERS = {
+    #                 young   old    loading
+    "albumin_gdl": (4.55, 3.95, -0.35),
+    "creatinine_mgdl": (0.85, 1.12, 0.12),
+    "glucose_mgdl": (90.0, 110.0, 9.0),
+    "crp_mgl": (1.2, 3.4, 1.4),
+    "lymphocyte_pct": (34.0, 23.0, -3.2),
+    "mcv_fl": (89.0, 92.8, 1.6),
+    "rdw_pct": (12.9, 14.7, 0.7),
+    "alp_ul": (66.0, 84.0, 6.0),
+    "wbc_1000ul": (5.9, 6.9, 0.7),
 }
 
 
-def _se_from_g(g: float, n1: int, n2: int) -> float:
-    return math.sqrt((n1 + n2) / (n1 * n2) + (g * g) / (2.0 * (n1 + n2)))
-
-
-def _p_from_z(g: float, se: float) -> float:
-    from scipy import stats
-
-    z = g / se if se > 0 else 0.0
-    return float(2.0 * stats.norm.sf(abs(z)))
-
-
-def build_signatures_and_studies(rng: np.random.Generator, resolver):
-    sig_rows, study_rows = [], []
-    study_counter = 90000
-    for group, omics in TRUE_EFFECTS.items():
-        records = resolver.genes_in_group(group)
-        for omic, true_eff in omics.items():
-            for species in SPECIES_BY_OMIC[omic]:
-                gene = next((r for r in records if r.species == species), None)
-                if gene is None:
-                    continue
-                mag = true_eff * (0.9 if species == "mouse" else 1.0)
-                for tissue in TISSUES_BY_OMIC[omic]:
-                    n_studies = 3 if omic == "transcriptome" else 2
-                    for _ in range(n_studies):
-                        n1 = int(rng.integers(8, 30))
-                        n2 = int(rng.integers(8, 30))
-                        g = float(mag + rng.normal(0, 0.15))
-                        se = _se_from_g(g, n1, n2)
-                        p = _p_from_z(g, se)
-                        study_counter += 1
-                        study_id = f"GEO:GSE{study_counter}"
-                        sig_rows.append(
-                            {
-                                "gene_id": gene.canonical_id,
-                                "study_id": study_id,
-                                "omic_layer": omic,
-                                "species": species,
-                                "tissue": tissue,
-                                "sex": rng.choice(["male", "female", "both"]),
-                                "age_range": rng.choice(["young_vs_old", "20-80", "3m_vs_24m"]),
-                                "effect_size": round(g, 4),
-                                "direction": "up" if g >= 0 else "down",
-                                "p_value": round(p, 6),
-                                "q_value": round(min(1.0, p * 1.5), 6),
-                                "standard_error": round(se, 4),
-                                "source": "GEO",
-                            }
-                        )
-                        study_rows.append(
-                            {
-                                "study_id": study_id,
-                                "source": "GEO",
-                                "omic_layer": omic,
-                                "species": species,
-                                "tissue": tissue,
-                                "sample_size": n1 + n2,
-                                "processing_method": "harmonized_demo_slice",
-                                "license": "public-attribute",
-                                "url": f"https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE{study_counter}",
-                                "version": "2024.1",
-                            }
-                        )
-    return sig_rows, study_rows
-
-
-def build_curated(resolver):
+def build_curated(resolver) -> list[dict]:
     rows = []
     for group, flags in CURATED.items():
         for gene in resolver.genes_in_group(group):
@@ -171,67 +103,54 @@ def build_curated(resolver):
     return rows
 
 
-def build_interventions(resolver):
+def build_interventions(resolver) -> list[dict]:
     rows = []
-    for i, (name, (itype, source, organism, eff, groups)) in enumerate(INTERVENTIONS.items(), 1):
-        linked = []
-        for group in groups:
+    for i, iv in enumerate(INTERVENTIONS.values(), 1):
+        linked: list[str] = []
+        for group in iv.linked_groups:
             linked.extend(g.canonical_id for g in resolver.genes_in_group(group))
+        primary_ref = REFERENCES[iv.reference_keys[0]] if iv.reference_keys else None
         rows.append(
             {
                 "intervention_id": f"IV{i:03d}",
-                "name": name,
-                "itype": itype,
-                "source": source,
-                "organism": organism,
-                "lifespan_effect_pct": eff,
+                "name": iv.name,
+                "itype": iv.itype,
+                "source": iv.source,
+                "organism": iv.organism,
+                "lifespan_effect_pct": iv.lifespan_effect_pct,
                 "linked_gene_ids": "|".join(sorted(set(linked))),
-                "url": f"https://genomics.senescence.info/drugs/search?search={name}",
+                "url": primary_ref.url if primary_ref else "",
             }
         )
     return rows
 
 
-def build_clinical(rng: np.random.Generator):
-    """A clinical/NHANES-style slice engineered with critical slowing down.
+def build_example_cohort(rng: np.random.Generator) -> list[dict]:
+    """A SIMULATED example cohort carrying the nine real PhenoAge markers.
 
-    A shared 'aging' latent factor whose variance grows with age drives all
-    biomarkers, so both the variance of the health state and the cross-correlation
-    among biomarkers rise with age — the cross-sectional CSD signature the
-    resilience module reproduces.
+    Not real patient data. A shared latent 'aging' factor whose variance grows
+    with age drives all markers, so biological-age acceleration and the
+    resilience (critical-slowing-down) signature both emerge realistically while
+    the cohort remains an honest, transparent worked example.
     """
-    markers = ["albumin", "creatinine", "glucose", "crp", "lymphocyte_pct", "rdw"]
-    base = {
-        "albumin": 4.3,
-        "creatinine": 0.9,
-        "glucose": 95.0,
-        "crp": 1.5,
-        "lymphocyte_pct": 32.0,
-        "rdw": 13.0,
-    }
-    loading = {
-        "albumin": -0.4,
-        "creatinine": 0.3,
-        "glucose": 5.0,
-        "crp": 0.8,
-        "lymphocyte_pct": -2.5,
-        "rdw": 0.6,
-    }
     rows = []
     n = 720
     for i in range(n):
         age = float(rng.integers(20, 86))
-        aging = (age - 20.0) / 65.0
-        common = rng.normal(0.0, 0.4 + 1.8 * aging)  # variance grows with age
-        row = {"subject_id": f"S{i:04d}", "age": age, "sex": rng.choice(["male", "female"])}
-        for m in markers:
-            idio = rng.normal(0.0, 0.5)  # fixed idiosyncratic noise
-            row[m] = round(base[m] + loading[m] * common + idio, 4)
+        aging = (age - 20.0) / 65.0  # 0 (young) .. 1 (old)
+        common = rng.normal(0.0, 0.35 + 1.6 * aging)  # variance grows with age
+        row = {"subject_id": f"SIM{i:04d}", "age": age, "sex": rng.choice(["male", "female"])}
+        for marker, (young, old, loading) in _MARKERS.items():
+            trend = young + (old - young) * aging
+            idio = rng.normal(0.0, abs(loading) * 0.6)
+            val = trend + loading * common + idio
+            # Keep values physiologically non-negative.
+            row[marker] = round(max(val, 0.01), 4)
         rows.append(row)
-    return markers, rows
+    return rows
 
 
-def _write_csv(path: Path, rows: list[dict]):
+def _write_csv(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
         path.write_text("")
@@ -248,23 +167,24 @@ def build_all(out_dir: Path | None = None) -> dict[str, int]:
     rng = np.random.default_rng(SEED)
     resolver = get_resolver()
 
-    sig_rows, study_rows = build_signatures_and_studies(rng, resolver)
     curated_rows = build_curated(resolver)
     iv_rows = build_interventions(resolver)
-    _markers, clinical_rows = build_clinical(rng)
+    cohort_rows = build_example_cohort(rng)
 
-    _write_csv(out_dir / "signatures.csv", sig_rows)
-    _write_csv(out_dir / "studies.csv", study_rows)
     _write_csv(out_dir / "curated_knowledge.csv", curated_rows)
     _write_csv(out_dir / "interventions.csv", iv_rows)
-    _write_csv(out_dir / "clinical_nhanes_slice.csv", clinical_rows)
+    _write_csv(out_dir / "example_cohort_simulated.csv", cohort_rows)
+
+    # Remove any stale fabricated files from earlier versions of the project.
+    for stale in ("signatures.csv", "studies.csv", "clinical_nhanes_slice.csv"):
+        p = out_dir / stale
+        if p.exists():
+            p.unlink()
 
     return {
-        "signatures": len(sig_rows),
-        "studies": len(study_rows),
         "curated": len(curated_rows),
         "interventions": len(iv_rows),
-        "clinical_subjects": len(clinical_rows),
+        "example_cohort_subjects": len(cohort_rows),
     }
 
 
