@@ -1,0 +1,15 @@
+"""M3 harmonize — cross-study normalization & meta-analysis (public surface)."""
+
+from .batch import batch_variance, remove_batch_effect
+from .effect_size import EffectSize, cohens_d, hedges_g
+from .meta import PooledEffect, random_effects
+
+__all__ = [
+    "EffectSize",
+    "cohens_d",
+    "hedges_g",
+    "PooledEffect",
+    "random_effects",
+    "remove_batch_effect",
+    "batch_variance",
+]

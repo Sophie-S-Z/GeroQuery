@@ -1,0 +1,17 @@
+{
+  "_provenance": "UBERON tissue slim for the bundled slice. Production maps arbitrary labels via the OLS/UBERON API; this covers the tissues present in the demo data.",
+  "terms": [
+    {"term_id": "UBERON:0000178", "label": "blood", "synonyms": ["blood", "whole blood", "peripheral blood", "pbmc", "peripheral blood mononuclear cells"]},
+    {"term_id": "UBERON:0001969", "label": "blood plasma", "synonyms": ["plasma", "blood plasma", "serum"]},
+    {"term_id": "UBERON:0000955", "label": "brain", "synonyms": ["brain", "cerebral cortex", "cortex", "prefrontal cortex", "hippocampus"]},
+    {"term_id": "UBERON:0002107", "label": "liver", "synonyms": ["liver", "hepatic", "hepatocyte"]},
+    {"term_id": "UBERON:0001134", "label": "skeletal muscle tissue", "synonyms": ["muscle", "skeletal muscle", "quadriceps", "gastrocnemius"]},
+    {"term_id": "UBERON:0002097", "label": "skin of body", "synonyms": ["skin", "dermis", "epidermis"]},
+    {"term_id": "UBERON:0000948", "label": "heart", "synonyms": ["heart", "cardiac", "myocardium", "left ventricle"]},
+    {"term_id": "UBERON:0002113", "label": "kidney", "synonyms": ["kidney", "renal"]},
+    {"term_id": "UBERON:0002048", "label": "lung", "synonyms": ["lung", "pulmonary"]},
+    {"term_id": "UBERON:0001013", "label": "adipose tissue", "synonyms": ["adipose", "fat", "adipose tissue", "white adipose tissue", "subcutaneous adipose"]},
+    {"term_id": "UBERON:0002106", "label": "spleen", "synonyms": ["spleen", "splenic"]},
+    {"term_id": "UBERON:0000945", "label": "stomach", "synonyms": ["stomach", "gastric"]}
+  ]
+}

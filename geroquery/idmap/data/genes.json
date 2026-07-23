@@ -1,0 +1,44 @@
+{
+  "_provenance": "Curated demonstration slice of well-studied aging genes (human + mouse orthologs). canonical_id is the internal source of truth; the production ETL resolves arbitrary identifiers live via mygene.info and caches into this same shape. IDs here are self-consistent across the bundled store.",
+  "deprecated_ids": {
+    "ENSG00000147888": "ENSG00000147889",
+    "ENSG00000267174": "ENSG00000141510"
+  },
+  "genes": [
+    {"canonical_id": "ENSG00000147889", "symbol": "CDKN2A", "species": "human", "entrez": "1029", "ensembl": "ENSG00000147889", "uniprot": "P42771", "name": "cyclin dependent kinase inhibitor 2A", "ortholog_group": "CDKN2A", "aliases": ["p16", "p16INK4a", "INK4A", "CDKN2", "MTS1", "p14ARF", "ARF"]},
+    {"canonical_id": "ENSMUSG00000044303", "symbol": "Cdkn2a", "species": "mouse", "entrez": "12578", "ensembl": "ENSMUSG00000044303", "uniprot": "P51480", "name": "cyclin dependent kinase inhibitor 2A", "ortholog_group": "CDKN2A", "aliases": ["p16", "p16Ink4a", "Ink4a", "p19Arf", "Cdkn2"]},
+
+    {"canonical_id": "ENSG00000141510", "symbol": "TP53", "species": "human", "entrez": "7157", "ensembl": "ENSG00000141510", "uniprot": "P04637", "name": "tumor protein p53", "ortholog_group": "TP53", "aliases": ["p53", "LFS1", "TRP53"]},
+    {"canonical_id": "ENSMUSG00000059552", "symbol": "Trp53", "species": "mouse", "entrez": "22059", "ensembl": "ENSMUSG00000059552", "uniprot": "P02340", "name": "transformation related protein 53", "ortholog_group": "TP53", "aliases": ["p53", "Tp53"]},
+
+    {"canonical_id": "ENSG00000096717", "symbol": "SIRT1", "species": "human", "entrez": "23411", "ensembl": "ENSG00000096717", "uniprot": "Q96EB6", "name": "sirtuin 1", "ortholog_group": "SIRT1", "aliases": ["SIR2L1", "SIR2alpha", "hSIR2"]},
+    {"canonical_id": "ENSMUSG00000020063", "symbol": "Sirt1", "species": "mouse", "entrez": "93759", "ensembl": "ENSMUSG00000020063", "uniprot": "Q923E4", "name": "sirtuin 1", "ortholog_group": "SIRT1", "aliases": ["Sir2", "Sir2l1"]},
+
+    {"canonical_id": "ENSG00000118689", "symbol": "FOXO3", "species": "human", "entrez": "2309", "ensembl": "ENSG00000118689", "uniprot": "O43524", "name": "forkhead box O3", "ortholog_group": "FOXO3", "aliases": ["FOXO3A", "FKHRL1", "AF6q21"]},
+    {"canonical_id": "ENSMUSG00000048756", "symbol": "Foxo3", "species": "mouse", "entrez": "56484", "ensembl": "ENSMUSG00000048756", "uniprot": "Q9WVH4", "name": "forkhead box O3", "ortholog_group": "FOXO3", "aliases": ["Foxo3a", "Fkhrl1"]},
+
+    {"canonical_id": "ENSG00000164362", "symbol": "TERT", "species": "human", "entrez": "7015", "ensembl": "ENSG00000164362", "uniprot": "O14746", "name": "telomerase reverse transcriptase", "ortholog_group": "TERT", "aliases": ["TP2", "TRT", "EST2", "hTERT"]},
+    {"canonical_id": "ENSMUSG00000021611", "symbol": "Tert", "species": "mouse", "entrez": "21752", "ensembl": "ENSMUSG00000021611", "uniprot": "O70372", "name": "telomerase reverse transcriptase", "ortholog_group": "TERT", "aliases": ["mTert", "Est2"]},
+
+    {"canonical_id": "ENSG00000133116", "symbol": "KL", "species": "human", "entrez": "9365", "ensembl": "ENSG00000133116", "uniprot": "Q9UEF7", "name": "klotho", "ortholog_group": "KL", "aliases": ["Klotho", "KLA"]},
+    {"canonical_id": "ENSMUSG00000058488", "symbol": "Kl", "species": "mouse", "entrez": "16591", "ensembl": "ENSMUSG00000058488", "uniprot": "O35082", "name": "klotho", "ortholog_group": "KL", "aliases": ["Klotho", "kl"]},
+
+    {"canonical_id": "ENSG00000198793", "symbol": "MTOR", "species": "human", "entrez": "2475", "ensembl": "ENSG00000198793", "uniprot": "P42345", "name": "mechanistic target of rapamycin kinase", "ortholog_group": "MTOR", "aliases": ["FRAP1", "RAFT1", "RAPT1", "mTOR"]},
+    {"canonical_id": "ENSMUSG00000028991", "symbol": "Mtor", "species": "mouse", "entrez": "56717", "ensembl": "ENSMUSG00000028991", "uniprot": "Q9JLN9", "name": "mechanistic target of rapamycin kinase", "ortholog_group": "MTOR", "aliases": ["Frap1", "Raft1"]},
+
+    {"canonical_id": "ENSG00000017427", "symbol": "IGF1", "species": "human", "entrez": "3479", "ensembl": "ENSG00000017427", "uniprot": "P05019", "name": "insulin like growth factor 1", "ortholog_group": "IGF1", "aliases": ["IGFI", "IGF-I", "IGF"]},
+    {"canonical_id": "ENSMUSG00000020053", "symbol": "Igf1", "species": "mouse", "entrez": "16000", "ensembl": "ENSMUSG00000020053", "uniprot": "P05017", "name": "insulin like growth factor 1", "ortholog_group": "IGF1", "aliases": ["Igf-1", "Igf-I"]},
+
+    {"canonical_id": "ENSG00000130513", "symbol": "GDF15", "species": "human", "entrez": "9518", "ensembl": "ENSG00000130513", "uniprot": "Q99988", "name": "growth differentiation factor 15", "ortholog_group": "GDF15", "aliases": ["MIC1", "MIC-1", "NAG1", "PLAB", "PTGFB"]},
+    {"canonical_id": "ENSMUSG00000038508", "symbol": "Gdf15", "species": "mouse", "entrez": "23886", "ensembl": "ENSMUSG00000038508", "uniprot": "Q9Z0J7", "name": "growth differentiation factor 15", "ortholog_group": "GDF15", "aliases": ["Mic1", "Nag1"]},
+
+    {"canonical_id": "ENSG00000113368", "symbol": "LMNB1", "species": "human", "entrez": "4001", "ensembl": "ENSG00000113368", "uniprot": "P20700", "name": "lamin B1", "ortholog_group": "LMNB1", "aliases": ["LMN2", "LMN"]},
+    {"canonical_id": "ENSMUSG00000024590", "symbol": "Lmnb1", "species": "mouse", "entrez": "16906", "ensembl": "ENSMUSG00000024590", "uniprot": "P14733", "name": "lamin B1", "ortholog_group": "LMNB1", "aliases": ["Lmn2"]},
+
+    {"canonical_id": "ENSG00000124762", "symbol": "CDKN1A", "species": "human", "entrez": "1026", "ensembl": "ENSG00000124762", "uniprot": "P38936", "name": "cyclin dependent kinase inhibitor 1A", "ortholog_group": "CDKN1A", "aliases": ["p21", "CIP1", "WAF1", "CAP20", "SDI1"]},
+    {"canonical_id": "ENSMUSG00000023067", "symbol": "Cdkn1a", "species": "mouse", "entrez": "12575", "ensembl": "ENSMUSG00000023067", "uniprot": "P39689", "name": "cyclin dependent kinase inhibitor 1A", "ortholog_group": "CDKN1A", "aliases": ["p21", "Cip1", "Waf1"]},
+
+    {"canonical_id": "ENSG00000140443", "symbol": "IGF1R", "species": "human", "entrez": "3480", "ensembl": "ENSG00000140443", "uniprot": "P08069", "name": "insulin like growth factor 1 receptor", "ortholog_group": "IGF1R", "aliases": ["IGFIR", "JTK13", "CD221"]},
+    {"canonical_id": "ENSMUSG00000005533", "symbol": "Igf1r", "species": "mouse", "entrez": "16001", "ensembl": "ENSMUSG00000005533", "uniprot": "Q60751", "name": "insulin like growth factor 1 receptor", "ortholog_group": "IGF1R", "aliases": ["Igfr", "Igf1rec"]}
+  ]
+}

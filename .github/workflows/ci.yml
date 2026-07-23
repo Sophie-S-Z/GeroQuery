@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Lint (ruff)
+        run: ruff check geroquery tests
+      - name: Format check (black)
+        run: black --check geroquery tests
+      - name: Type check (mypy)
+        run: mypy geroquery
+      - name: Tests
+        run: pytest --cov=geroquery --cov-report=term-missing
+
+  # Live upstream smoke tests + full ETL run OFF the PR path (avoids
+  # rate-limiting GEO/GTEx/mygene.info). Manual or scheduled only.
+  smoke-live:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[dev]"
+      - name: Live smoke tests
+        env:
+          GEROQUERY_ALLOW_NETWORK: "1"
+        run: pytest -m live -q || echo "no live tests selected"

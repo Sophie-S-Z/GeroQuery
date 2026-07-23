@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# GeroQuery runtime build & cache (regenerated from bundled fixtures)
+geroquery/_build/
+geroquery/_cache/
+_build/
+_cache/
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
