@@ -5,24 +5,28 @@ import pytest
 from geroquery.exceptions import LicenseViolationError
 from geroquery.sources import all_adapters
 from geroquery.sources.federated import UK_BIOBANK
-from geroquery.sources.local_fixture import LocalSignatureSource
+from geroquery.sources.local_fixture import LocalEvidenceSource
 
 
 def test_reproducibility_same_query_same_result(service):
-    a = service.gene_signature("CDKN2A", species="human", omic_layer="transcriptome")
-    b = service.gene_signature("CDKN2A", species="human", omic_layer="transcriptome")
+    a = service.gene_report("CDKN2A", species="human")
+    b = service.gene_report("CDKN2A", species="human")
     assert a == b
 
 
-def test_every_signature_carries_provenance(service):
-    body = service.gene_signature("GDF15")
-    assert body["signatures"]
-    for s in body["signatures"]:
-        assert s["study_id"] and s["source"]
+def test_every_evidence_line_carries_a_citation(service):
+    report = service.gene_report("GDF15")
+    assert report["knowledge"]["evidence"]
+    refmap = {r["key"] for r in report["references"]}
+    for e in report["knowledge"]["evidence"]:
+        assert e["reference_keys"]
+        assert all(k in refmap for k in e["reference_keys"])
 
 
-def test_every_study_is_versioned(service):
-    assert all(s["version"] for s in service.studies())
+def test_references_are_real_and_linkable(service):
+    for r in service.references():
+        assert r["url"].startswith("https://pubmed")
+        assert r["year"] > 1990
 
 
 def test_controlled_source_is_federate_only_and_uncacheable():
@@ -34,7 +38,7 @@ def test_controlled_source_is_federate_only_and_uncacheable():
 
 
 def test_redistributable_source_passes_cache_gate():
-    LocalSignatureSource().assert_cacheable()  # should not raise
+    LocalEvidenceSource().assert_cacheable()  # should not raise
 
 
 def test_all_controlled_adapters_refuse_caching():

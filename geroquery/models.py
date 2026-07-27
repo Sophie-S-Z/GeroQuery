@@ -10,7 +10,7 @@ The fields mirror the conceptual schema in the PRD (§6 "Schema").
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 
 
 def _clean(d: dict) -> dict:
@@ -29,6 +29,7 @@ class CanonicalGene:
     ensembl: str | None = None
     uniprot: str | None = None
     name: str | None = None
+    ortholog_group: str | None = None  # cross-species group key, used for knowledge lookup
     aliases: tuple[str, ...] = ()
     matched_from: str | None = None  # what the caller queried with
     ambiguous_candidates: tuple[str, ...] = ()  # other canonical_ids the query could mean
@@ -46,66 +47,6 @@ class UberonTerm:
     label: str
     confidence: float
     matched_from: str | None = None
-
-    def to_dict(self) -> dict:
-        return _clean(asdict(self))
-
-
-@dataclass(frozen=True)
-class Study:
-    study_id: str
-    source: str
-    omic_layer: str  # transcriptome | methylome | proteome | clinical
-    species: str
-    tissue: str | None = None
-    sample_size: int | None = None
-    processing_method: str | None = None
-    license: str | None = None
-    url: str | None = None
-    version: str | None = None
-
-    def to_dict(self) -> dict:
-        return _clean(asdict(self))
-
-
-@dataclass(frozen=True)
-class AgingSignature:
-    """One gene's age-associated change within a single study."""
-
-    gene_id: str
-    study_id: str
-    omic_layer: str
-    species: str
-    effect_size: float  # standardized (Hedges g): +ve = up with age
-    direction: str  # "up" | "down"
-    tissue: str | None = None
-    sex: str | None = None
-    age_range: str | None = None
-    p_value: float | None = None
-    q_value: float | None = None
-    standard_error: float | None = None
-    source: str | None = None
-
-    def to_dict(self) -> dict:
-        return _clean(asdict(self))
-
-
-@dataclass(frozen=True)
-class MetaSignature:
-    """Random-effects pool of one gene's signatures within an omic layer."""
-
-    gene_id: str
-    omic_layer: str
-    species: str
-    pooled_effect: float
-    standard_error: float
-    ci_low: float
-    ci_high: float
-    p_value: float
-    heterogeneity_i2: float
-    tau2: float
-    n_studies: int
-    direction: str
 
     def to_dict(self) -> dict:
         return _clean(asdict(self))
@@ -157,23 +98,3 @@ class CuratedFlag:
 
     def to_dict(self) -> dict:
         return _clean(asdict(self))
-
-
-@dataclass
-class GeneCard:
-    """Assembled multi-omic + curated + intervention view of one gene."""
-
-    gene: CanonicalGene
-    meta_signatures: list[MetaSignature] = field(default_factory=list)
-    signatures: list[AgingSignature] = field(default_factory=list)
-    curated_flags: list[CuratedFlag] = field(default_factory=list)
-    interventions: list[Intervention] = field(default_factory=list)
-
-    def to_dict(self) -> dict:
-        return {
-            "gene": self.gene.to_dict(),
-            "meta_signatures": [m.to_dict() for m in self.meta_signatures],
-            "signatures": [s.to_dict() for s in self.signatures],
-            "curated_flags": [c.to_dict() for c in self.curated_flags],
-            "interventions": [i.to_dict() for i in self.interventions],
-        }

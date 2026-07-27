@@ -1,8 +1,7 @@
 intervention_id,name,itype,source,organism,lifespan_effect_pct,linked_gene_ids,url
-IV001,rapamycin,drug,ITP,mouse,14.0,ENSG00000198793|ENSMUSG00000028991,https://genomics.senescence.info/drugs/search?search=rapamycin
-IV002,caloric_restriction,dietary,GenDR,mouse,30.0,ENSG00000017427|ENSG00000096717|ENSG00000118689|ENSG00000198793|ENSMUSG00000020053|ENSMUSG00000020063|ENSMUSG00000028991|ENSMUSG00000048756,https://genomics.senescence.info/drugs/search?search=caloric_restriction
-IV003,metformin,drug,DrugAge,mouse,6.0,ENSG00000130513|ENSG00000198793|ENSMUSG00000028991|ENSMUSG00000038508,https://genomics.senescence.info/drugs/search?search=metformin
-IV004,resveratrol,drug,DrugAge,mouse,4.0,ENSG00000096717|ENSMUSG00000020063,https://genomics.senescence.info/drugs/search?search=resveratrol
-IV005,dasatinib_quercetin,drug,DrugAge,mouse,9.0,ENSG00000124762|ENSG00000147889|ENSMUSG00000023067|ENSMUSG00000044303,https://genomics.senescence.info/drugs/search?search=dasatinib_quercetin
-IV006,nmn,drug,DrugAge,mouse,5.0,ENSG00000096717|ENSMUSG00000020063,https://genomics.senescence.info/drugs/search?search=nmn
-IV007,17a_estradiol,drug,ITP,mouse,12.0,ENSG00000017427|ENSMUSG00000020053,https://genomics.senescence.info/drugs/search?search=17a_estradiol
+IV001,rapamycin,drug,NIA ITP,mouse,14.0,ENSG00000198793|ENSMUSG00000028991,https://pubmed.ncbi.nlm.nih.gov/19587680/
+IV002,caloric_restriction,dietary,GenDR,mouse,30.0,ENSG00000017427|ENSG00000096717|ENSG00000118689|ENSG00000140443|ENSG00000198793|ENSMUSG00000005533|ENSMUSG00000020053|ENSMUSG00000020063|ENSMUSG00000028991|ENSMUSG00000048756,https://pubmed.ncbi.nlm.nih.gov/23726003/
+IV003,metformin,drug,DrugAge,mouse,6.0,ENSG00000130513|ENSG00000198793|ENSMUSG00000028991|ENSMUSG00000038508,https://pubmed.ncbi.nlm.nih.gov/23900241/
+IV004,dasatinib_quercetin,senolytic,DrugAge,mouse,9.0,ENSG00000124762|ENSG00000147889|ENSMUSG00000023067|ENSMUSG00000044303,https://pubmed.ncbi.nlm.nih.gov/29988130/
+IV005,17a_estradiol,drug,NIA ITP,mouse,12.0,ENSG00000017427|ENSMUSG00000020053,https://pubmed.ncbi.nlm.nih.gov/24245565/
+IV006,nmn,drug,DrugAge,mouse,5.0,ENSG00000096717|ENSMUSG00000020063,https://pubmed.ncbi.nlm.nih.gov/28068222/

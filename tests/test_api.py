@@ -1,8 +1,21 @@
-"""M7 api — endpoint behavior, envelopes, pagination, format switch, OpenAPI."""
+"""M7 api — endpoint behavior, envelopes, format switch, OpenAPI."""
 
 import io
 
 import pandas as pd
+
+_CLINICAL_ROW = {
+    "albumin_gdl": 4.4,
+    "creatinine_mgdl": 0.9,
+    "glucose_mgdl": 95,
+    "crp_mgl": 1.2,
+    "lymphocyte_pct": 30,
+    "mcv_fl": 90,
+    "rdw_pct": 13.2,
+    "alp_ul": 72,
+    "wbc_1000ul": 6.2,
+    "age": 55,
+}
 
 
 def test_healthz_and_version(client):
@@ -11,91 +24,60 @@ def test_healthz_and_version(client):
     assert "code_version" in v and "data_version" in v
 
 
-def test_gene_signature_shape_and_cross_species(client):
-    r = client.get("/v1/gene/CDKN2A/signature", params={"omic_layer": "transcriptome"})
-    assert r.status_code == 200
-    body = r.json()
+def test_gene_report_shape_and_cross_species(client):
+    body = client.get("/v1/gene/CDKN2A/report").json()
     assert body["gene"]["symbol"] == "CDKN2A"
-    species = {m["species"] for m in body["meta_signatures"]}
+    assert body["knowledge"]["direction_with_age"] == "up"
+    species = {o["species"] for o in body["orthologs"]}
     assert {"human", "mouse"} <= species  # conservation view
-    assert all(m["direction"] == "up" for m in body["meta_signatures"])
+    assert body["references"]
 
 
-def test_gene_signature_pagination(client):
-    full = client.get("/v1/gene/CDKN2A/signature").json()["signatures"]
-    page = client.get("/v1/gene/CDKN2A/signature", params={"limit": 3, "offset": 2}).json()
-    assert page["signatures"] == full[2:5]
-
-
-def test_gene_signature_format_csv_and_parquet(client):
-    csv = client.get("/v1/gene/CDKN2A/signature", params={"format": "csv"})
-    assert csv.headers["content-type"].startswith("text/csv")
-    assert "effect_size" in csv.text
-
-    pq = client.get("/v1/gene/CDKN2A/signature", params={"format": "parquet"})
-    df = pd.read_parquet(io.BytesIO(pq.content))
-    assert "gene_id" in df.columns and len(df) > 0
-
-
-def test_gene_card(client):
+def test_gene_card_alias(client):
     card = client.get("/v1/gene/klotho/card").json()
     assert card["gene"]["symbol"] == "KL"
     assert len(card["curated_flags"]) >= 1
+    assert card["knowledge"]["direction_with_age"] == "down"
 
 
-def test_geneset_signature(client):
+def test_genes_list(client):
+    genes = client.get("/v1/genes").json()["genes"]
+    symbols = {g["symbol"] for g in genes}
+    assert {"CDKN2A", "LMNB1", "GDF15", "FOXO3"} <= symbols
+    assert all("direction_with_age" in g for g in genes)
+
+
+def test_geneset_summary(client):
     r = client.post(
-        "/v1/geneset/signature",
-        json={
-            "genes": ["CDKN2A", "LMNB1", "SIRT1"],
-            "species": "human",
-            "omic_layer": "transcriptome",
-        },
+        "/v1/geneset/summary",
+        json={"genes": ["CDKN2A", "LMNB1", "KL"], "species": "human"},
     ).json()
-    assert set(r["resolved"]) == {"CDKN2A", "LMNB1", "SIRT1"}
-    assert r["aggregate_pooled_effect"] is not None
+    assert set(r["resolved"]) == {"CDKN2A", "LMNB1", "KL"}
+    assert r["direction_counts"]["up"] >= 1
+    assert r["direction_counts"]["down"] >= 1
 
 
 def test_clocks_list_carry_outcome_metadata(client):
     clocks = client.get("/v1/clocks").json()["clocks"]
-    assert all("predicted_outcome" in c for c in clocks)
+    assert clocks and all("predicted_outcome" in c for c in clocks)
+    assert any(c["clock_id"] == "phenoage" for c in clocks)
 
 
 def test_clock_apply_on_dataset(client):
     r = client.post(
         "/v1/clock/apply",
-        json={"clock_id": "clinical_phenoage_demo", "dataset_id": "clinical_nhanes_slice"},
+        json={"clock_id": "phenoage", "dataset_id": "example_cohort_simulated"},
     ).json()
     assert r["n_samples"] == 720
     assert r["predicted_outcome"] == "chronological_age"
+    assert "mortality_risk_10yr" in r
 
 
 def test_clock_apply_on_uploaded_matrix(client):
-    records = [
-        {
-            "albumin": 4.2,
-            "creatinine": 0.9,
-            "glucose": 95,
-            "crp": 1.2,
-            "lymphocyte_pct": 30,
-            "rdw": 13,
-        },
-        {
-            "albumin": 3.8,
-            "creatinine": 1.1,
-            "glucose": 110,
-            "crp": 3.0,
-            "lymphocyte_pct": 22,
-            "rdw": 15,
-        },
-    ]
+    records = [_CLINICAL_ROW, {**_CLINICAL_ROW, "age": 70, "crp_mgl": 4.0, "glucose_mgdl": 120}]
     r = client.post(
         "/v1/clock/apply",
-        json={
-            "clock_id": "clinical_phenoage_demo",
-            "matrix": {"records": records},
-            "chronological_age": [40, 70],
-        },
+        json={"clock_id": "phenoage", "matrix": {"records": records}},
     )
     assert r.status_code == 200
     assert r.json()["n_samples"] == 2
@@ -104,7 +86,7 @@ def test_clock_apply_on_uploaded_matrix(client):
 def test_clock_apply_missing_feature_envelope(client):
     r = client.post(
         "/v1/clock/apply",
-        json={"clock_id": "clinical_phenoage_demo", "matrix": {"records": [{"albumin": 4.0}]}},
+        json={"clock_id": "phenoage", "matrix": {"records": [{"albumin_gdl": 4.0}]}},
     )
     assert r.status_code == 422
     err = r.json()["error"]
@@ -112,20 +94,10 @@ def test_clock_apply_missing_feature_envelope(client):
     assert "missing_features" in err["detail"]
 
 
-def test_clock_compare(client):
-    r = client.post(
-        "/v1/clock/compare",
-        json={
-            "clock_ids": ["clinical_phenoage_demo", "clinical_mortality_demo"],
-            "dataset_id": "clinical_nhanes_slice",
-        },
-    ).json()
-    assert len(r["results"]) == 2
-
-
 def test_intervention_and_not_found(client):
     ok = client.get("/v1/intervention/rapamycin").json()
     assert ok["intervention"]["name"] == "rapamycin"
+    assert ok["intervention"]["references"]
     missing = client.get("/v1/intervention/notadrug")
     assert missing.status_code == 404
     assert missing.json()["error"]["code"] == "intervention_not_found"
@@ -133,7 +105,8 @@ def test_intervention_and_not_found(client):
 
 def test_resilience_csd_endpoint(client):
     r = client.post(
-        "/v1/resilience/csd", json={"dataset_id": "clinical_nhanes_slice", "n_strata": 6}
+        "/v1/resilience/csd",
+        json={"dataset_id": "example_cohort_simulated", "n_strata": 6},
     ).json()
     assert r["resilience_declines"] is True
     assert r["fallback_used"] is True
@@ -146,18 +119,20 @@ def test_resilience_recovery_endpoint(client):
     assert r["recovery_rate"] > 0
 
 
-def test_studies_pagination_and_format(client):
-    j = client.get("/v1/studies", params={"limit": 5}).json()
+def test_references_pagination_and_format(client):
+    j = client.get("/v1/references", params={"limit": 5}).json()
     assert j["n"] == 5
-    csv = client.get("/v1/studies", params={"format": "csv", "limit": 5})
+    csv = client.get("/v1/references", params={"format": "csv", "limit": 5})
     assert csv.headers["content-type"].startswith("text/csv")
+    df = pd.read_csv(io.StringIO(csv.text))
+    assert "url" in df.columns
 
 
 def test_sources_and_datasets(client):
     names = {s["name"] for s in client.get("/v1/sources").json()["sources"]}
-    assert {"local-harmonized", "uk-biobank"} <= names
+    assert {"local-curated", "uk-biobank"} <= names
     ds = {d["dataset_id"] for d in client.get("/v1/datasets").json()["datasets"]}
-    assert "clinical_nhanes_slice" in ds
+    assert "example_cohort_simulated" in ds
 
 
 def test_error_envelope_structure(client):
@@ -170,4 +145,4 @@ def test_error_envelope_structure(client):
 def test_openapi_schema_valid(client):
     schema = client.get("/openapi.json").json()
     assert schema["info"]["title"] == "GeroQuery API"
-    assert "/v1/gene/{gene_id}/signature" in schema["paths"]
+    assert "/v1/gene/{gene_id}/report" in schema["paths"]

@@ -5,14 +5,14 @@ from .federated import FEDERATED_ADAPTERS
 from .local_fixture import (
     CuratedKnowledgeSource,
     InterventionSource,
-    LocalSignatureSource,
+    LocalEvidenceSource,
 )
 
 
 def all_adapters() -> list[SourceAdapter]:
     """Every registered adapter, cached + federated, for /v1/sources."""
     return [
-        LocalSignatureSource(),
+        LocalEvidenceSource(),
         CuratedKnowledgeSource(),
         InterventionSource(),
         *FEDERATED_ADAPTERS,
@@ -24,7 +24,7 @@ __all__ = [
     "Capabilities",
     "License",
     "FederatedStub",
-    "LocalSignatureSource",
+    "LocalEvidenceSource",
     "CuratedKnowledgeSource",
     "InterventionSource",
     "FEDERATED_ADAPTERS",

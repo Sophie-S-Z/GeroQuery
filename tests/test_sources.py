@@ -3,21 +3,22 @@
 from geroquery.sources import (
     CuratedKnowledgeSource,
     InterventionSource,
-    LocalSignatureSource,
+    LocalEvidenceSource,
     all_adapters,
 )
-
-
-def test_local_signature_adapter_reads_slice():
-    sigs = LocalSignatureSource().signatures()
-    assert len(sigs) == 228
-    assert all(s.effect_size is not None and s.standard_error is not None for s in sigs)
 
 
 def test_curated_and_intervention_adapters():
     assert len(CuratedKnowledgeSource().flags()) == 50
     ivs = InterventionSource().interventions()
     assert {"rapamycin", "metformin"} <= {i.name for i in ivs}
+    # Interventions carry a real primary-citation URL.
+    rapa = next(i for i in ivs if i.name == "rapamycin")
+    assert rapa.url.startswith("https://pubmed")
+
+
+def test_local_evidence_source_is_cacheable():
+    LocalEvidenceSource().assert_cacheable()  # redistributable, should not raise
 
 
 def test_registry_exposes_capabilities_and_license():
