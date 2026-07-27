@@ -263,3 +263,32 @@ disclosed in the UI (About tab), README, and DATA_SOURCES.
 - UI: `geroquery/ui/streamlit_app.py`
 - Data generation: `geroquery/etl/build_fixtures.py`
 - PR: https://github.com/Sophie-S-Z/GeroQuery/pull/1
+
+---
+
+## 10. Follow-up: strategy-driven rigor pass
+
+Acting on the external assessment in [`docs/STRATEGY_2026.md`](docs/STRATEGY_2026.md)
+(roadmap in [`docs/ROADMAP.md`](docs/ROADMAP.md)), the offline-feasible, honesty-aligned
+recommendations were implemented. A full read-only audit first confirmed the repo was clean
+(ruff/black/mypy/pytest green; no dangling refs; docs consistent). Then:
+
+- **Resilience reframed honestly** — renamed to an *age-stratified dispersion & co-fluctuation
+  indicator*; the code, UI, and README no longer claim validated "critical slowing down" and now
+  cite the contested-EWS literature (Boettiger & Hastings 2012; Dakos et al. 2012).
+- **DNB / l-DNB composite** added as a pure-Python method (`geroquery/resilience/dnb.py`; Chen 2012,
+  Liu 2017), surfaced as a third indicator with its own figure.
+- **Uncertainty quantification** — bootstrap 95% CIs on the resilience trend slopes
+  (`resilience/csd.py`) and on PhenoAge mean age-acceleration (`clocks/service.py`), surfaced in the
+  API and UI.
+- **Clock applicability diagnostics** — `geroquery/clocks/diagnostics.py`,
+  `POST /v1/clock/diagnostics`, and a UI "Check applicability" panel: feature completeness,
+  out-of-range flags, unit-mismatch heuristics, and a bootstrap-CI'd PhenoAge.
+- **Hartung–Knapp** option added to `harmonize/meta.py::random_effects` (DL stays the default).
+- Test suite grew to **89 tests**; ruff/black/mypy clean.
+
+**Deliberately deferred** (need blocked biomedical-data APIs or R/Next.js/Nextflow, unavailable in
+this environment): real-data trajectory GAMs, ComputAgeBench benchmarking, DNB longitudinal
+validation, cell-composition deconvolution, signature reversal, a Next.js frontend, and Nextflow
+ETL. **Recommended future cuts** (left in place, not executed): the `frontend/` React showcase and
+the unexposed `resilience/control.py`. All tracked in `docs/ROADMAP.md`.

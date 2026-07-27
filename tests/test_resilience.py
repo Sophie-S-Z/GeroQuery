@@ -83,3 +83,39 @@ def test_service_csd_missing_columns_raises():
     df = pd.DataFrame({"age": range(30), "x": range(30)})
     with pytest.raises(ResilienceInputError):
         ResilienceService().csd(df, ["x", "not_here"], age_col="age", n_strata=3)
+
+
+def test_csd_reports_dnb_and_bootstrap_cis():
+    from geroquery.resilience import csd_indicators
+
+    ages, values = _tipping_point_dataset()
+    res = csd_indicators(values, ages, n_strata=6, n_bootstrap=100, seed=0)
+    # DNB series + trend are present.
+    assert len(res.dnb) == len(res.strata_midpoints)
+    assert np.isfinite(res.dnb_trend_slope)
+    # Bootstrap CIs are 2-element [low, high] on each trend slope.
+    for c in (res.variance_trend_ci, res.crosscorr_trend_ci, res.dnb_trend_ci):
+        assert c is None or (len(c) == 2 and c[0] <= c[1])
+    assert res.n_bootstrap == 100
+    # Reframing keeps the contested-EWS caveat in the assumptions.
+    joined = " ".join(res.assumptions).lower()
+    assert "false positive" in joined and "critical slowing down" in joined
+
+
+def test_dnb_index_rises_toward_tipping_point():
+    from geroquery.resilience import auto_module, dnb_index
+
+    ages, values = _tipping_point_dataset()
+    order = np.argsort(ages)
+    young = values[order[:150]]
+    old = values[order[-150:]]
+    part = auto_module(values)
+    assert dnb_index(old, part) > dnb_index(young, part)
+
+
+def test_csd_bootstrap_can_be_disabled():
+    from geroquery.resilience import csd_indicators
+
+    ages, values = _tipping_point_dataset()
+    res = csd_indicators(values, ages, n_strata=6, n_bootstrap=0)
+    assert res.variance_trend_ci is None and res.n_bootstrap == 0

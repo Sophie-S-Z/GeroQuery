@@ -28,10 +28,22 @@ class ClockResult:
     sample_ids: list[str]
     age_acceleration: list[float] | None = None
     mean_age_acceleration: float | None = None
+    # Bootstrap 95% CI on the cohort mean age acceleration ([low, high]).
+    mean_age_acceleration_ci: list[float] | None = None
     mortality_risk_10yr: list[float] | None = None
 
     def to_dict(self) -> dict:
         return {k: v for k, v in asdict(self).items() if v is not None}
+
+
+def _bootstrap_mean_ci(values: np.ndarray, n_boot: int = 1000, seed: int = 0) -> list[float] | None:
+    """Percentile 95% CI on the mean of ``values`` via resampling."""
+    n = len(values)
+    if n < 10:
+        return None
+    rng = np.random.default_rng(seed)
+    means = values[rng.integers(0, n, (n_boot, n))].mean(axis=1)
+    return [float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))]
 
 
 class ClockService:
@@ -85,6 +97,7 @@ class ClockService:
             accel = predictions - chrono_arr
             result.age_acceleration = [float(x) for x in accel]
             result.mean_age_acceleration = float(np.mean(accel))
+            result.mean_age_acceleration_ci = _bootstrap_mean_ci(accel)
         return result
 
     def compare_clocks(

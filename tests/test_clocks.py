@@ -112,3 +112,39 @@ def test_empty_matrix_rejected(svc):
 def test_required_features_are_the_nine_markers_plus_age():
     assert len(REQUIRED_FEATURES) == 10
     assert "age" in REQUIRED_FEATURES
+
+
+def test_phenoage_reports_mean_acceleration_ci(svc, clinical_matrix):
+    feats, true_age = clinical_matrix
+    res = svc.apply_clock("phenoage", feats, chronological_age=true_age)
+    ci = res.mean_age_acceleration_ci
+    assert ci is not None and len(ci) == 2
+    assert ci[0] <= res.mean_age_acceleration <= ci[1]
+
+
+def test_diagnostics_flags_out_of_range_and_units():
+    from geroquery.clocks.diagnostics import phenoage_diagnostics
+
+    good = {
+        "albumin_gdl": 4.4,
+        "creatinine_mgdl": 0.9,
+        "glucose_mgdl": 95,
+        "crp_mgl": 1.2,
+        "lymphocyte_pct": 30,
+        "mcv_fl": 90,
+        "rdw_pct": 13.2,
+        "alp_ul": 72,
+        "wbc_1000ul": 6.2,
+        "age": 55,
+    }
+    rep = phenoage_diagnostics(pd.DataFrame([good]))
+    assert rep["applicable"] is True and rep["missing_features"] == []
+
+    # Glucose supplied in mmol/L (median ~5) triggers a unit hint.
+    mmol = {**good, "glucose_mgdl": 5.2}
+    rep2 = phenoage_diagnostics(pd.DataFrame([mmol]))
+    assert any("mmol/L" in w for w in rep2["unit_warnings"])
+
+    # Missing a feature -> not applicable.
+    rep3 = phenoage_diagnostics(pd.DataFrame([{"albumin_gdl": 4.0}]))
+    assert rep3["applicable"] is False and "age" in rep3["missing_features"]

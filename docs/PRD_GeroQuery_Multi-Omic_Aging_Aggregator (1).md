@@ -1,3 +1,12 @@
+> ⚠️ **Superseded / historical.** This is the original planning PRD and describes the *initial*
+> design — including the per-study `AgingSignature`/`MetaSignature` meta-analysis and a fabricated
+> demonstration slice — that has since been replaced. For the current design see
+> [`../HANDOFF.md`](../HANDOFF.md); for strategy and roadmap see
+> [`STRATEGY_2026.md`](STRATEGY_2026.md) and [`ROADMAP.md`](ROADMAP.md). Kept for provenance; not a
+> live specification.
+
+---
+
 # PRD: GeroQuery — Open-Source Multi-Omic & Clinical Aging Data Aggregator
 
 **Version:** 1.0

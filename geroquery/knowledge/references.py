@@ -278,6 +278,39 @@ _REFS: list[Reference] = [
         "Human Ageing Genomic Resources: new and updated databases",
         "29121237",
     ),
+    # Early-warning-signal criticism (why the cross-sectional proxy is only a proxy).
+    Reference(
+        "boettiger_2012",
+        "Boettiger & Hastings",
+        2012,
+        "J R Soc Interface",
+        "Quantifying limits to detection of early warning for critical transitions",
+    ),
+    Reference(
+        "dakos_2012",
+        "Dakos et al.",
+        2012,
+        "PLoS ONE",
+        "Methods for detecting early warnings of critical transitions in time "
+        "series illustrated using simulated ecological data",
+    ),
+    # Dynamic Network Biomarker (DNB / l-DNB) theory.
+    Reference(
+        "chen_2012",
+        "Chen et al.",
+        2012,
+        "Sci Rep",
+        "Detecting early-warning signals for sudden deterioration of complex "
+        "diseases by dynamical network biomarkers",
+    ),
+    Reference(
+        "liu_2017",
+        "Liu et al.",
+        2017,
+        "PLoS Comput Biol",
+        "Quantifying critical states of complex diseases using single-sample "
+        "dynamic network biomarkers",
+    ),
 ]
 
 REFERENCES: dict[str, Reference] = {r.key: r for r in _REFS}

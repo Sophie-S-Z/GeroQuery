@@ -83,6 +83,39 @@ def test_clock_apply_on_uploaded_matrix(client):
     assert r.json()["n_samples"] == 2
 
 
+def test_clock_apply_reports_mean_acceleration_ci(client):
+    r = client.post(
+        "/v1/clock/apply",
+        json={"clock_id": "phenoage", "dataset_id": "example_cohort_simulated"},
+    ).json()
+    ci = r["mean_age_acceleration_ci"]
+    assert len(ci) == 2 and ci[0] <= r["mean_age_acceleration"] <= ci[1]
+
+
+def test_clock_diagnostics_on_dataset(client):
+    r = client.post(
+        "/v1/clock/diagnostics",
+        json={"dataset_id": "example_cohort_simulated"},
+    ).json()
+    assert r["clock_id"] == "phenoage"
+    assert r["applicable"] is True
+    assert r["missing_features"] == []
+    assert len(r["mean_phenoage_ci"]) == 2
+
+
+def test_clock_diagnostics_flags_missing_and_units(client):
+    # Missing features -> not applicable.
+    miss = client.post(
+        "/v1/clock/diagnostics",
+        json={"matrix": {"records": [{"albumin_gdl": 4.0}]}},
+    ).json()
+    assert miss["applicable"] is False and miss["missing_features"]
+    # Albumin supplied in g/L (×10) -> unit warning.
+    bad_units = {**_CLINICAL_ROW, "albumin_gdl": 44.0}
+    ru = client.post("/v1/clock/diagnostics", json={"matrix": {"records": [bad_units]}}).json()
+    assert any("g/L" in w for w in ru["unit_warnings"])
+
+
 def test_clock_apply_missing_feature_envelope(client):
     r = client.post(
         "/v1/clock/apply",

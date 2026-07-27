@@ -1,9 +1,17 @@
-"""Random-effects meta-analysis (DerSimonian-Laird).
+"""Random-effects meta-analysis (DerSimonian-Laird, with optional Hartung-Knapp).
 
 Pools per-study effect sizes into one signature *without* ever concatenating raw
 expression matrices (which would confound platform and batch with biology). The
 random-effects model additionally estimates between-study heterogeneity (tau^2,
 I^2) so callers can see how consistent the studies actually are.
+
+Inference offers two modes (``method=``):
+
+* ``"dl"`` (default) — classic DerSimonian-Laird moment estimator with a normal-Z
+  test. Simple, but under-covers with few studies.
+* ``"hk"`` — the Hartung-Knapp(-Sidik-Jonkman) adjustment: a quasi-t variance and
+  a t(k-1) reference distribution. It gives better small-study confidence-interval
+  coverage and is the modern recommendation for random-effects pooling.
 """
 
 from __future__ import annotations
@@ -26,6 +34,7 @@ class PooledEffect:
     i2: float  # % of variance due to heterogeneity (0..100)
     q: float  # Cochran's Q
     n_studies: int
+    method: str = "dl"  # "dl" | "hk"
 
     @property
     def direction(self) -> str:
@@ -33,7 +42,10 @@ class PooledEffect:
 
 
 def random_effects(
-    effects: Sequence[float], standard_errors: Sequence[float], ci: float = 0.95
+    effects: Sequence[float],
+    standard_errors: Sequence[float],
+    ci: float = 0.95,
+    method: str = "dl",
 ) -> PooledEffect:
     """DerSimonian-Laird pooling of standardized effects.
 
@@ -41,7 +53,17 @@ def random_effects(
     ----------
     effects, standard_errors:
         Per-study effect sizes and their SEs (same length, >=1).
+    ci:
+        Confidence level for the interval.
+    method:
+        ``"dl"`` for DerSimonian-Laird normal-Z inference (default), or ``"hk"``
+        for the Hartung-Knapp quasi-t adjustment (better small-study coverage).
+        The point estimate and heterogeneity statistics are identical; only the
+        pooled standard error and reference distribution differ.
     """
+    method = method.lower()
+    if method not in ("dl", "hk"):
+        raise ValueError("method must be 'dl' or 'hk'.")
     y = np.asarray(effects, dtype=float)
     se = np.asarray(standard_errors, dtype=float)
     if y.shape != se.shape or y.ndim != 1:
@@ -58,34 +80,48 @@ def random_effects(
     if k == 1:
         eff = float(y[0])
         se_pool = float(se[0])
-    else:
-        # Fixed-effect pooled mean, used to compute Q.
-        mean_fixed = np.sum(w_fixed * y) / np.sum(w_fixed)
-        q = float(np.sum(w_fixed * (y - mean_fixed) ** 2))
-        c = np.sum(w_fixed) - np.sum(w_fixed**2) / np.sum(w_fixed)
-        tau2 = max(0.0, (q - (k - 1)) / c) if c > 0 else 0.0
-
-        w_random = 1.0 / (v + tau2)
-        eff = float(np.sum(w_random * y) / np.sum(w_random))
-        se_pool = float(np.sqrt(1.0 / np.sum(w_random)))
-
-    # For k==1 there is no heterogeneity to estimate.
-    if k == 1:
         tau2, q, i2 = 0.0, 0.0, 0.0
-    else:
-        i2 = float(max(0.0, (q - (k - 1)) / q) * 100.0) if q > 0 else 0.0
+        # Single study: no adjustment possible, fall back to normal-Z.
+        crit = float(stats.norm.ppf(1.0 - (1.0 - ci) / 2.0))
+        z = eff / se_pool if se_pool > 0 else 0.0
+        p = float(2.0 * stats.norm.sf(abs(z)))
+        return PooledEffect(
+            eff, se_pool, eff - crit * se_pool, eff + crit * se_pool, p, 0.0, 0.0, 0.0, 1, method
+        )
 
-    z = eff / se_pool if se_pool > 0 else 0.0
-    p = float(2.0 * stats.norm.sf(abs(z)))
-    z_crit = float(stats.norm.ppf(1.0 - (1.0 - ci) / 2.0))
+    # Fixed-effect pooled mean, used to compute Q.
+    mean_fixed = np.sum(w_fixed * y) / np.sum(w_fixed)
+    q = float(np.sum(w_fixed * (y - mean_fixed) ** 2))
+    c = np.sum(w_fixed) - np.sum(w_fixed**2) / np.sum(w_fixed)
+    tau2 = max(0.0, (q - (k - 1)) / c) if c > 0 else 0.0
+
+    w_random = 1.0 / (v + tau2)
+    eff = float(np.sum(w_random * y) / np.sum(w_random))
+    se_dl = float(np.sqrt(1.0 / np.sum(w_random)))
+    i2 = float(max(0.0, (q - (k - 1)) / q) * 100.0) if q > 0 else 0.0
+
+    if method == "hk":
+        # Hartung-Knapp: quasi-t variance and a t(k-1) reference distribution.
+        q_hk = float(np.sum(w_random * (y - eff) ** 2) / (k - 1))
+        se_pool = float(np.sqrt(q_hk / np.sum(w_random)))
+        crit = float(stats.t.ppf(1.0 - (1.0 - ci) / 2.0, df=k - 1))
+        t_stat = eff / se_pool if se_pool > 0 else 0.0
+        p = float(2.0 * stats.t.sf(abs(t_stat), df=k - 1))
+    else:
+        se_pool = se_dl
+        crit = float(stats.norm.ppf(1.0 - (1.0 - ci) / 2.0))
+        z = eff / se_pool if se_pool > 0 else 0.0
+        p = float(2.0 * stats.norm.sf(abs(z)))
+
     return PooledEffect(
         pooled_effect=eff,
         standard_error=se_pool,
-        ci_low=eff - z_crit * se_pool,
-        ci_high=eff + z_crit * se_pool,
+        ci_low=eff - crit * se_pool,
+        ci_high=eff + crit * se_pool,
         p_value=p,
         tau2=float(tau2),
         i2=i2,
         q=float(q),
         n_studies=k,
+        method=method,
     )

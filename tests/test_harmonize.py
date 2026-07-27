@@ -57,6 +57,24 @@ def test_random_effects_rejects_nonpositive_se():
         random_effects([0.5, 0.5], [0.1, 0.0])
 
 
+def test_hartung_knapp_matches_point_estimate_but_widens_ci():
+    effects = [0.1, 0.9, 0.5, 0.0]
+    ses = [0.1, 0.1, 0.1, 0.1]
+    dl = random_effects(effects, ses, method="dl")
+    hk = random_effects(effects, ses, method="hk")
+    # Same pooled estimate and heterogeneity; only inference differs.
+    assert hk.pooled_effect == pytest.approx(dl.pooled_effect, abs=1e-9)
+    assert hk.i2 == pytest.approx(dl.i2, abs=1e-9)
+    assert hk.method == "hk" and dl.method == "dl"
+    # With substantial heterogeneity, HK's quasi-t interval is wider than DL's.
+    assert (hk.ci_high - hk.ci_low) > (dl.ci_high - dl.ci_low)
+
+
+def test_random_effects_rejects_bad_method():
+    with pytest.raises(ValueError):
+        random_effects([0.5, 0.5], [0.1, 0.1], method="bogus")
+
+
 def test_batch_correction_reduces_batch_signal_and_preserves_biology():
     rng = np.random.default_rng(3)
     n_features, per = 30, 10

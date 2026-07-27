@@ -30,8 +30,10 @@ Three tools, one interface:
    to see that “biological age” and “mortality risk” are two faces of one model.
 3. **Resilience** — early-warning signals of aging from dynamical-systems theory.
    As a body loses resilience, its biomarkers get more variable and more
-   synchronised (critical slowing down); GeroQuery surfaces both signals across
-   age with plain-language limitations.
+   synchronised; GeroQuery surfaces this as age-stratified **dispersion**,
+   **co-fluctuation**, and a **Dynamic Network Biomarker** composite — each with
+   a bootstrap confidence interval. It is *inspired by* critical-slowing-down
+   theory but honestly labelled a cross-sectional proxy, not validated CSD.
 
 ## Data honesty (read this)
 
@@ -88,7 +90,8 @@ docker compose up   # API on :8000, dashboard on :8501
 | `POST /v1/geneset/summary` | direction-of-change summary across a set of genes |
 | `GET /v1/clocks` · `POST /v1/clock/apply` · `POST /v1/clock/compare` | PhenoAge metadata & application (dataset ID or uploaded matrix) |
 | `GET /v1/intervention/{name}` | intervention record + linked genes + citations |
-| `POST /v1/resilience/csd` · `POST /v1/resilience/recovery` | resilience metrics |
+| `POST /v1/clock/diagnostics` | clock applicability check (completeness, ranges, unit hints, bootstrap CI) |
+| `POST /v1/resilience/csd` · `POST /v1/resilience/recovery` | resilience metrics (dispersion, co-fluctuation, DNB, recovery rate) |
 | `GET /v1/references` · `GET /v1/sources` · `GET /v1/datasets` · `GET /v1/version` | provenance & versioning |
 
 Every error uses one envelope: `{"error": {"code", "message", "detail"}}`.
@@ -110,7 +113,7 @@ ui  ->  api  ->  ( knowledge, clocks, resilience, store, harmonize )  ->  ( sour
 | **`harmonize`** | Hedges’ g, random-effects meta-analysis, batch correction (real algorithms for when real per-study data is supplied) |
 | **`store`** | SQLite metadata + Parquet phenotype datasets + versioning |
 | **`clocks`** | the real PhenoAge clock; a seam for `pyaging`/`biolearn` DNAm clocks |
-| **`resilience`** | critical-slowing-down indicators, recovery rate, documented fallback |
+| **`resilience`** | age-stratified dispersion & co-fluctuation indicators + DNB composite (bootstrap CIs), AR(1)/OU recovery rate, documented fallback |
 | **`api`** | FastAPI `/v1`, error envelope, `format=json\|csv\|parquet` |
 | **`ui`** | the Streamlit dashboard |
 
@@ -128,6 +131,14 @@ ui  ->  api  ->  ( knowledge, clocks, resilience, store, harmonize )  ->  ( sour
 - Live identifier resolution (mygene.info) and real DNA-methylation clocks
   (`pyaging`/`biolearn`) activate automatically where network/those libraries are
   available; the bundled demo is fully offline.
+
+## Roadmap & strategy
+
+Where GeroQuery competes, what is deliberately deferred, and why, is documented in
+[`docs/ROADMAP.md`](docs/ROADMAP.md) (with the full external assessment in
+[`docs/STRATEGY_2026.md`](docs/STRATEGY_2026.md)). Short version: it wins on a
+methodological-rigor layer — cited, uncertainty-quantified, honestly-scoped
+answers — not on breadth.
 
 ## License
 

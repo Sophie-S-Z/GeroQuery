@@ -67,6 +67,13 @@ class ClockCompareRequest(BaseModel):
     chronological_age: list[float] | None = None
 
 
+class ClockDiagnosticsRequest(BaseModel):
+    """Applicability check for the PhenoAge clock on a dataset or uploaded matrix."""
+
+    dataset_id: str | None = None
+    matrix: MatrixPayload | None = None
+
+
 class ResilienceCSDRequest(BaseModel):
     dataset_id: str | None = None
     data: MatrixPayload | None = None

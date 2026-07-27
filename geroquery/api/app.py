@@ -19,6 +19,7 @@ from ..exceptions import GeroQueryError
 from .schemas import (
     ClockApplyRequest,
     ClockCompareRequest,
+    ClockDiagnosticsRequest,
     GeneSetRequest,
     ResilienceCSDRequest,
     ResilienceRecoveryRequest,
@@ -147,6 +148,11 @@ def create_app(service: GeroService | None = None) -> FastAPI:
     def clock_compare(req: ClockCompareRequest):
         df = _matrix_from_request(svc(), req.dataset_id, req.matrix)
         return {"results": svc().compare_clocks(req.clock_ids, df, req.chronological_age)}
+
+    @app.post(f"{API_PREFIX}/clock/diagnostics")
+    def clock_diagnostics(req: ClockDiagnosticsRequest):
+        df = _matrix_from_request(svc(), req.dataset_id, req.matrix)
+        return svc().clock_diagnostics(df)
 
     # ---- interventions ---------------------------------------------------
 

@@ -561,6 +561,62 @@ _UNIT_HELP = {
 }
 
 
+def render_clock_diagnostics(df: pd.DataFrame) -> None:
+    """Applicability report: is this data valid input for the clock?"""
+    rep = svc.clock_diagnostics(df)
+    ok = rep["applicable"] and not rep.get("range_flags") and not rep["unit_warnings"]
+    color = CONF["robust"] if ok else UP
+    verdict = (
+        "Inputs look well-formed for PhenoAge"
+        if ok
+        else "Applicability issues detected — read before trusting the number"
+    )
+    st.markdown(
+        f"<div class='gq-card'><h4>Applicability diagnostics</h4>"
+        f"<div>{pill(verdict, color)}</div>",
+        unsafe_allow_html=True,
+    )
+    if rep["missing_features"]:
+        st.markdown(
+            f"<div class='gq-note'><b>Missing required features:</b> "
+            f"{', '.join(rep['missing_features'])}.</div>",
+            unsafe_allow_html=True,
+        )
+    for w in rep["unit_warnings"]:
+        st.markdown(
+            f"<div class='gq-note'>⚠️ <b>Unit check</b> — {w}</div>", unsafe_allow_html=True
+        )
+    for w in rep["warnings"]:
+        st.markdown(f"<div class='gq-note'>• {w}</div>", unsafe_allow_html=True)
+    if rep.get("range_flags"):
+        rf = pd.DataFrame(
+            [
+                {
+                    "marker": k,
+                    "out_of_range": v["out_of_range"],
+                    "typical_range": f"{v['range'][0]}–{v['range'][1]}",
+                    "observed_median": round(v["observed_median"], 2),
+                }
+                for k, v in rep["range_flags"].items()
+            ]
+        )
+        st.dataframe(rf, use_container_width=True, hide_index=True)
+    if rep.get("mean_phenoage_ci"):
+        lo, hi = rep["mean_phenoage_ci"]
+        st.markdown(
+            f"<div class='gq-note'>Mean PhenoAge <b>{rep['mean_phenoage']:.1f} yr</b> "
+            f"(bootstrap 95% CI {lo:.1f}–{hi:.1f}).</div>",
+            unsafe_allow_html=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
+    caption(
+        "This checks your matrix against the real PhenoAge input contract — missing columns, "
+        "values outside physiological range, and likely unit mismatches (e.g. albumin in g/L "
+        "instead of g/dL) — and attaches a bootstrap confidence interval, so a clock isn't "
+        "trusted blindly on data it was never meant for."
+    )
+
+
 def render_clock():
     st.markdown("### PhenoAge · a real biological-age clock")
     st.markdown(
@@ -614,7 +670,14 @@ def render_clock():
         st.info("Pick the simulated cohort or upload a CSV, then run the clock.")
         return
 
-    if not st.button("Apply PhenoAge clock", type="primary"):
+    diag_col, apply_col = st.columns([1, 1])
+    run_diag = diag_col.button("🔍 Check applicability first", use_container_width=True)
+    run_apply = apply_col.button("Apply PhenoAge clock", type="primary", use_container_width=True)
+
+    if run_diag:
+        render_clock_diagnostics(df)
+
+    if not run_apply:
         return
 
     try:
@@ -631,16 +694,22 @@ def render_clock():
     if res.get("mean_age_acceleration") is not None:
         faster = int(np.sum(np.array(res["age_acceleration"]) > 0))
         pct_faster = 100 * faster / len(pred)
+        ci = res.get("mean_age_acceleration_ci")
+        ci_txt = f"95% CI {ci[0]:+.1f} … {ci[1]:+.1f}" if ci else "mean age acceleration"
         st.markdown(
             "<div class='gq-tiles'>"
             f"<div class='gq-tile'><div class='v'>{res['n_samples']}</div><div class='l'>subjects</div></div>"
             f"<div class='gq-tile'><div class='v'>{np.mean(pred):.1f} yr</div><div class='l'>mean biological age</div></div>"
-            f"<div class='gq-tile'><div class='v'>{res['mean_age_acceleration']:+.1f} yr</div><div class='l'>mean age acceleration</div></div>"
+            f"<div class='gq-tile'><div class='v'>{res['mean_age_acceleration']:+.1f} yr</div><div class='l'>{ci_txt}</div></div>"
             f"<div class='gq-tile'><div class='v'>{pct_faster:.0f}%</div><div class='l'>aging faster than birthday</div></div>"
             "</div>",
             unsafe_allow_html=True,
         )
-        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+        caption(
+            "The mean age-acceleration tile shows a <b>bootstrap 95% confidence interval</b> — how "
+            "precisely the cohort's average pace of aging is pinned down given its size."
+        )
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     if chrono is not None:
@@ -762,15 +831,19 @@ with tab_clock:
 
 
 def render_resilience():
-    st.markdown("### Resilience · early-warning signals of aging")
+    st.markdown("### Resilience · age-stratified dispersion & co-fluctuation")
     st.markdown(
         "<div class='gq-card'><div class='gq-analysis'>"
-        "Complex systems that are close to breaking down get <b>slower to recover</b> from small "
-        "knocks and their signals become <b>more erratic and more synchronised</b>. Ecologists and "
-        "physicists call these <b>critical-slowing-down</b> early-warning signals; the same idea "
-        "applies to an aging body. GeroQuery looks for two of them across age: rising "
-        "<b>variance</b> (the state wobbles more) and rising <b>cross-correlation</b> between "
-        "markers (they move together more). When both climb with age, resilience is eroding."
+        "As a body loses resilience its biomarker state tends to become <b>more variable</b> and "
+        "its markers <b>more coupled</b>. GeroQuery measures three signals across age bands: rising "
+        "<b>dispersion</b> (variance of the health state), rising <b>co-fluctuation</b> (mean "
+        "cross-correlation between markers), and a <b>Dynamic Network Biomarker (DNB)</b> composite. "
+        "These are <b>inspired by</b> critical-slowing-down theory but this is a "
+        "<b>cross-sectional proxy across ages, not validated critical slowing down</b> — "
+        "early-warning signals are contested and prone to false positives (Boettiger &amp; Hastings "
+        "2012; Dakos et al. 2012), so every trend below ships with a <b>bootstrap confidence "
+        "interval</b>. The sharp, defensible metric — recovery rate from within-individual time "
+        "series — needs longitudinal data."
         "</div></div>",
         unsafe_allow_html=True,
     )
@@ -839,52 +912,77 @@ def render_resilience():
         unsafe_allow_html=True,
     )
 
-    frame = pd.DataFrame(
-        {
-            "age": res["strata_midpoints"],
-            "variance": res["variance"],
-            "cross_correlation": res["cross_correlation"],
-        }
+    def _slope_ci(slope, ci):
+        base = f"{slope:+.3g}"
+        return (
+            f"{base}  <span style='font-size:0.7rem;color:{MUTED}'>95% CI [{ci[0]:+.2g}, {ci[1]:+.2g}]</span>"
+            if ci
+            else base
+        )
+
+    # Trend slopes with bootstrap CIs. A CI clearing zero = a directional trend
+    # the resampling supports; a CI spanning zero = don't over-read it.
+    st.markdown(
+        "<div class='gq-tiles'>"
+        f"<div class='gq-tile'><div class='v' style='font-size:1.1rem'>{_slope_ci(res['variance_trend_slope'], res.get('variance_trend_ci'))}</div><div class='l'>dispersion trend / age</div></div>"
+        f"<div class='gq-tile'><div class='v' style='font-size:1.1rem'>{_slope_ci(res['crosscorr_trend_slope'], res.get('crosscorr_trend_ci'))}</div><div class='l'>co-fluctuation trend / age</div></div>"
+        f"<div class='gq-tile'><div class='v' style='font-size:1.1rem'>{_slope_ci(res['dnb_trend_slope'], res.get('dnb_trend_ci'))}</div><div class='l'>DNB trend / age</div></div>"
+        "</div>",
+        unsafe_allow_html=True,
     )
-    c1, c2 = st.columns(2)
-    with c1:
-        f1 = go.Figure(
-            go.Scatter(
-                x=frame["age"],
-                y=frame["variance"],
-                mode="lines+markers",
-                line=dict(color=UP, width=2.5),
-                marker=dict(size=8, color=UP),
+    caption(
+        f"Trend slopes across {res['n_bootstrap']} bootstrap resamples of the cohort. A "
+        "confidence interval that stays on one side of zero is a trend the data support; one "
+        "that straddles zero should not be read as a real change."
+    )
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+    frames = [
+        (
+            "variance",
+            "dispersion (variance of health state)",
+            UP,
+            "<b>Dispersion vs age.</b> How much the overall biomarker state wobbles within each age "
+            "band. A rising line means older bands are less stable.",
+        ),
+        (
+            "cross_correlation",
+            "co-fluctuation (mean cross-correlation)",
+            ACCENT,
+            "<b>Co-fluctuation vs age.</b> How synchronised the markers are. Rising coupling means the "
+            "system has lost independent buffering capacity.",
+        ),
+        (
+            "dnb",
+            "DNB composite index",
+            "#0f9d8f",
+            "<b>DNB vs age.</b> The Dynamic Network Biomarker composite (Chen 2012; Liu 2017) combining "
+            "within-group variability and coupling — a more structured pre-transition signal.",
+        ),
+    ]
+    series = {
+        "variance": res["variance"],
+        "cross_correlation": res["cross_correlation"],
+        "dnb": res["dnb"],
+    }
+    ages_mid = res["strata_midpoints"]
+    cols = st.columns(3)
+    for col, (key, ytitle, color, cap) in zip(cols, frames, strict=True):
+        with col:
+            fig = go.Figure(
+                go.Scatter(
+                    x=ages_mid,
+                    y=series[key],
+                    mode="lines+markers",
+                    line=dict(color=color, width=2.5),
+                    marker=dict(size=7, color=color),
+                )
             )
-        )
-        f1.update_xaxes(title="age (band midpoint, years)")
-        f1.update_yaxes(title="variance of health state")
-        _plotly_theme(f1, height=320, legend=False)
-        st.plotly_chart(f1, use_container_width=True)
-        caption(
-            "<b>Variance vs age.</b> How much the overall biomarker state wobbles within each "
-            "age band. A rising line means older bands are less stable — a core early-warning "
-            "signal."
-        )
-    with c2:
-        f2 = go.Figure(
-            go.Scatter(
-                x=frame["age"],
-                y=frame["cross_correlation"],
-                mode="lines+markers",
-                line=dict(color=ACCENT, width=2.5),
-                marker=dict(size=8, color=ACCENT),
-            )
-        )
-        f2.update_xaxes(title="age (band midpoint, years)")
-        f2.update_yaxes(title="mean cross-correlation between markers")
-        _plotly_theme(f2, height=320, legend=False)
-        st.plotly_chart(f2, use_container_width=True)
-        caption(
-            "<b>Cross-correlation vs age.</b> How synchronised the markers are. When markers "
-            "increasingly move together with age, the system has lost independent buffering "
-            "capacity — the second early-warning signal."
-        )
+            fig.update_xaxes(title="age (band midpoint)")
+            fig.update_yaxes(title=ytitle)
+            _plotly_theme(fig, height=300, legend=False)
+            st.plotly_chart(fig, use_container_width=True)
+            caption(cap)
 
     with st.expander("Method, assumptions & limitations (read this)"):
         st.markdown(f"**Method:** `{res['method']}`")
@@ -892,11 +990,14 @@ def render_resilience():
             st.markdown(f"- {a}")
         st.markdown(
             "This is a **cross-sectional proxy**: it compares different people at different ages, "
-            "not the same person recovering over time. True critical-slowing-down is a "
+            "not the same person recovering over time. It is **inspired by** critical-slowing-down "
+            "theory (Scheffer et al., 2009) but is **not a validated CSD measurement** — "
+            "early-warning signals produce systematic false positives and depend on detrending and "
+            "window choices (Boettiger & Hastings, 2012; Dakos et al., 2012), which is why the "
+            "trends are shown with bootstrap confidence intervals. True critical slowing down is a "
             "*longitudinal* phenomenon; with repeated within-person measurements the recovery-rate "
-            "metric applies directly. The signal is real dynamical-systems theory (Scheffer et al., "
-            "2009; Gijzel et al., 2017; Pyrkov et al., 2021), applied here as an age-stratified "
-            "approximation."
+            "metric (an AR(1)/Ornstein–Uhlenbeck relaxation estimate, per Pyrkov et al., 2021) "
+            "applies directly. The DNB composite follows Chen et al. (2012) and Liu et al. (2017)."
         )
 
 
@@ -913,9 +1014,10 @@ with tab_about:
     st.markdown(
         "<div class='gq-card'><div class='gq-analysis'>"
         "GeroQuery unifies the scattered evidence on how genes relate to aging into one "
-        "gene-first search experience, and adds two biomarker tools — a real biological-age clock "
-        "and a resilience/early-warning analysis. It exists to save aging researchers from "
-        "manually cross-referencing a dozen separate databases to answer one simple question."
+        "gene-first search experience, and adds biomarker tools — a real biological-age clock with "
+        "an applicability checker, and an age-stratified dispersion/co-fluctuation (resilience) "
+        "analysis. It exists to save aging researchers from manually cross-referencing a dozen "
+        "separate databases to answer one simple question."
         "</div></div>",
         unsafe_allow_html=True,
     )

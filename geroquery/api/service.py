@@ -194,6 +194,12 @@ class GeroService:
             r.to_dict() for r in self.clocks.compare_clocks(clock_ids, matrix, chronological_age)
         ]
 
+    def clock_diagnostics(self, matrix: pd.DataFrame) -> dict:
+        """Applicability check + bootstrap-CI'd PhenoAge for an uploaded matrix."""
+        from ..clocks.diagnostics import phenoage_diagnostics
+
+        return phenoage_diagnostics(matrix)
+
     # ---- interventions ---------------------------------------------------
 
     def intervention(self, name: str) -> dict:
