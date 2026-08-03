@@ -14,10 +14,37 @@ def svc():
 
 
 def test_every_clock_declares_outcome_and_features(svc):
+    """Every clock must state what it predicts, what it was trained on, and what
+    it needs as input.
+
+    Deliberately not a closed vocabulary. When biolearn is installed the registry
+    holds 60+ real models predicting BMI, smoking status, cholesterol and cell
+    proportions alongside age — an allow-list of {chronological_age, mortality,
+    pace_of_aging} would force those into a bucket they do not belong in, which
+    is the exact mislabelling this metadata exists to prevent.
+    """
     for c in svc.list_clocks():
-        assert c.predicted_outcome in {"chronological_age", "mortality", "pace_of_aging"}
-        assert c.training_population
-        assert len(c.required_features) > 0
+        assert c.predicted_outcome, c.clock_id
+        assert c.predicted_outcome == c.predicted_outcome.strip().lower()
+        assert c.training_population, c.clock_id
+        assert c.units, c.clock_id
+        # required_features is legitimately empty for the pyaging tier: its
+        # model artifacts download lazily, so the feature list is not knowable
+        # at registration time. Everything else must declare its inputs.
+        if c.library != "pyaging":
+            assert len(c.required_features) > 0, c.clock_id
+
+
+def test_non_age_predictors_are_not_labelled_as_age_clocks(svc):
+    """A predictor of smoking, BMI, cholesterol or sex is not an aging clock.
+    Only runs where the library tier is loaded; the reference tier has none."""
+    NOT_AGE = ("smoking", "bmi", "cholesterol", "sex", "bodyfat", "alcohol", "education")
+    checked = 0
+    for c in svc.list_clocks():
+        if any(token in c.clock_id.lower() for token in NOT_AGE):
+            checked += 1
+            assert c.predicted_outcome != "chronological_age", c.clock_id
+    # No assertion on `checked` — it is legitimately 0 without biolearn.
 
 
 def test_clock_recovers_known_ages(svc, clinical_matrix):

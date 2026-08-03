@@ -64,7 +64,7 @@ with tab_gene:
         sigs = pd.DataFrame(card["signatures"])
 
         if metas.empty:
-            st.warning("No harmonized signatures for this gene in the bundled slice.")
+            st.warning("No GEO contrast in this panel covers this gene.")
         else:
             left, right = st.columns(2)
             with left:
@@ -128,7 +128,10 @@ with tab_gene:
             st.markdown("**Linked interventions**")
             ivs = pd.DataFrame(card["interventions"])
             if ivs.empty:
-                st.write("No linked interventions in the bundled slice.")
+                st.write(
+                    "No linked interventions. DrugAge records no gene targets, so only "
+                    "GenDR dietary-restriction genes carry intervention links."
+                )
             else:
                 st.dataframe(
                     ivs[["name", "itype", "source", "lifespan_effect_pct"]],

@@ -63,6 +63,12 @@ class Study:
     license: str | None = None
     url: str | None = None
     version: str | None = None
+    # Upstream experiment this study was derived from. GEO sometimes publishes
+    # one experiment as two DataSets (the two halves of a split array), so two
+    # study_ids can share subjects. A random-effects pool assumes its inputs are
+    # independent; surfacing the series id is what lets a caller check that
+    # assumption instead of taking the study count at face value.
+    series_id: str | None = None
 
     def to_dict(self) -> dict:
         return _clean(asdict(self))

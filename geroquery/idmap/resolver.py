@@ -14,12 +14,18 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from functools import lru_cache
 
 from .. import config
-from ..exceptions import GeneNotFoundError, TissueNotFoundError, UnknownSpeciesError
+from ..exceptions import (
+    GeneNotFoundError,
+    SourceError,
+    TissueNotFoundError,
+    UnknownSpeciesError,
+)
 from ..models import CanonicalGene, UberonTerm
+from .mygene import MyGeneClient
 
 _ENSEMBL_RE = re.compile(r"^ENS[A-Z]*G\d{6,}$", re.IGNORECASE)
 _ENTREZ_RE = re.compile(r"^\d+$")
@@ -38,7 +44,8 @@ class GeneResolver:
     tests/CI by default, keeping resolution hermetic.
     """
 
-    def __init__(self, genes_path=None, tissues_path=None, anage_path=None):
+    def __init__(self, genes_path=None, tissues_path=None, anage_path=None, mygene=None):
+        self._mygene = mygene if mygene is not None else MyGeneClient()
         genes_path = genes_path or (config.IDMAP_DATA / "genes.json")
         tissues_path = tissues_path or (config.IDMAP_DATA / "tissues.json")
         anage_path = anage_path or (config.IDMAP_DATA / "anage.json")
@@ -128,11 +135,7 @@ class GeneResolver:
         if not query or not query.strip():
             raise GeneNotFoundError("Empty gene query.")
 
-        candidates = self._candidates(query)
-
-        if species is not None:
-            sp = species.strip().lower()
-            candidates = [c for c in candidates if c["species"].lower() == sp]
+        candidates = self._local_candidates(query, species)
 
         if not candidates:
             fetched = self._fetch_remote(query, species)
@@ -147,23 +150,56 @@ class GeneResolver:
                 detail={"query": query, "species": species},
             )
 
+        return self._from_candidates(candidates, query)
+
+    def resolve_batch(
+        self, queries: Iterable[str], species: str | None = None
+    ) -> dict[str, CanonicalGene | None]:
+        """Resolve many identifiers; unresolved ones map to ``None``.
+
+        Everything resolvable from the bundled table is answered locally, and the
+        remainder goes upstream in a *single* batched request. Calling
+        ``resolve_gene`` in a loop instead would issue one HTTP round trip per
+        missing gene — for a 50-gene set that is 50 sequential requests to a free
+        public API, which is both slow and the fastest way to get rate-limited.
+        """
+        queries = list(queries)
+        out: dict[str, CanonicalGene | None] = {}
+        pending: list[str] = []
+
+        for q in queries:
+            local = self._local_candidates(q, species)
+            if local:
+                out[q] = self._from_candidates(local, q)
+            else:
+                pending.append(q)
+
+        remote = self._remote_records(pending, species)
+        for q in pending:
+            records = remote.get(q) or []
+            if species is not None:
+                sp = species.strip().lower()
+                records = [r for r in records if r["species"].lower() == sp]
+            out[q] = self._from_candidates(records, q) if records else None
+
+        return {q: out.get(q) for q in queries}
+
+    def _local_candidates(self, query: str, species: str | None) -> list[dict]:
+        """Candidates from the bundled table only, scoped to species if given."""
+        if not query or not query.strip():
+            return []
+        candidates = self._candidates(query)
+        if species is not None:
+            sp = species.strip().lower()
+            candidates = [c for c in candidates if c["species"].lower() == sp]
+        return candidates
+
+    def _from_candidates(self, candidates: list[dict], query: str) -> CanonicalGene:
         primary = self._pick_primary(candidates)
         others = tuple(
             c["canonical_id"] for c in candidates if c["canonical_id"] != primary["canonical_id"]
         )
         return self._to_gene(primary, matched_from=query, ambiguous=others)
-
-    def resolve_batch(
-        self, queries: Iterable[str], species: str | None = None
-    ) -> dict[str, CanonicalGene | None]:
-        """Resolve many identifiers; unresolved ones map to ``None``."""
-        out: dict[str, CanonicalGene | None] = {}
-        for q in queries:
-            try:
-                out[q] = self.resolve_gene(q, species)
-            except GeneNotFoundError:
-                out[q] = None
-        return out
 
     def orthologs(self, canonical_id: str) -> list[CanonicalGene]:
         """All canonical genes sharing an ortholog group (cross-species view)."""
@@ -201,43 +237,25 @@ class GeneResolver:
             ambiguous_candidates=ambiguous,
         )
 
-    def _fetch_remote(self, query: str, species: str | None):  # pragma: no cover - network
-        """Best-effort mygene.info fallback. Disabled unless ALLOW_NETWORK."""
-        if not config.ALLOW_NETWORK:
-            return None
-        try:
-            import httpx
+    def _remote_records(self, queries: Sequence[str], species: str | None) -> dict[str, list[dict]]:
+        """Batch mygene.info fallback for identifiers not in the bundled table.
 
-            params = {
-                "q": query,
-                "fields": "symbol,ensembl.gene,entrez,uniprot.Swiss-Prot,taxid,name",
-            }
-            if species:
-                params["species"] = species
-            resp = httpx.get(
-                "https://mygene.info/v3/query", params=params, timeout=config.HTTP_TIMEOUT
-            )
-            resp.raise_for_status()
-            hits = resp.json().get("hits", [])
-            if not hits:
-                return None
-            hit = hits[0]
-            ens = hit.get("ensembl", {})
-            ens_id = ens.get("gene") if isinstance(ens, dict) else (ens[0]["gene"] if ens else None)
-            sp = {9606: "human", 10090: "mouse"}.get(hit.get("taxid"), species or "unknown")
-            return {
-                "canonical_id": ens_id or f"ENTREZ:{hit.get('entrez')}",
-                "symbol": hit.get("symbol", query),
-                "species": sp,
-                "entrez": str(hit["entrez"]) if hit.get("entrez") else None,
-                "ensembl": ens_id,
-                "uniprot": (hit.get("uniprot") or {}).get("Swiss-Prot"),
-                "name": hit.get("name"),
-                "aliases": [],
-                "ortholog_group": hit.get("symbol", query).upper(),
-            }
-        except Exception:
-            return None
+        Returns ``{query: [record, ...]}``. A disabled network or an upstream
+        failure yields empty lists rather than an exception: this is a fallback
+        behind a local table, so it must degrade to "not found" instead of taking
+        down a query that was mostly resolvable locally.
+        """
+        if not queries:
+            return {}
+        try:
+            return self._mygene.resolve(list(queries), species)
+        except SourceError:
+            return {q: [] for q in queries}
+
+    def _fetch_remote(self, query: str, species: str | None) -> dict | None:
+        """Single-identifier convenience wrapper over the batch path."""
+        records = self._remote_records([query], species).get(query) or []
+        return records[0] if records else None
 
     # ---- tissue mapping --------------------------------------------------
 

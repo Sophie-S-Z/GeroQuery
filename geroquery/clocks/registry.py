@@ -6,8 +6,9 @@ Two tiers:
     published-style structure. They exist so the service, validation, and
     age-acceleration maths are testable end-to-end with a known ground truth,
     and so the chronological-age-vs-mortality distinction is demonstrable.
-  * **Library clocks**: real Horvath/PhenoAge/DunedinPACE/etc. via ``pyaging`` /
-    ``biolearn`` when those are installed. We *wrap*, never rebuild.
+  * **Library clocks** (:mod:`geroquery.clocks.library`): real published clocks —
+    Horvath, Hannum, PhenoAge, GrimAge — wrapped from ``biolearn`` when it is
+    installed. We *wrap*, never rebuild.
 
 Every registered clock — reference or library — carries ``predicted_outcome``
 and ``training_population`` metadata, because a clock's chronological-age
@@ -24,6 +25,8 @@ import pandas as pd
 
 from ..exceptions import ClockInputError, ClockNotFoundError
 from ..models import ClockInfo
+from .library import LibraryClock, LibraryStatus, load_library_clocks
+from .pyaging_clocks import PyagingClock, load_pyaging_clocks
 
 CLINICAL_FEATURES = ("albumin", "creatinine", "glucose", "crp", "lymphocyte_pct", "rdw")
 EXPRESSION_FEATURES = ("ENSG00000147889", "ENSG00000124762", "ENSG00000113368", "ENSG00000130513")
@@ -136,32 +139,29 @@ def _reference_clocks() -> dict[str, LinearClock]:
     return {c.info.clock_id: c for c in clocks}
 
 
-def _library_clocks() -> dict[str, LinearClock]:
-    """Hook for pyaging / biolearn. Returns {} unless those are installed.
-
-    Kept as a seam so real clocks appear in the registry automatically wherever
-    the libraries are available (e.g. the hosted demo), without any other code
-    change. We deliberately do not fabricate their coefficients here.
-    """
-    import importlib.util
-
-    available = [
-        lib for lib in ("pyaging", "biolearn") if importlib.util.find_spec(lib) is not None
-    ]
-    # When present, production code would enumerate and wrap each library clock.
-    # We record availability but do not invent clocks we cannot execute.
-    _ = available
-    return {}
-
-
 class ClockRegistry:
-    def __init__(self):
-        self._clocks: dict[str, LinearClock] = {**_reference_clocks(), **_library_clocks()}
+    def __init__(self, include_library: bool = True):
+        clocks: dict[str, LinearClock | LibraryClock | PyagingClock] = dict(_reference_clocks())
+        idle = LibraryStatus(
+            installed=False, usable=False, n_clocks=0, n_skipped=0, reason="not requested"
+        )
+        self.library_status = idle
+        self.pyaging_status = idle
+        if include_library:
+            # Real published clocks appear automatically wherever biolearn or
+            # pyaging is installed. Absent both, the registry holds only the
+            # transparent reference clocks — and the statuses say which of those
+            # situations you are in, rather than leaving an empty list unexplained.
+            library, self.library_status = load_library_clocks()
+            clocks.update(library)
+            pyaging, self.pyaging_status = load_pyaging_clocks()
+            clocks.update(pyaging)
+        self._clocks = clocks
 
     def list_clocks(self) -> list[ClockInfo]:
         return [c.info for c in self._clocks.values()]
 
-    def get(self, clock_id: str) -> LinearClock:
+    def get(self, clock_id: str) -> LinearClock | LibraryClock | PyagingClock:
         if clock_id not in self._clocks:
             raise ClockNotFoundError(
                 f"Unknown clock {clock_id!r}.",

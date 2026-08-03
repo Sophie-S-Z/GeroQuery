@@ -1,8 +1,1341 @@
-intervention_id,name,itype,source,organism,lifespan_effect_pct,linked_gene_ids,url
-IV001,rapamycin,drug,ITP,mouse,14.0,ENSG00000198793|ENSMUSG00000028991,https://genomics.senescence.info/drugs/search?search=rapamycin
-IV002,caloric_restriction,dietary,GenDR,mouse,30.0,ENSG00000017427|ENSG00000096717|ENSG00000118689|ENSG00000198793|ENSMUSG00000020053|ENSMUSG00000020063|ENSMUSG00000028991|ENSMUSG00000048756,https://genomics.senescence.info/drugs/search?search=caloric_restriction
-IV003,metformin,drug,DrugAge,mouse,6.0,ENSG00000130513|ENSG00000198793|ENSMUSG00000028991|ENSMUSG00000038508,https://genomics.senescence.info/drugs/search?search=metformin
-IV004,resveratrol,drug,DrugAge,mouse,4.0,ENSG00000096717|ENSMUSG00000020063,https://genomics.senescence.info/drugs/search?search=resveratrol
-IV005,dasatinib_quercetin,drug,DrugAge,mouse,9.0,ENSG00000124762|ENSG00000147889|ENSMUSG00000023067|ENSMUSG00000044303,https://genomics.senescence.info/drugs/search?search=dasatinib_quercetin
-IV006,nmn,drug,DrugAge,mouse,5.0,ENSG00000096717|ENSMUSG00000020063,https://genomics.senescence.info/drugs/search?search=nmn
-IV007,17a_estradiol,drug,ITP,mouse,12.0,ENSG00000017427|ENSMUSG00000020053,https://genomics.senescence.info/drugs/search?search=17a_estradiol
+intervention_id,name,itype,source,organism,lifespan_effect_pct,linked_gene_ids,url,n_experiments
+DRUGAGE:2r__1__1_benzofuran_2_yl__n_propylpentane_2_amine:rattus_norvegicus,(2R)-1-(1-benzofuran-2-yl)-N-propylpentane-2-amine,drug,DrugAge,Rattus norvegicus,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:iso_lappaol_a:caenorhabditis_elegans,(Iso)lappaol A,drug,DrugAge,Caenorhabditis elegans,11.2,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:r__2_hydroxyglutarate:caenorhabditis_elegans,(R)-2-hydroxyglutarate,drug,DrugAge,Caenorhabditis elegans,42.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:r_r__cis_diethyl_tetrahydro_2_8_chrysenediol:caenorhabditis_elegans,"(R,R)-cis-Diethyl tetrahydro-2,8-chrysenediol",drug,DrugAge,Caenorhabditis elegans,7.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:r_s__1_3_butanediol:mus_musculus,"(R/S)-1,3-butanediol",drug,ITP,Mus musculus,1.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:s__2_hydroxyglutarate:caenorhabditis_elegans,(S)-2-hydroxyglutarate,drug,DrugAge,Caenorhabditis elegans,31.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:1_2_3_triazolyl_ester_of_ketorolac:caenorhabditis_elegans,"1,2,3-Triazolyl ester of ketorolac",drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:1_2_4_triazolo_1_5_a_pyridine:caenorhabditis_elegans,"1,2,4-triazolo[1,5-a]pyridine",drug,DrugAge,Caenorhabditis elegans,12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:1_3_dimemethyl_xan:caenorhabditis_elegans,"1,3-dimemethyl Xan",drug,DrugAge,Caenorhabditis elegans,5.54,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:1_7_dimethylxanthine:caenorhabditis_elegans,"1,7-dimethylxanthine",drug,DrugAge,Caenorhabditis elegans,14.75,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:1_methyl_nicotinamide:caenorhabditis_elegans,1-methyl nicotinamide,drug,DrugAge,Caenorhabditis elegans,7.7,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:1_methylxanthine:caenorhabditis_elegans,1-methylxanthine,drug,DrugAge,Caenorhabditis elegans,5.05,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:10_hydroxy_2_decenoic_acid:caenorhabditis_elegans,10-hydroxy-2-decenoic Acid,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:16_17__epoxy_21_acetoxy_5_pregnenolone:caenorhabditis_elegans,16(17)-epoxy-21-acetoxy-5-pregnenolone,drug,DrugAge,Caenorhabditis elegans,-17.54,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:16_alpha_hydroxyestradiol:mus_musculus,16-alpha-hydroxyestradiol,drug,ITP,Mus musculus,4.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:17_dimethylaminoethylamino_17_demethoxygeldanamycin_hydrochloride:mus_musculus,17-dimethylaminoethylamino-17-demethoxygeldanamycin hydrochloride,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:17_alpha_estradiol:mus_musculus,17‐alpha‐estradiol,drug,ITP,Mus musculus,15.5,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:18α_glycyrrhetinic_acid:caenorhabditis_elegans,18α-Glycyrrhetinic acid,drug,DrugAge,Caenorhabditis elegans,16.88,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:2_2__diaminodiethyl_disulfide_dihydrochloride:mus_musculus,"2,2'-diaminodiethyl disulfide dihydrochloride",drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:2_3_dehydrosilybin_a:caenorhabditis_elegans,"2,3-Dehydrosilybin A",drug,DrugAge,Caenorhabditis elegans,12.55,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:2_3_dehydrosilybin_b:caenorhabditis_elegans,"2,3-Dehydrosilybin B",drug,DrugAge,Caenorhabditis elegans,7.18,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:2_3_dihydroxybenzoic_acid:drosophila_melanogaster,"2,3-Dihydroxybenzoic acid",drug,DrugAge,Drosophila melanogaster,9.33,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:2_3_dehydrosilybin:caenorhabditis_elegans,"2,3-dehydrosilybin",drug,DrugAge,Caenorhabditis elegans,6.155,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:2_4_dinitrophenol:drosophila_melanogaster,"2,4-dinitrophenol",drug,DrugAge,Drosophila melanogaster,12.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:2_4_dinitrophenol:mus_musculus,"2,4-dinitrophenol",drug,ITP,Mus musculus,7.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:2_4_dinitrophenol:saccharomyces_cerevisiae,"2,4-dinitrophenol",drug,DrugAge,Saccharomyces cerevisiae,14.71,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:2_4_pyridinedicarboxylic_acid:caenorhabditis_elegans,"2,4-pyridinedicarboxylic acid",drug,DrugAge,Caenorhabditis elegans,-17.13,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:2_5_di_tert_butylhydroquinone:caenorhabditis_elegans,"2,5-Di-tert-butylhydroquinone",drug,DrugAge,Caenorhabditis elegans,15.2,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:2_5_dimethyl_celecoxib:drosophila_melanogaster,"2,5-Dimethyl-Celecoxib",drug,DrugAge,Drosophila melanogaster,8.735,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:2__2_hydroxyphenyl_benzothiazole:mus_musculus,2-(2-hydroxyphenyl)benzothiazole,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:2_ethyl_6_methylpyridin_3_ol_hydrochloride:drosophila_melanogaster,2-Ethyl-6-methylpyridin-3-ol hydrochloride,drug,DrugAge,Drosophila melanogaster,19.2,,https://genomics.senescence.info/drugs/,8
+DRUGAGE:2_oxothiazolidine_4_carboxylate:musca_domestica,2-Oxothiazolidine-4-carboxylate,drug,DrugAge,Musca Domestica,-24.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:2_selenium_bridged_beta_cyclodextrin:caenorhabditis_elegans,2-Selenium-bridged-beta-cyclodextrin,drug,DrugAge,Caenorhabditis elegans,7.965,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:2_deoxy_d_glucose:caenorhabditis_elegans,2-deoxy-D-glucose,drug,DrugAge,Caenorhabditis elegans,19.57,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:2_mercaptoethylamine_hydrochloride:mus_musculus,2-mercaptoethylamine hydrochloride,drug,DrugAge,Mus musculus,26.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:25_azacoprostane:caenorhabditis_elegans,25-Azacoprostane,drug,DrugAge,Caenorhabditis elegans,-34.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:3_3__thiodipropionic_acid:asplanchna_brightwelli,"3,3'-thiodipropionic acid",drug,DrugAge,Asplanchna brightwelli,13.2,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:3_3_diethyl_2_pyrrolidinone:caenorhabditis_elegans,"3,3-diethyl-2-pyrrolidinone",drug,DrugAge,Caenorhabditis elegans,31.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:3_4__dihydroxyflavone:caenorhabditis_elegans,"3,4'-Dihydroxyflavone",drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:3_4_dichloroisocoumarin:caenorhabditis_elegans,"3,4-dichloroisocoumarin",drug,DrugAge,Caenorhabditis elegans,13.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:3_4_dihydroxybenzaldehyde:drosophila_melanogaster,"3,4-dihydroxybenzaldehyde",drug,DrugAge,Drosophila melanogaster,13.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:3_5_dihydroxy_4__acetoxy_trans_stilbene:saccharomyces_cerevisiae,"3,5-dihydroxy-4'-acetoxy-trans-stilbene",drug,DrugAge,Saccharomyces cerevisiae,68.2,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:3_5_dihydroxy_4__ethyl_trans_stilbene:saccharomyces_cerevisiae,"3,5-dihydroxy-4'-ethyl-trans-stilbene",drug,DrugAge,Saccharomyces cerevisiae,51.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:3_5_dihydroxy_4__thiomethyl_trans_stilbene:saccharomyces_cerevisiae,"3,5-dihydroxy-4'-thiomethyl-trans-stilbene",drug,DrugAge,Saccharomyces cerevisiae,22.7,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:3_7_dimethylxanthine:caenorhabditis_elegans,"3,7-dimethylxanthine",drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:3_methoxycatechol_ii:caenorhabditis_elegans,3-Methoxycatechol II,drug,DrugAge,Caenorhabditis elegans,8.2,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:3_morpholinosydnonimine_hydrochloride:caenorhabditis_elegans,3-Morpholinosydnonimine hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:3_amino_1_2_4_triazole:musca_domestica,"3-amino-1,2,4-triazole",drug,DrugAge,Musca domestica,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:3_methoxycatechol:caenorhabditis_elegans,3-methoxycatechol,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:3_methoxycatechol:drosophila_melanogaster,3-methoxycatechol,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:3_methylxanthine:caenorhabditis_elegans,3-methylxanthine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:3230_2939:caenorhabditis_elegans,3230-2939,drug,DrugAge,Caenorhabditis elegans,-10.515,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:3230_2939:drosophila_melanogaster,3230_2939,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:3_1_mixture__salicyl_salicylic_acid___aspirin:drosophila_melanogaster,3:1 Mixture: salicyl-salicylic acid + aspirin,drug,DrugAge,Drosophila melanogaster,31.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:4__demethylpipodophyllotoxin:caenorhabditis_elegans,4'-Demethylpipodophyllotoxin,drug,DrugAge,Caenorhabditis elegans,10.52,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:4_4__dimethoxychalcone:caenorhabditis_elegans,"4,4′-dimethoxychalcone",drug,DrugAge,Caenorhabditis elegans,18.55,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:4_4__dimethoxychalcone:drosophila_melanogaster,"4,4′-dimethoxychalcone",drug,DrugAge,Drosophila melanogaster,17.24,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:4_dafachronic_acid:caenorhabditis_elegans,4-dafachronic acid,drug,DrugAge,Caenorhabditis elegans,8.3,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:4_hydroxy_e_globularinin:caenorhabditis_elegans,4-hydroxy-E-globularinin,drug,DrugAge,Caenorhabditis elegans,8.1,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:4_hydroxyphenyl_n_tert_butylnitrone:mus_musculus,4-hydroxyphenyl-N-tert-butylnitrone,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:4_phenyl_3_furoxancarbonitrile:caenorhabditis_elegans,4-phenyl-3-furoxancarbonitrile,drug,DrugAge,Caenorhabditis elegans,30.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:4_phenylbutyrate:drosophila_melanogaster,4-phenylbutyrate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:4_phenylbutyrate:mus_musculus,4-phenylbutyrate,drug,ITP,Mus musculus,-2.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:4112_3315:caenorhabditis_elegans,4112-3315,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:4112_3315:drosophila_melanogaster,4112_3315,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:4_methyl_2_oxovalerate:caenorhabditis_elegans,4‐methyl‐2‐oxovalerate,drug,DrugAge,Caenorhabditis elegans,12.44,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:5_7_4trimethoxyfavone:caenorhabditis_elegans,"5,7,4Trimethoxyfavone",drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:5_hydroxy_l_tryptophan:drosophila_melanogaster,5-Hydroxy-L-tryptophan,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:5_octanoyl_salicylic_acid:caenorhabditis_elegans,5-octanoyl salicylic acid,drug,DrugAge,Caenorhabditis elegans,18.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:574_trimethoxyfavone:drosophila_melanogaster,574-Trimethoxyfavone,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:5__hydroxy_6__7__8__3___4__pentamethoxyflavone:caenorhabditis_elegans,"5′-Hydroxy-6, 7, 8, 3′, 4′-pentamethoxyflavone",drug,DrugAge,Caenorhabditis elegans,16.05,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:6_7_dihydroxyflavone:caenorhabditis_elegans,"6,7-Dihydroxyflavone",drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:6_hydroxyflavone:caenorhabditis_elegans,6-Hydroxyflavone,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:6_shogaol:caenorhabditis_elegans,6-shogaol,drug,DrugAge,Caenorhabditis elegans,25.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:6526_0645:caenorhabditis_elegans,6526-0645,drug,DrugAge,Caenorhabditis elegans,3.51,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:6526_0645:drosophila_melanogaster,6526_0645,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:7_8_dihydroxyflavone:caenorhabditis_elegans,"7,8-Dihydroxyflavone",drug,DrugAge,Caenorhabditis elegans,0.145,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:7_cyclopentyl_5__4_phenoxy_phenyl_7h_pyrrolo_2_3_d_pyrimidin_4_ylamine:caenorhabditis_elegans,"7-cyclopentyl-5-(4-phenoxy)phenyl-7H-pyrrolo[2,3-d]pyrimidin-4-ylamine",drug,DrugAge,Caenorhabditis elegans,11.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:7_methyl_dehydrosilybin:caenorhabditis_elegans,7-methyl-Dehydrosilybin,drug,DrugAge,Caenorhabditis elegans,-9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:7_methylxanthine:caenorhabditis_elegans,7-methylxanthine,drug,DrugAge,Caenorhabditis elegans,8.41,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:78c__cd38_inhibitor:mus_musculus,78c (CD38 inhibitor),drug,DrugAge,Mus musculus,17.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:aa26_3:caenorhabditis_elegans,AA26-3,drug,DrugAge,Caenorhabditis elegans,-15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aa26_7:caenorhabditis_elegans,AA26-7,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aa26_8:caenorhabditis_elegans,AA26-8,drug,DrugAge,Caenorhabditis elegans,-36.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aa26_9:caenorhabditis_elegans,AA26-9,drug,DrugAge,Caenorhabditis elegans,-12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aa39_2:caenorhabditis_elegans,AA39-2,drug,DrugAge,Caenorhabditis elegans,-33.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aa39_3:caenorhabditis_elegans,AA39-3,drug,DrugAge,Caenorhabditis elegans,-37.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aa74_1:caenorhabditis_elegans,AA74-1,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc101:caenorhabditis_elegans,ABC101,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc16:caenorhabditis_elegans,ABC16,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc23:caenorhabditis_elegans,ABC23,drug,DrugAge,Caenorhabditis elegans,35.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc26:caenorhabditis_elegans,ABC26,drug,DrugAge,Caenorhabditis elegans,22.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc28:caenorhabditis_elegans,ABC28,drug,DrugAge,Caenorhabditis elegans,29.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc30:caenorhabditis_elegans,ABC30,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc32:caenorhabditis_elegans,ABC32,drug,DrugAge,Caenorhabditis elegans,-23.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc35:caenorhabditis_elegans,ABC35,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc36:caenorhabditis_elegans,ABC36,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc37:caenorhabditis_elegans,ABC37,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc44:caenorhabditis_elegans,ABC44,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc45:caenorhabditis_elegans,ABC45,drug,DrugAge,Caenorhabditis elegans,-20.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc5:caenorhabditis_elegans,ABC5,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc52:caenorhabditis_elegans,ABC52,drug,DrugAge,Caenorhabditis elegans,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc53:caenorhabditis_elegans,ABC53,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc63:caenorhabditis_elegans,ABC63,drug,DrugAge,Caenorhabditis elegans,28.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc84:caenorhabditis_elegans,ABC84,drug,DrugAge,Caenorhabditis elegans,-10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc90:caenorhabditis_elegans,ABC90,drug,DrugAge,Caenorhabditis elegans,-22.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc91:caenorhabditis_elegans,ABC91,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc92:caenorhabditis_elegans,ABC92,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abc99:caenorhabditis_elegans,ABC99,drug,DrugAge,Caenorhabditis elegans,-46.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abl127:caenorhabditis_elegans,ABL127,drug,DrugAge,Caenorhabditis elegans,-13.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:abl303:caenorhabditis_elegans,ABL303,drug,DrugAge,Caenorhabditis elegans,-12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aeg_3482:caenorhabditis_elegans,AEG 3482,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ag_490:drosophila_melanogaster,AG-490,drug,DrugAge,Drosophila melanogaster,17.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:amn082:caenorhabditis_elegans,AMN082,drug,DrugAge,Caenorhabditis elegans,8.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aphs:drosophila_melanogaster,APHS,drug,DrugAge,Drosophila melanogaster,9.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:au701:drosophila_melanogaster,AU701,drug,DrugAge,Drosophila melanogaster,11.4,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:azd2281:caenorhabditis_elegans,AZD2281,drug,DrugAge,Caenorhabditis elegans,28.94,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:acacetin_7_o_alpha_l_rhamnopyranosyl__1_2__beta_d_xylopyranoside:caenorhabditis_elegans,Acacetin 7-O-alpha-l-rhamnopyranosyl (1_2) beta-D-xylopyranoside,drug,DrugAge,Caenorhabditis elegans,17.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:acanthopanax_sessiliflorus_extract:caenorhabditis_elegans,Acanthopanax sessiliflorus extract,drug,DrugAge,Caenorhabditis elegans,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:acanthophora_spicifera_extract:brachionus_manjavacas,Acanthophora spicifera extract,drug,DrugAge,Brachionus manjavacas,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:acarbose:mus_musculus,Acarbose,drug,ITP,Mus musculus,8.5,,https://genomics.senescence.info/drugs/,10
+DRUGAGE:acetaminophen:caenorhabditis_elegans,Acetaminophen,drug,DrugAge,Caenorhabditis elegans,48.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:acetaminophen:drosophila_melanogaster,Acetaminophen,drug,DrugAge,Drosophila melanogaster,20.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:acetaminophen:mus_musculus,Acetaminophen,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:acetazolamide:drosophila_melanogaster,Acetazolamide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:acetic_acid:caenorhabditis_elegans,Acetic Acid,drug,DrugAge,Caenorhabditis elegans,23.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:acivicin:caenorhabditis_elegans,Acivicin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:agmatine:caenorhabditis_elegans,Agmatine,drug,DrugAge,Caenorhabditis elegans,-2.0,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:agmatine:drosophila_melanogaster,Agmatine,drug,DrugAge,Drosophila melanogaster,4.8,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:agrimonia_procera_extract:caenorhabditis_elegans,Agrimonia procera extract,drug,DrugAge,Caenorhabditis elegans,8.1,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:alanine:caenorhabditis_elegans,Alanine,drug,DrugAge,Caenorhabditis elegans,9.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:allantoin:caenorhabditis_elegans,Allantoin,drug,DrugAge,Caenorhabditis elegans,21.75,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:allantoin:drosophila_melanogaster,Allantoin,drug,DrugAge,Drosophila melanogaster,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:alln:caenorhabditis_elegans,Alln,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:alln:drosophila_melanogaster,Alln,drug,DrugAge,Drosophila melanogaster,0.22,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:alln_ii:caenorhabditis_elegans,Alln II,drug,DrugAge,Caenorhabditis elegans,-0.87,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:alpelisib:mus_musculus,Alpelisib,drug,DrugAge,Mus musculus,10.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:alpha_beta_trehalose:caenorhabditis_elegans,"Alpha,beta-Trehalose",drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:alpha_ketoglutarate:caenorhabditis_briggsae,Alpha-ketoglutarate,drug,DrugAge,Caenorhabditis briggsae,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:alpha_ketoglutarate:caenorhabditis_elegans,Alpha-ketoglutarate,drug,DrugAge,Caenorhabditis elegans,22.2,,https://genomics.senescence.info/drugs/,7
+DRUGAGE:alpha_ketoglutarate:drosophila_melanogaster,Alpha-ketoglutarate,drug,DrugAge,Drosophila melanogaster,8.14,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:alpha_ketoglutarate:mus_musculus,Alpha-ketoglutarate,drug,ITP,Mus musculus,4.5,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:alpha_lipoic_acid:caenorhabditis_elegans,Alpha-lipoic acid,drug,DrugAge,Caenorhabditis elegans,22.6,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:alpha_lipoic_acid:drosophila_melanogaster,Alpha-lipoic acid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:alpha_lipoic_acid:mus_musculus,Alpha-lipoic acid,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:alpha_lipoic_acid:rattus_norvegicus,Alpha-lipoic acid,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:alpha_santalol:caenorhabditis_elegans,Alpha-santalol,drug,DrugAge,Caenorhabditis elegans,14.175,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:alpha_ketoisovalerate:caenorhabditis_elegans,Alpha‐ketoisovalerate,drug,DrugAge,Caenorhabditis elegans,35.02,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:alpha_keto_beta_methylvalerate:caenorhabditis_elegans,Alpha‐keto‐beta‐methylvalerate,drug,DrugAge,Caenorhabditis elegans,20.77,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:alpha_linolenic_acid:caenorhabditis_elegans,Alpha‐linolenic acid,drug,DrugAge,Caenorhabditis elegans,15.13,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:alsterpaullone:caenorhabditis_elegans,Alsterpaullone,drug,DrugAge,Caenorhabditis elegans,12.55,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aluminium_chloride:drosophila_melanogaster,Aluminium chloride,drug,DrugAge,Drosophila melanogaster,-11.64,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:aluminium_chloride:mus_musculus,Aluminium chloride,drug,DrugAge,Mus musculus,-7.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aluminium_nitrate:drosophila_melanogaster,Aluminium nitrate,drug,DrugAge,Drosophila melanogaster,-10.7,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:aluminum_acetylsalicylate:drosophila_melanogaster,Aluminum acetylsalicylate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aluminum_potassium_sulfate:mus_musculus,Aluminum potassium sulfate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:aluminum_sulfate:drosophila_melanogaster,Aluminum sulfate,drug,DrugAge,Drosophila melanogaster,-16.38,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:amethopterin:rattus_norvegicus,Amethopterin,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:amikacin_hydrate:caenorhabditis_elegans,Amikacin hydrate,drug,DrugAge,Caenorhabditis elegans,10.03,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:amikacin_hydrate:drosophila_melanogaster,Amikacin hydrate,drug,DrugAge,Drosophila melanogaster,7.75,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:amlexanox:caenorhabditis_elegans,Amlexanox,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:amlexanox:drosophila_melanogaster,Amlexanox,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:amoxapine:caenorhabditis_elegans,Amoxapine,drug,DrugAge,Caenorhabditis elegans,33.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:amoxapine:drosophila_melanogaster,Amoxapine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:amperozide_hydrochloride:caenorhabditis_elegans,Amperozide hydrochloride,drug,DrugAge,Caenorhabditis elegans,38.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ampicillin:caenorhabditis_elegans,Ampicillin,drug,DrugAge,Caenorhabditis elegans,34.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:angelica_sinensis_extract:caenorhabditis_elegans,Angelica sinensis extract,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:anisomycin:caenorhabditis_elegans,Anisomycin,drug,DrugAge,Caenorhabditis elegans,21.96,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:antalarmin:caenorhabditis_elegans,Antalarmin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:anterior_hypothalamus_extract:mus_musculus,Anterior hypothalamus extract,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:antimycin_a:caenorhabditis_elegans,Antimycin A,drug,DrugAge,Caenorhabditis elegans,-55.575,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:antimycin_a:drosophila_melanogaster,Antimycin A,drug,DrugAge,Drosophila melanogaster,-64.265,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:apple_extract:caenorhabditis_elegans,Apple extract,drug,DrugAge,Caenorhabditis elegans,25.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:apple_extract:drosophila_melanogaster,Apple extract,drug,DrugAge,Drosophila melanogaster,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:apple_extract:saccharomyces_cerevisiae,Apple extract,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:arbutin:caenorhabditis_elegans,Arbutin,drug,DrugAge,Caenorhabditis elegans,11.89,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:arctigenin:caenorhabditis_elegans,Arctigenin,drug,DrugAge,Caenorhabditis elegans,10.2,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:arctiin:caenorhabditis_elegans,Arctiin,drug,DrugAge,Caenorhabditis elegans,12.1,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:arecoline:caenorhabditis_elegans,Arecoline,drug,DrugAge,Caenorhabditis elegans,11.625,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:arginine:caenorhabditis_elegans,Arginine,drug,DrugAge,Caenorhabditis elegans,11.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:argyreia_boseana_extract:caenorhabditis_elegans,Argyreia boseana extract,drug,DrugAge,Caenorhabditis elegans,-0.575,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:aronia_extract:drosophila_melanogaster,Aronia extract,drug,DrugAge,Drosophila melanogaster,15.38,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:arsenite:caenorhabditis_elegans,Arsenite,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ascorbic_acid:caenorhabditis_elegans,Ascorbic acid,drug,DrugAge,Caenorhabditis elegans,-3.59,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:ascorbic_acid:drosophila_melanogaster,Ascorbic acid,drug,DrugAge,Drosophila melanogaster,-3.4,,https://genomics.senescence.info/drugs/,18
+DRUGAGE:ascorbic_acid:mus_musculus,Ascorbic acid,drug,DrugAge,Mus musculus,9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ascorbic_acid:musca_domestica,Ascorbic acid,drug,DrugAge,Musca domestica,-52.17,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ascorbic_acid:paramecium_tetraurelia,Ascorbic acid,drug,DrugAge,Paramecium tetraurelia,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ascr_2:caenorhabditis_elegans,Ascr#2,drug,DrugAge,Caenorhabditis elegans,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ascr_3:caenorhabditis_elegans,Ascr#3,drug,DrugAge,Caenorhabditis elegans,21.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:asparagine:caenorhabditis_elegans,Asparagine,drug,DrugAge,Caenorhabditis elegans,-10.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:aspirin:acheta_domesticus,Aspirin,drug,DrugAge,Acheta domesticus,72.0,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:aspirin:caenorhabditis_elegans,Aspirin,drug,DrugAge,Caenorhabditis elegans,18.45,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:aspirin:drosophila_melanogaster,Aspirin,drug,DrugAge,Drosophila melanogaster,0.29,,https://genomics.senescence.info/drugs/,11
+DRUGAGE:aspirin:mus_musculus,Aspirin,drug,ITP,Mus musculus,-1.0,,https://genomics.senescence.info/drugs/,10
+DRUGAGE:astaxanthin:caenorhabditis_elegans,Astaxanthin,drug,DrugAge,Caenorhabditis elegans,17.08,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:astaxanthin:mus_musculus,Astaxanthin,drug,ITP,Mus musculus,12.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:astemizole:caenorhabditis_elegans,Astemizole,drug,DrugAge,Caenorhabditis elegans,-8.105,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:astemizole:drosophila_melanogaster,Astemizole,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:astragaloside_iv:caenorhabditis_elegans,Astragaloside IV,drug,DrugAge,Caenorhabditis elegans,20.835,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:astragalus_extract:caenorhabditis_elegans,Astragalus extract,drug,DrugAge,Caenorhabditis elegans,23.3,,https://genomics.senescence.info/drugs/,7
+DRUGAGE:atropine:rattus_norvegicus,Atropine,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:auraptene:caenorhabditis_elegans,Auraptene,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:auraptene:drosophila_melanogaster,Auraptene,drug,DrugAge,Drosophila melanogaster,5.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:aurintricarboxylic_acid:drosophila_melanogaster,Aurintricarboxylic acid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:auten_67:drosophila_melanogaster,Auten-67,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:azacytidine:caenorhabditis_elegans,Azacytidine,drug,DrugAge,Caenorhabditis elegans,25.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:bia_10_2474:caenorhabditis_elegans,BIA 10-2474,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:bia_10_2639:caenorhabditis_elegans,BIA 10-2639,drug,DrugAge,Caenorhabditis elegans,22.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:bp_c3__benzenepolycarboxylic_acids_mixture:mus_musculus,BP-C3 (benzenepolycarboxylic acids mixture),drug,DrugAge,Mus musculus,8.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:brl_15572:caenorhabditis_elegans,BRL 15572,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:brl_50481:caenorhabditis_elegans,BRL 50481,drug,DrugAge,Caenorhabditis elegans,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:btcp_hydrochloride:caenorhabditis_elegans,BTCP hydrochloride,drug,DrugAge,Caenorhabditis elegans,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:bacitracin:caenorhabditis_elegans,Bacitracin,drug,DrugAge,Caenorhabditis elegans,58.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:baicalein:caenorhabditis_elegans,Baicalein,drug,DrugAge,Caenorhabditis elegans,17.515,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:baicalein:drosophila_melanogaster,Baicalein,drug,DrugAge,Drosophila melanogaster,9.32,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:barium_acetate:mus_musculus,Barium acetate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:benzalkonium_chloride:caenorhabditis_elegans,Benzalkonium chloride,drug,DrugAge,Caenorhabditis elegans,-17.505,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:benzethonium:drosophila_melanogaster,Benzethonium,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:berberine:caenorhabditis_elegans,Berberine,drug,DrugAge,Caenorhabditis elegans,6.47,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:berberine:drosophila_melanogaster,Berberine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:berberine:mus_musculus,Berberine,drug,DrugAge,Mus musculus,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:beryllium_sulfate:mus_musculus,Beryllium sulfate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:beta_alanine:caenorhabditis_elegans,Beta-alanine,drug,DrugAge,Caenorhabditis elegans,13.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:beta_alanine:drosophila_melanogaster,Beta-alanine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:beta_aminopropionitrile_fumarate:mus_musculus,Beta-aminopropionitrile fumarate,drug,DrugAge,Mus musculus,5.0,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:beta_carotene:mus_musculus,Beta-carotene,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:beta_carotene:musca_domestica,Beta-carotene,drug,DrugAge,Musca domestica,-26.08,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:beta_caryophyllene:caenorhabditis_elegans,Beta-caryophyllene,drug,DrugAge,Caenorhabditis elegans,14.9,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:beta_estradiol:caenorhabditis_elegans,Beta-estradiol,drug,DrugAge,Caenorhabditis elegans,7.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:beta_guanidinopropionic_acid:caenorhabditis_briggsae,Beta-guanidinopropionic acid,drug,DrugAge,Caenorhabditis briggsae,-16.82,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:beta_guanidinopropionic_acid:drosophila_melanogaster,Beta-guanidinopropionic acid,drug,DrugAge,Drosophila melanogaster,-22.45,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:beta_guanidinopropionic_acid:mus_musculus,Beta-guanidinopropionic acid,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:beta_santalol:caenorhabditis_elegans,Beta-santalol,drug,DrugAge,Caenorhabditis elegans,12.56,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:betaine:caenorhabditis_elegans,Betaine,drug,DrugAge,Caenorhabditis elegans,9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:betula_utilis_extract:caenorhabditis_elegans,Betula utilis extract,drug,DrugAge,Caenorhabditis elegans,25.72,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:bezafibrate:caenorhabditis_elegans,Bezafibrate,drug,DrugAge,Caenorhabditis elegans,13.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:biotin:drosophila_melanogaster,Biotin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:bis_1_hydroxy_2_2_6_6_tetramethyl_4_piperidinyl__decandioate:aeolosoma_viride,"Bis(1-hydroxy-2,2,6,6-tetramethyl-4-piperidinyl)-decandioate",drug,DrugAge,Aeolosoma viride,127.95,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:bismuth_sodium_tryglycollamate:drosophila_melanogaster,Bismuth sodium tryglycollamate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:black_rice_extract:drosophila_melanogaster,Black rice extract,drug,DrugAge,Drosophila melanogaster,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:black_tea_extract:caenorhabditis_elegans,Black tea extract,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:black_tea_extract:drosophila_melanogaster,Black tea extract,drug,DrugAge,Drosophila melanogaster,15.1,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:blackcurrant_extract:mus_musculus,Blackcurrant extract,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:blueberry_extract:caenorhabditis_elegans,Blueberry extract,drug,DrugAge,Caenorhabditis elegans,36.52,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:blueberry_extract:drosophila_melanogaster,Blueberry extract,drug,DrugAge,Drosophila melanogaster,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:branched_chain_amino_acids:mus_musculus,Branched-chain amino acids,drug,DrugAge,Mus musculus,12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:broccoli_extract:tribolium_castaneum,Broccoli extract,drug,DrugAge,Tribolium castaneum,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:buckwheat_trypsin_inhibitor:caenorhabditis_elegans,Buckwheat trypsin inhibitor,drug,DrugAge,Caenorhabditis elegans,15.6,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:buformin:rattus_norvegicus,Buformin,drug,DrugAge,Rattus norvegicus,7.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:bupivacaine_hydrochloride:caenorhabditis_elegans,Bupivacaine Hydrochloride,drug,DrugAge,Caenorhabditis elegans,7.43,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:bupivacaine_hydrochloride:drosophila_melanogaster,Bupivacaine Hydrochloride,drug,DrugAge,Drosophila melanogaster,11.95,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:butaclamol_hydrochloride:caenorhabditis_elegans,Butaclamol hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:butein:saccharomyces_cerevisiae,Butein,drug,DrugAge,Saccharomyces cerevisiae,31.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:buthionine_sulfoximine:musca_domestica,Buthionine Sulfoximine,drug,DrugAge,Musca Domestica,-30.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:buthus_martensii_karsch_polypeptide_toxin:caenorhabditis_elegans,Buthus martensii Karsch Polypeptide Toxin,drug,DrugAge,Caenorhabditis elegans,22.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:butylated_hydroxyanisole:caenorhabditis_elegans,Butylated hydroxyanisole,drug,DrugAge,Caenorhabditis elegans,6.38,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:butylated_hydroxyanisole:zaprionus_paravittiger,Butylated hydroxyanisole,drug,DrugAge,Zaprionus paravittiger,10.5,,https://genomics.senescence.info/drugs/,12
+DRUGAGE:butylated_hydroxytoluene:drosophila_bipectinata,Butylated hydroxytoluene,drug,DrugAge,Drosophila bipectinata,13.65,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:butylated_hydroxytoluene:mus_musculus,Butylated hydroxytoluene,drug,DrugAge,Mus musculus,22.0,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:c60_fullerene:mus_musculus,C60 fullerene,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:c60_fullerene:rattus_norvegicus,C60 fullerene,drug,DrugAge,Rattus norvegicus,90.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:c75:caenorhabditis_elegans,C75,drug,DrugAge,Caenorhabditis elegans,-6.25,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:casin:mus_musculus,CASIN,drug,DrugAge,Mus musculus,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cgp37157:caenorhabditis_elegans,CGP37157,drug,DrugAge,Caenorhabditis elegans,14.9,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:cms121:drosophila_melanogaster,CMS121,drug,DrugAge,Drosophila melanogaster,8.46,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cu701:drosophila_melanogaster,CU701,drug,DrugAge,Drosophila melanogaster,11.15,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:cadmium_chloride:drosophila_melanogaster,Cadmium chloride,drug,DrugAge,Drosophila melanogaster,-41.25,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:caffeic_acid:caenorhabditis_elegans,Caffeic acid,drug,DrugAge,Caenorhabditis elegans,15.57,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:caffeic_acid_phenethylester:caenorhabditis_elegans,Caffeic acid phenethylester,drug,DrugAge,Caenorhabditis elegans,9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:caffeic_acid_phenethylester:mus_musculus,Caffeic acid phenethylester,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:caffeine:aedes_albopictus,Caffeine,drug,DrugAge,Aedes albopictus,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:caffeine:caenorhabditis_elegans,Caffeine,drug,DrugAge,Caenorhabditis elegans,10.8,,https://genomics.senescence.info/drugs/,26
+DRUGAGE:caffeine:drosophila_melanogaster,Caffeine,drug,DrugAge,Drosophila melanogaster,-20.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:caffeine:saccharomyces_cerevisiae,Caffeine,drug,DrugAge,Saccharomyces cerevisiae,86.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:calcium_dichloride:asplanchna_brightwelli,Calcium dichloride,drug,DrugAge,Asplanchna brightwelli,-23.345,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:calcium_gluconate:drosophila_melanogaster,Calcium gluconate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:calcium_lactate:drosophila_melanogaster,Calcium lactate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:calcium_pantothenate:drosophila_melanogaster,Calcium pantothenate,drug,DrugAge,Drosophila melanogaster,27.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:calcium_pantothenate:mus_musculus,Calcium pantothenate,drug,DrugAge,Mus musculus,19.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:calycosin:caenorhabditis_elegans,Calycosin,drug,DrugAge,Caenorhabditis elegans,16.72,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:canagliflozin:mus_musculus,Canagliflozin,drug,ITP,Mus musculus,11.5,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:candesartan_cilexetil:mus_musculus,Candesartan cilexetil,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cannabidiol:caenorhabditis_elegans,Cannabidiol,drug,DrugAge,Caenorhabditis elegans,1.865,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:cannabidiol:drosophila_melanogaster,Cannabidiol,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:capecitabine:brachionus_manjavacas,Capecitabine,drug,DrugAge,Brachionus manjavacas,7.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:caprylate:caenorhabditis_elegans,Caprylate,drug,DrugAge,Caenorhabditis elegans,-5.0,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:capsaicin:drosophila_melanogaster,Capsaicin,drug,DrugAge,Drosophila melanogaster,6.22,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:captopril:caenorhabditis_elegans,Captopril,drug,DrugAge,Caenorhabditis elegans,28.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:captopril:mus_musculus,Captopril,drug,ITP,Mus musculus,9.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:carbidopa:caenorhabditis_elegans,Carbidopa,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:carbidopa:drosophila_melanogaster,Carbidopa,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:carbinoxamine_maleate:drosophila_melanogaster,Carbinoxamine maleate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:carbonylcyanide_3_chlorophenylhydrazone:caenorhabditis_elegans,Carbonylcyanide-3-chlorophenylhydrazone,drug,DrugAge,Caenorhabditis elegans,60.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cardamonin:caenorhabditis_elegans,Cardamonin,drug,DrugAge,Caenorhabditis elegans,-10.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cardamonin:drosophila_melanogaster,Cardamonin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:carglumic_acid:brachionus_manjavacas,Carglumic acid,drug,DrugAge,Brachionus manjavacas,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:carnosic_acid:caenorhabditis_elegans,Carnosic acid,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:carnosine:caenorhabditis_elegans,Carnosine,drug,DrugAge,Caenorhabditis elegans,7.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:carnosine:drosophila_melanogaster,Carnosine,drug,DrugAge,Drosophila melanogaster,22.15,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:carnosine:saccharomyces_cerevisiae,Carnosine,drug,DrugAge,Saccharomyces cerevisiae,25.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:carnosol:caenorhabditis_elegans,Carnosol,drug,DrugAge,Caenorhabditis elegans,19.02,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:carvedilol:caenorhabditis_elegans,Carvedilol,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:carvedilol:drosophila_melanogaster,Carvedilol,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:casein:drosophila_melanogaster,Casein,drug,DrugAge,Drosophila melanogaster,4.34,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:catechin:caenorhabditis_elegans,Catechin,drug,DrugAge,Caenorhabditis elegans,8.39,,https://genomics.senescence.info/drugs/,8
+DRUGAGE:catechin:drosophila_melanogaster,Catechin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:cefazolin_sodium:caenorhabditis_elegans,Cefazolin sodium,drug,DrugAge,Caenorhabditis elegans,-11.45,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cefazolin_sodium:drosophila_melanogaster,Cefazolin sodium,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ceftriaxone_disodium_salt:drosophila_melanogaster,Ceftriaxone disodium salt,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:celastrol:caenorhabditis_elegans,Celastrol,drug,DrugAge,Caenorhabditis elegans,15.6,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:celecoxib:caenorhabditis_elegans,Celecoxib,drug,DrugAge,Caenorhabditis elegans,19.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:centylpyridinium_cl:drosophila_melanogaster,Centylpyridinium-Cl,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ceoxide_beads:caenorhabditis_elegans,Ceoxide beads,drug,DrugAge,Caenorhabditis elegans,-0.76,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cetylpyridinium_chloride:caenorhabditis_elegans,Cetylpyridinium chloride,drug,DrugAge,Caenorhabditis elegans,8.61,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:chicoric_acid:caenorhabditis_elegans,Chicoric acid,drug,DrugAge,Caenorhabditis elegans,21.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:chloramphenicol:caenorhabditis_elegans,Chloramphenicol,drug,DrugAge,Caenorhabditis elegans,15.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:chlorhexidine:caenorhabditis_elegans,Chlorhexidine,drug,DrugAge,Caenorhabditis elegans,-25.33,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:chlorhexidine:drosophila_melanogaster,Chlorhexidine,drug,DrugAge,Drosophila melanogaster,-4.25,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:chlorogenic_acid:caenorhabditis_elegans,Chlorogenic Acid,drug,DrugAge,Caenorhabditis elegans,20.1,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:chlorophenyalanine:drosophila_melanogaster,Chlorophenyalanine,drug,DrugAge,Drosophila melanogaster,11.86,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:chlorophyll:caenorhabditis_elegans,Chlorophyll,drug,DrugAge,Caenorhabditis elegans,13.9,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:chlorophytum_borivilianum__extract:caenorhabditis_elegans,Chlorophytum borivilianum  extract,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:chlorophytum_borivilianum__extract:saccharomyces_cerevisiae,Chlorophytum borivilianum  extract,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:chloroquine:drosophila_melanogaster,Chloroquine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:chloroquine:mus_musculus,Chloroquine,drug,DrugAge,Mus musculus,1.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:chloroquine:rattus_norvegicus,Chloroquine,drug,DrugAge,Rattus Norvegicus,6.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:chlorpheniramine:mus_musculus,Chlorpheniramine,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:chlorpheniramine_maleate:drosophila_melanogaster,Chlorpheniramine maleate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:chlorpromazine:mus_musculus,Chlorpromazine,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:chlorpromazine_chloride:drosophila_melanogaster,Chlorpromazine chloride,drug,DrugAge,Drosophila melanogaster,-8.17,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:chlorprothixene_hydrochloride:caenorhabditis_elegans,Chlorprothixene hydrochloride,drug,DrugAge,Caenorhabditis elegans,33.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:choline_chloride:caenorhabditis_elegans,Choline Chloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:choline_chloride:drosophila_melanogaster,Choline Chloride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:chrysanthemum_extract:drosophila_melanogaster,Chrysanthemum extract,drug,DrugAge,Drosophila melanogaster,15.5,,https://genomics.senescence.info/drugs/,7
+DRUGAGE:chrysin:caenorhabditis_elegans,Chrysin,drug,DrugAge,Caenorhabditis elegans,8.46,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:ciclopirox_olamine:caenorhabditis_elegans,Ciclopirox olamine,drug,DrugAge,Caenorhabditis elegans,41.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cinnamon_extract:drosophila_melanogaster,Cinnamon extract,drug,DrugAge,Drosophila melanogaster,27.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cinnarizine:caenorhabditis_elegans,Cinnarizine,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cinoxacin:caenorhabditis_elegans,Cinoxacin,drug,DrugAge,Caenorhabditis elegans,-11.99,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cinoxacin:drosophila_melanogaster,Cinoxacin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cis__z__flupenthixol_dihydrochloride:caenorhabditis_elegans,Cis-(Z)-Flupenthixol dihydrochloride,drug,DrugAge,Caenorhabditis elegans,30.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:citrate:caenorhabditis_elegans,Citrate,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:citrate:mytilina_brevispina,Citrate,drug,DrugAge,Mytilina brevispina,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:clofibrate:caenorhabditis_elegans,Clofibrate,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:clofilium_tosylate:caenorhabditis_elegans,Clofilium Tosylate,drug,DrugAge,Caenorhabditis elegans,-7.66,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cocoa_extract:drosophila_melanogaster,Cocoa extract,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cocoa_extract:rattus_norvegicus,Cocoa extract,drug,DrugAge,Rattus norvegicus,11.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:coenzyme_q10:caenorhabditis_elegans,Coenzyme Q10,drug,DrugAge,Caenorhabditis elegans,13.5,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:coenzyme_q10:mus_musculus,Coenzyme Q10,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:coenzyme_q10:rattus_norvegicus,Coenzyme Q10,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:coix_seed_oil:caenorhabditis_elegans,Coix seed oil,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:colanic_acid:caenorhabditis_elegans,Colanic acid,drug,DrugAge,Caenorhabditis elegans,12.5,,https://genomics.senescence.info/drugs/,19
+DRUGAGE:colanic_acid:drosophila_melanogaster,Colanic acid,drug,DrugAge,Drosophila melanogaster,18.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:colchine:drosophila_melanogaster,Colchine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cordyceps_sinensis_oral_liquid:drosophila_melanogaster,Cordyceps sinensis oral liquid,drug,DrugAge,Drosophila melanogaster,32.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cortexolone_maleate:caenorhabditis_elegans,Cortexolone maleate,drug,DrugAge,Caenorhabditis elegans,11.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cortisone:asplanchna_brightwelli,Cortisone,drug,DrugAge,Asplanchna brightwelli,20.05,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:cranberry_extract:caenorhabditis_elegans,Cranberry extract,drug,DrugAge,Caenorhabditis elegans,17.2,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:cranberry_extract:drosophila_melanogaster,Cranberry extract,drug,DrugAge,Drosophila melanogaster,10.4,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:creatine:caenorhabditis_elegans,Creatine,drug,DrugAge,Caenorhabditis elegans,-18.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:creatine:mus_musculus,Creatine,drug,DrugAge,Mus musculus,9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:crocus_sativus_extract:drosophila_melanogaster,Crocus sativus extract,drug,DrugAge,Drosophila melanogaster,13.55,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cryptotanshinone:caenorhabditis_elegans,Cryptotanshinone,drug,DrugAge,Caenorhabditis elegans,-6.34,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cryptotanshinone:drosophila_melanogaster,Cryptotanshinone,drug,DrugAge,Drosophila melanogaster,13.41,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cucurbitacin_b:saccharomyces_cerevisiae,Cucurbitacin B,drug,DrugAge,Saccharomyces cerevisiae,28.78,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:cupric_chloride:drosophila_melanogaster,Cupric chloride,drug,DrugAge,Drosophila melanogaster,-15.1,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cupric_citrate:drosophila_melanogaster,Cupric citrate,drug,DrugAge,Drosophila melanogaster,-16.3,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cupric_formate:drosophila_melanogaster,Cupric formate,drug,DrugAge,Drosophila melanogaster,7.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:cupric_gluconate:drosophila_melanogaster,Cupric gluconate,drug,DrugAge,Drosophila melanogaster,-46.05,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:cupric_glycinate:drosophila_melanogaster,Cupric glycinate,drug,DrugAge,Drosophila melanogaster,-4.4,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:cupric_lactate:drosophila_melanogaster,Cupric lactate,drug,DrugAge,Drosophila melanogaster,7.1,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:cupric_sulfate:drosophila_melanogaster,Cupric sulfate,drug,DrugAge,Drosophila melanogaster,-10.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:curare:asplanchna_brightwelli,Curare,drug,DrugAge,Asplanchna brightwelli,29.0,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:curcumin:caenorhabditis_elegans,Curcumin,drug,DrugAge,Caenorhabditis elegans,8.805,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:curcumin:drosophila_melanogaster,Curcumin,drug,DrugAge,Drosophila melanogaster,18.5,,https://genomics.senescence.info/drugs/,34
+DRUGAGE:curcumin:mus_musculus,Curcumin,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cyclic_adenosine_monophosphate:adineta_vaga,Cyclic adenosine monophosphate,drug,DrugAge,Adineta vaga,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cyclic_adenosine_monophosphate:philodina_acuticornis,Cyclic adenosine monophosphate,drug,DrugAge,Philodina acuticornis,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cyclizine_hcl:drosophila_melanogaster,Cyclizine HCl,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cycloheximide:drosophila_melanogaster,Cycloheximide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cyclophosphamide:rattus_norvegicus,Cyclophosphamide,drug,DrugAge,Rattus norvegicus,-9.47,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:cyclosporin_a:caenorhabditis_elegans,Cyclosporin A,drug,DrugAge,Caenorhabditis elegans,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cyclosporin_a:podospora_anserina,Cyclosporin A,drug,DrugAge,Podospora anserina,3.32,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:cynomorium_songaricum_extract:drosophila_melanogaster,Cynomorium songaricum extract,drug,DrugAge,Drosophila melanogaster,15.3,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:cyproterone_acetate:caenorhabditis_elegans,Cyproterone acetate,drug,DrugAge,Caenorhabditis elegans,23.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cysteine:caenorhabditis_elegans,Cysteine,drug,DrugAge,Caenorhabditis elegans,12.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:cysteine_hydrochloride:mus_musculus,Cysteine hydrochloride,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:cytidine:caenorhabditis_elegans,Cytidine,drug,DrugAge,Caenorhabditis elegans,9.83,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:d_allulose:caenorhabditis_elegans,D-Allulose,drug,DrugAge,Caenorhabditis elegans,7.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:d_erythro_mapp:caenorhabditis_elegans,D-Erythro-MAPP,drug,DrugAge,Caenorhabditis elegans,-6.25,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:d_alanine:caenorhabditis_elegans,D-alanine,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:d_aspartate:caenorhabditis_elegans,D-aspartate,drug,DrugAge,Caenorhabditis elegans,13.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:d_beta_hydroxybutyrate:caenorhabditis_elegans,D-beta-hydroxybutyrate,drug,DrugAge,Caenorhabditis elegans,26.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:d_glucosamine:caenorhabditis_elegans,D-glucosamine,drug,DrugAge,Caenorhabditis elegans,11.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:d_glucosamine:mus_musculus,D-glucosamine,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:d_glucosamine:saccharomyces_cerevisiae,D-glucosamine,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:d_glutamate:caenorhabditis_elegans,D-glutamate,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:d_xylitol:caenorhabditis_elegans,D-xylitol,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:d_xylitol:drosophila_melanogaster,D-xylitol,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:d_xylitol:saccharomyces_cerevisiae,D-xylitol,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:d609:caenorhabditis_elegans,D609,drug,DrugAge,Caenorhabditis elegans,25.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:daph:caenorhabditis_elegans,DAPH,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:deta_nonoate:caenorhabditis_elegans,DETA NONOate,drug,DrugAge,Caenorhabditis elegans,8.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dh376:caenorhabditis_elegans,DH376,drug,DrugAge,Caenorhabditis elegans,-50.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dl_isocitrate:caenorhabditis_elegans,DL-isocitrate,drug,DrugAge,Caenorhabditis elegans,-7.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:dl_lactate:caenorhabditis_elegans,DL-lactate,drug,DrugAge,Caenorhabditis elegans,6.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:dnic_1a:caenorhabditis_elegans,DNIC-1a,drug,DrugAge,Caenorhabditis elegans,11.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dtt:caenorhabditis_elegans,DTT,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:dtt:drosophila_melanogaster,DTT,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dafachronic_acid:caenorhabditis_elegans,Dafachronic Acid,drug,DrugAge,Caenorhabditis elegans,23.44,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dafadine_a:caenorhabditis_elegans,Dafadine-A,drug,DrugAge,Caenorhabditis elegans,29.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:damaurone_d:caenorhabditis_elegans,Damaurone D,drug,DrugAge,Caenorhabditis elegans,12.6,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:damnacanthus_officinarum_leaf_extract:caenorhabditis_elegans,Damnacanthus officinarum leaf extract,drug,DrugAge,Caenorhabditis elegans,18.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:damnacanthus_officinarum_root_extract:caenorhabditis_elegans,Damnacanthus officinarum root extract,drug,DrugAge,Caenorhabditis elegans,30.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:danazol:caenorhabditis_elegans,Danazol,drug,DrugAge,Caenorhabditis elegans,13.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dapsone:caenorhabditis_elegans,Dapsone,drug,DrugAge,Caenorhabditis elegans,30.635,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:darapladib:caenorhabditis_elegans,Darapladib,drug,DrugAge,Caenorhabditis elegans,-20.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dauer_inducing_pheromone:caenorhabditis_elegans,Dauer-inducing Pheromone,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:deferoxamine:caenorhabditis_elegans,Deferoxamine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:deguelin:caenorhabditis_elegans,Deguelin,drug,DrugAge,Caenorhabditis elegans,-2.23,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:deguelin:drosophila_melanogaster,Deguelin,drug,DrugAge,Drosophila melanogaster,-31.58,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:dehydroabietic_acid:caenorhabditis_elegans,Dehydroabietic acid,drug,DrugAge,Caenorhabditis elegans,12.3,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:dehydroascorbic_acid:drosophila_melanogaster,Dehydroascorbic acid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:dehydroepiandrosterone_sulfate:mus_musculus,Dehydroepiandrosterone sulfate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:demeclocycline_hydrochloride:caenorhabditis_elegans,Demeclocycline hydrochloride,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:demethylpipodophyllotoxin:drosophila_melanogaster,Demethylpipodophyllotoxin,drug,DrugAge,Drosophila melanogaster,-5.77,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dequalinium:drosophila_melanogaster,Dequalinium,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dequalinium_chloride:caenorhabditis_elegans,Dequalinium chloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:deuterium_oxide:drosophila_melanogaster,Deuterium Oxide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:dexamethasone_sodium_phosphate:drosophila_melanogaster,Dexamethasone sodium phosphate,drug,DrugAge,Drosophila melanogaster,29.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:dhhp_6:caenorhabditis_elegans,DhHP-6,drug,DrugAge,Caenorhabditis elegans,20.05,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:diallyl_trisulfide:caenorhabditis_elegans,Diallyl trisulfide,drug,DrugAge,Caenorhabditis elegans,13.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:diamide:caenorhabditis_elegans,Diamide,drug,DrugAge,Caenorhabditis elegans,-24.88,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:diamide:musca_domestica,Diamide,drug,DrugAge,Musca domestica,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dibromoacetic_acid:caenorhabditis_elegans,Dibromoacetic acid,drug,DrugAge,Caenorhabditis elegans,14.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dichloroacetate:caenorhabditis_elegans,Dichloroacetate,drug,DrugAge,Caenorhabditis elegans,7.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:diethyl_maleate:caenorhabditis_elegans,Diethyl Maleate,drug,DrugAge,Caenorhabditis elegans,-1.02,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:diethyldithiocarbamate:musca_domestica,Diethyldithiocarbamate,drug,DrugAge,Musca domestica,40.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:diethylhydroxylamine:drosophila_melanogaster,Diethylhydroxylamine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,9
+DRUGAGE:diethylnitrosamine:mesocricetus_auratus,Diethylnitrosamine,drug,DrugAge,Mesocricetus auratus,-9.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dihydroergocristine_methanesulfonate:caenorhabditis_elegans,Dihydroergocristine methanesulfonate,drug,DrugAge,Caenorhabditis elegans,34.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dihydroergotamine_methanesulfonate:caenorhabditis_elegans,Dihydroergotamine methanesulfonate,drug,DrugAge,Caenorhabditis elegans,24.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dihydromyricetin:drosophila_melanogaster,Dihydromyricetin,drug,DrugAge,Drosophila melanogaster,12.43,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:dihydrorotenon:caenorhabditis_elegans,Dihydrorotenon,drug,DrugAge,Caenorhabditis elegans,13.02,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dihydrorotenone:drosophila_melanogaster,Dihydrorotenone,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:dihydroxyflavone:drosophila_melanogaster,Dihydroxyflavone,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:diiodomethane:drosophila_melanogaster,Diiodomethane,drug,DrugAge,Drosophila melanogaster,14.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:dimethyl_sulfide:caenorhabditis_elegans,Dimethyl Sulfide,drug,DrugAge,Caenorhabditis elegans,20.14,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:dimethyl_sulfide:drosophila_melanogaster,Dimethyl Sulfide,drug,DrugAge,Drosophila melanogaster,16.04,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:dimethyl_formamide:caenorhabditis_elegans,Dimethyl formamide,drug,DrugAge,Caenorhabditis elegans,33.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dimethyl_fumarate:mus_musculus,Dimethyl fumarate,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:dimethyl_sulfoxide:caenorhabditis_elegans,Dimethyl sulfoxide,drug,DrugAge,Caenorhabditis elegans,29.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dimethyl_sulfoxide:drosophila_melanogaster,Dimethyl sulfoxide,drug,DrugAge,Drosophila melanogaster,-21.305,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:dimethylaminoethyl_p_chlorophenoxyacetate:mus_musculus,Dimethylaminoethyl p-chlorophenoxyacetate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:dimethylaminoethyl_p_chlorophenoxyacetate:rattus_norvegicus,Dimethylaminoethyl p-chlorophenoxyacetate,drug,DrugAge,Rattus norvegicus,27.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:diosgenin:caenorhabditis_elegans,Diosgenin,drug,DrugAge,Caenorhabditis elegans,20.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:diphenhydramine_hcl:drosophila_melanogaster,Diphenhydramine HCl,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:diphyenyleneiodonium_chloride:caenorhabditis_elegans,Diphyenyleneiodonium chloride,drug,DrugAge,Caenorhabditis elegans,-53.34,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:disulfiram:rattus_norvegicus,Disulfiram,drug,DrugAge,Rattus norvegicus,-21.18,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:dofetilide:caenorhabditis_elegans,Dofetilide,drug,DrugAge,Caenorhabditis elegans,4.73,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:dofetilide:drosophila_melanogaster,Dofetilide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:doxazosin_mesylate:caenorhabditis_elegans,Doxazosin mesylate,drug,DrugAge,Caenorhabditis elegans,10.98,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:doxazosin_mesylate:drosophila_melanogaster,Doxazosin mesylate,drug,DrugAge,Drosophila melanogaster,-3.7,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:doxycycline:caenorhabditis_elegans,Doxycycline,drug,DrugAge,Caenorhabditis elegans,23.7,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:doxycycline_hydrochloride:caenorhabditis_elegans,Doxycycline hydrochloride,drug,DrugAge,Caenorhabditis elegans,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:doxylamine_succinate:drosophila_melanogaster,Doxylamine succinate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:egta:asplanchna_brightwelli,EGTA,drug,DrugAge,Asplanchna brightwelli,-24.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:egta:mytilina_brevispina,EGTA,drug,DrugAge,Mytilina brevispina,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:euk_134:aeolosoma_viride,EUK-134,drug,DrugAge,Aeolosoma viride,26.4,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:euk_134:caenorhabditis_elegans,EUK-134,drug,DrugAge,Caenorhabditis elegans,42.0,,https://genomics.senescence.info/drugs/,7
+DRUGAGE:euk_8:caenorhabditis_elegans,EUK-8,drug,DrugAge,Caenorhabditis elegans,-12.9,,https://genomics.senescence.info/drugs/,18
+DRUGAGE:echinacoside:caenorhabditis_elegans,Echinacoside,drug,DrugAge,Caenorhabditis elegans,11.555,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:edetate_calcium_disodium:caenorhabditis_elegans,Edetate Calcium Disodium,drug,DrugAge,Caenorhabditis elegans,21.4,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:edetate_calcium_disodium:mytilina_brevispina,Edetate Calcium Disodium,drug,DrugAge,Mytilina brevispina,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:edetate_disodium:philodina_acuticornis,Edetate disodium,drug,DrugAge,Philodina acuticornis,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:edetic_acid:asplanchna_brightwelli,Edetic acid,drug,DrugAge,Asplanchna brightwelli,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:eicosapentaenoic_acid:caenorhabditis_elegans,Eicosapentaenoic acid,drug,DrugAge,Caenorhabditis elegans,-20.37,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:electrolyzed_reduced_water:caenorhabditis_elegans,Electrolyzed reduced water,drug,DrugAge,Caenorhabditis elegans,17.5,,https://genomics.senescence.info/drugs/,7
+DRUGAGE:eleutherococcus_senticosus_extract:caenorhabditis_elegans,Eleutherococcus senticosus extract,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:eliprodil:caenorhabditis_elegans,Eliprodil,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ellagic_acid:caenorhabditis_elegans,Ellagic acid,drug,DrugAge,Caenorhabditis elegans,1.925,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:ellagic_acid:drosophila_melanogaster,Ellagic acid,drug,DrugAge,Drosophila melanogaster,24.96,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:emblica_officinalis_extract:drosophila_melanogaster,Emblica officinalis extract,drug,DrugAge,Drosophila melanogaster,5.9,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:emodin:caenorhabditis_elegans,Emodin,drug,DrugAge,Caenorhabditis elegans,14.71,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:enalapril:mus_musculus,Enalapril,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:enalapril:rattus_norvegicus,Enalapril,drug,DrugAge,Rattus norvegicus,21.36,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:enoxacin:caenorhabditis_elegans,Enoxacin,drug,DrugAge,Caenorhabditis elegans,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:epicatechin:caenorhabditis_elegans,Epicatechin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:epicatechin:drosophila_melanogaster,Epicatechin,drug,DrugAge,Drosophila melanogaster,1.585,,https://genomics.senescence.info/drugs/,12
+DRUGAGE:epigallocatechin_3_gallate:aedes_aegypti,Epigallocatechin-3-gallate,drug,DrugAge,Aedes aegypti,52.395,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:epigallocatechin_3_gallate:caenorhabditis_elegans,Epigallocatechin-3-gallate,drug,DrugAge,Caenorhabditis elegans,12.2,,https://genomics.senescence.info/drugs/,11
+DRUGAGE:epigallocatechin_3_gallate:drosophila_melanogaster,Epigallocatechin-3-gallate,drug,DrugAge,Drosophila melanogaster,15.7,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:epigallocatechin_3_gallate:rattus_norvegicus,Epigallocatechin-3-gallate,drug,DrugAge,Rattus norvegicus,13.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:epimedium_extract:caenorhabditis_elegans,Epimedium extract,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:epimedium_extract:mus_musculus,Epimedium extract,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:epitalon:drosophila_melanogaster,Epitalon,drug,DrugAge,Drosophila melanogaster,12.0,,https://genomics.senescence.info/drugs/,10
+DRUGAGE:epitalon:mus_musculus,Epitalon,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:epithalamin:drosophila_melanogaster,Epithalamin,drug,DrugAge,Drosophila melanogaster,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:epithalamin:mus_musculus,Epithalamin,drug,DrugAge,Mus musculus,21.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:epithalamin:rattus_norvegicus,Epithalamin,drug,DrugAge,Rattus norvegicus,25.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:epoxy_pregnenolone:drosophila_melanogaster,Epoxy Pregnenolone,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:erbstatin_analog:drosophila_melanogaster,Erbstatin analog,drug,DrugAge,Drosophila melanogaster,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:erchen_wan:caenorhabditis_elegans,Erchen wan,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:erythorbic_acid:drosophila_melanogaster,Erythorbic acid,drug,DrugAge,Drosophila melanogaster,3.94,,https://genomics.senescence.info/drugs/,8
+DRUGAGE:erythromycin:brachionus_manjavacas,Erythromycin,drug,DrugAge,Brachionus manjavacas,37.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:eserine:caenorhabditis_elegans,Eserine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:eserine:drosophila_melanogaster,Eserine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:eserine_hemisulfate_salt:caenorhabditis_elegans,Eserine hemisulfate salt,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:eserine_hemisulfate_salt:drosophila_melanogaster,Eserine hemisulfate salt,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:estradiol_valerate:caenorhabditis_elegans,Estradiol valerate,drug,DrugAge,Caenorhabditis elegans,18.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ethanol:drosophila_mojavensis,Ethanol,drug,DrugAge,Drosophila mojavensis,,,https://genomics.senescence.info/drugs/,52
+DRUGAGE:ethidium_bromide:caenorhabditis_elegans,Ethidium bromide,drug,DrugAge,Caenorhabditis elegans,30.1,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ethopropazine:drosophila_melanogaster,Ethopropazine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ethopropazine_hydrochloride:caenorhabditis_elegans,Ethopropazine Hydrochloride,drug,DrugAge,Caenorhabditis elegans,-3.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ethosuximide:caenorhabditis_elegans,Ethosuximide,drug,DrugAge,Caenorhabditis elegans,17.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:ethotoin:caenorhabditis_elegans,Ethotoin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ethotoin:drosophila_melanogaster,Ethotoin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ethoxyquin:mus_musculus,Ethoxyquin,drug,DrugAge,Mus musculus,19.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ethoxzolamide:caenorhabditis_elegans,Ethoxzolamide,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ethoxzolamide:drosophila_melanogaster,Ethoxzolamide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:everolimus:drosophila_melanogaster,Everolimus,drug,DrugAge,Drosophila melanogaster,16.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:fccp:caenorhabditis_elegans,FCCP,drug,DrugAge,Caenorhabditis elegans,22.55,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:fw1251:caenorhabditis_elegans,FW1251,drug,DrugAge,Caenorhabditis elegans,10.055,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:fw1256:caenorhabditis_elegans,FW1256,drug,DrugAge,Caenorhabditis elegans,33.8,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:felbinac:caenorhabditis_elegans,Felbinac,drug,DrugAge,Caenorhabditis elegans,10.49,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:fenofibrate:caenorhabditis_elegans,Fenofibrate,drug,DrugAge,Caenorhabditis elegans,19.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ferric_ammonium_citrate:caenorhabditis_elegans,Ferric ammonium citrate,drug,DrugAge,Caenorhabditis elegans,-23.16,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:ferrous_chloride:musca_domestica,Ferrous chloride,drug,DrugAge,Musca domestica,-53.91,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ferulic_acid:caenorhabditis_elegans,Ferulic Acid,drug,DrugAge,Caenorhabditis elegans,4.75,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:ferulsinaic_acid:caenorhabditis_elegans,Ferulsinaic acid,drug,DrugAge,Caenorhabditis elegans,20.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:fisetin:drosophila_melanogaster,Fisetin,drug,DrugAge,Drosophila melanogaster,23.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:fisetin:mus_musculus,Fisetin,drug,ITP,Mus musculus,10.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:fisetin:saccharomyces_cerevisiae,Fisetin,drug,DrugAge,Saccharomyces cerevisiae,55.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:fish_oil:caenorhabditis_elegans,Fish oil,drug,DrugAge,Caenorhabditis elegans,-1.6,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:fish_oil:mus_musculus,Fish oil,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:floxuridine:caenorhabditis_elegans,Floxuridine,drug,DrugAge,Caenorhabditis elegans,6.66,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:flunarizine:drosophila_melanogaster,Flunarizine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:flunarizine_hydrochloride:caenorhabditis_elegans,Flunarizine hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:flunarizine_hydrochloride_ii:caenorhabditis_elegans,Flunarizine hydrochloride II,drug,DrugAge,Caenorhabditis elegans,8.38,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:fluoranthene:caenorhabditis_elegans,Fluoranthene,drug,DrugAge,Caenorhabditis elegans,-52.82,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:fluprednisolone:drosophila_melanogaster,Fluprednisolone,drug,DrugAge,Drosophila melanogaster,23.0,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:fluspirilene:caenorhabditis_elegans,Fluspirilene,drug,DrugAge,Caenorhabditis elegans,-3.73,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:fluspirilene:drosophila_melanogaster,Fluspirilene,drug,DrugAge,Drosophila melanogaster,8.86,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:fluvastatin:caenorhabditis_elegans,Fluvastatin,drug,DrugAge,Caenorhabditis elegans,13.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:fluvoxamine:caenorhabditis_elegans,Fluvoxamine,drug,DrugAge,Caenorhabditis elegans,-7.555,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:fluvoxamine:drosophila_melanogaster,Fluvoxamine,drug,DrugAge,Drosophila melanogaster,13.68,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:folic_acid:caenorhabditis_elegans,Folic acid,drug,DrugAge,Caenorhabditis elegans,17.1,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:formonoetin:caenorhabditis_elegans,Formonoetin,drug,DrugAge,Caenorhabditis elegans,6.06,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:fructose:caenorhabditis_elegans,Fructose,drug,DrugAge,Caenorhabditis elegans,21.96,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:fucoxanthin:caenorhabditis_elegans,Fucoxanthin,drug,DrugAge,Caenorhabditis elegans,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:fucoxanthin:drosophila_melanogaster,Fucoxanthin,drug,DrugAge,Drosophila melanogaster,10.55,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:fumarate:caenorhabditis_elegans,Fumarate,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:furosemide:caenorhabditis_elegans,Furosemide,drug,DrugAge,Caenorhabditis elegans,-7.115,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:furosemide:drosophila_melanogaster,Furosemide,drug,DrugAge,Drosophila melanogaster,-5.49,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:g109:caenorhabditis_elegans,G109,drug,DrugAge,Caenorhabditis elegans,6.25,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:gdf11:nothobranchius_guentheri,GDF11,drug,DrugAge,Nothobranchius guentheri,8.51,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:gyy4137:caenorhabditis_elegans,GYY4137,drug,DrugAge,Caenorhabditis elegans,20.9,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:galactose:caenorhabditis_elegans,Galactose,drug,DrugAge,Caenorhabditis elegans,6.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:galactose:drosophila_melanogaster,Galactose,drug,DrugAge,Drosophila melanogaster,-14.25,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:galactose:musca_domestica,Galactose,drug,DrugAge,Musca domestica,-23.45,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:gallic_acid:caenorhabditis_elegans,Gallic Acid,drug,DrugAge,Caenorhabditis elegans,5.185,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:gamma_tocopherol:caenorhabditis_elegans,Gamma-tocopherol,drug,DrugAge,Caenorhabditis elegans,17.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:ganoderma_lucidum_extract:caenorhabditis_elegans,Ganoderma lucidum extract,drug,DrugAge,Caenorhabditis elegans,35.83,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:garlic_extract:caenorhabditis_elegans,Garlic extract,drug,DrugAge,Caenorhabditis elegans,21.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:gedunin:caenorhabditis_elegans,Gedunin,drug,DrugAge,Caenorhabditis elegans,6.82,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:gedunin:drosophila_melanogaster,Gedunin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:geldanamycin:caenorhabditis_elegans,Geldanamycin,drug,DrugAge,Caenorhabditis elegans,3.51,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:geldanamycin:drosophila_melanogaster,Geldanamycin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:genistein:aedes_aegypti,Genistein,drug,DrugAge,Aedes aegypti,35.75,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:genistein:caenorhabditis_elegans,Genistein,drug,DrugAge,Caenorhabditis elegans,18.95,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:genistein:drosophila_melanogaster,Genistein,drug,DrugAge,Drosophila melanogaster,-20.49,,https://genomics.senescence.info/drugs/,9
+DRUGAGE:geranylgeranylacetone:mus_musculus,Geranylgeranylacetone,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:geri_bp002a:caenorhabditis_elegans,Geri-BP002A,drug,DrugAge,Caenorhabditis elegans,7.275,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ginkgo_biloba_extract:caenorhabditis_elegans,Ginkgo biloba extract,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ginkgo_biloba_extract:rattus_norvegicus,Ginkgo biloba extract,drug,DrugAge,Rattus norvegicus,17.4,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ginseng_extract:drosophila_melanogaster,Ginseng extract,drug,DrugAge,Drosophila melanogaster,14.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:ginseng_extract:mus_musculus,Ginseng extract,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:glaucarubinone:caenorhabditis_elegans,Glaucarubinone,drug,DrugAge,Caenorhabditis elegans,7.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:gliotoxin:caenorhabditis_elegans,Gliotoxin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:glucomannan_hydrolysate:drosophila_melanogaster,Glucomannan Hydrolysate,drug,DrugAge,Drosophila melanogaster,11.7,,https://genomics.senescence.info/drugs/,9
+DRUGAGE:gluconic_acid:caenorhabditis_elegans,Gluconic acid,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:gluconic_acid:drosophila_melanogaster,Gluconic acid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,15
+DRUGAGE:glucose:caenorhabditis_elegans,Glucose,drug,DrugAge,Caenorhabditis elegans,-17.65,,https://genomics.senescence.info/drugs/,26
+DRUGAGE:glucose:saccharomyces_cerevisiae,Glucose,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:glutamate:caenorhabditis_elegans,Glutamate,drug,DrugAge,Caenorhabditis elegans,11.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:glutamine:caenorhabditis_elegans,Glutamine,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:glutathione:caenorhabditis_elegans,Glutathione,drug,DrugAge,Caenorhabditis elegans,-13.9,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:glyceollin_i:saccharomyces_cerevisiae,Glyceollin I,drug,DrugAge,Saccharomyces cerevisiae,40.0,,https://genomics.senescence.info/drugs/,11
+DRUGAGE:glycerol:brachionus_manjavacas,Glycerol,drug,DrugAge,Brachionus manjavacas,51.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:glycerol:caenorhabditis_elegans,Glycerol,drug,DrugAge,Caenorhabditis elegans,-23.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:glycerol:saccharomyces_cerevisiae,Glycerol,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:glycine:caenorhabditis_elegans,Glycine,drug,DrugAge,Caenorhabditis elegans,13.8,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:glycine:mus_musculus,Glycine,drug,ITP,Mus musculus,5.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:glycyrrhizae_radix_extract:caenorhabditis_elegans,Glycyrrhizae radix extract,drug,DrugAge,Caenorhabditis elegans,15.25,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:gr_4d:caenorhabditis_elegans,Gr-4D,drug,DrugAge,Caenorhabditis elegans,50.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:gramicidin:caenorhabditis_elegans,Gramicidin,drug,DrugAge,Caenorhabditis elegans,-3.69,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:gramicidin:drosophila_melanogaster,Gramicidin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:green_tea_extract:caenorhabditis_elegans,Green tea extract,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:green_tea_extract:drosophila_melanogaster,Green tea extract,drug,DrugAge,Drosophila melanogaster,12.2,,https://genomics.senescence.info/drugs/,9
+DRUGAGE:green_tea_extract:mus_musculus,Green tea extract,drug,ITP,Mus musculus,6.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:guanabenz_acetate:caenorhabditis_elegans,Guanabenz acetate,drug,DrugAge,Caenorhabditis elegans,12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:guanfacine_hydrochloride:caenorhabditis_elegans,Guanfacine hydrochloride,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:guanine:saccharomyces_cerevisiae,Guanine,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:guarana_extract:caenorhabditis_elegans,Guarana extract,drug,DrugAge,Caenorhabditis elegans,36.36,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:ha_1004:drosophila_melanogaster,HA-1004,drug,DrugAge,Drosophila melanogaster,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ha_1077:drosophila_melanogaster,HA-1077,drug,DrugAge,Drosophila melanogaster,14.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:hf:caenorhabditis_elegans,HF,drug,DrugAge,Caenorhabditis elegans,12.7,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:hf_hq:caenorhabditis_elegans,HF-HQ,drug,DrugAge,Caenorhabditis elegans,20.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:haloperidol:drosophila_melanogaster,Haloperidol,drug,DrugAge,Drosophila melanogaster,8.82,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:hesperetin:mus_musculus,Hesperetin,drug,DrugAge,Mus musculus,9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:hesperidin:saccharomyces_cerevisiae,Hesperidin,drug,DrugAge,Saccharomyces cerevisiae,15.4,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:hexachlorophene:mus_musculus,Hexachlorophene,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:hexahydro_sila_diphenidol:caenorhabditis_elegans,Hexahydro-sila-diphenidol,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:hispidol:caenorhabditis_elegans,Hispidol,drug,DrugAge,Caenorhabditis elegans,28.305,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:histidine:caenorhabditis_elegans,Histidine,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:holothuria_scabra_extract:caenorhabditis_elegans,Holothuria scabra extract,drug,DrugAge,Caenorhabditis elegans,8.12,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:homocysteine:caenorhabditis_elegans,Homocysteine,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:hon_tsai_tai_extract:caenorhabditis_elegans,Hon Tsai Tai extract,drug,DrugAge,Caenorhabditis elegans,7.97,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:huan_shao_dan:caenorhabditis_elegans,Huan Shao Dan,drug,DrugAge,Caenorhabditis elegans,38.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:huminfeed:caenorhabditis_elegans,HuminFeed,drug,DrugAge,Caenorhabditis elegans,12.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:huperzine_a:caenorhabditis_elegans,Huperzine A,drug,DrugAge,Caenorhabditis elegans,13.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:hydralazine:brachionus_manjavacas,Hydralazine,drug,DrugAge,Brachionus manjavacas,9.01,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:hydralazine:caenorhabditis_elegans,Hydralazine,drug,DrugAge,Caenorhabditis elegans,20.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:hydralazine:mus_musculus,Hydralazine,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:hydrocortisone:rattus_norvegicus,Hydrocortisone,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:hydrocortisone_acetate:drosophila_melanogaster,Hydrocortisone acetate,drug,DrugAge,Drosophila melanogaster,31.0,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:hydrogen_sulphide:caenorhabditis_elegans,Hydrogen Sulphide,drug,DrugAge,Caenorhabditis elegans,74.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:hydrogen_iodide:drosophila_melanogaster,Hydrogen iodide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:hydroxylamine_hydrochloride:mus_musculus,Hydroxylamine hydrochloride,drug,DrugAge,Mus musculus,12.0,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:hydroxyprogesterone_caproate:caenorhabditis_elegans,Hydroxyprogesterone caproate,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:hydroxyprogesterone_caproate:drosophila_melanogaster,Hydroxyprogesterone caproate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:hypotaurine:caenorhabditis_elegans,Hypotaurine,drug,DrugAge,Caenorhabditis elegans,18.27,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:hypotaurine:drosophila_melanogaster,Hypotaurine,drug,DrugAge,Drosophila melanogaster,-39.76,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:i_bet:caenorhabditis_elegans,I-BET,drug,DrugAge,Caenorhabditis elegans,-14.31,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ibet:drosophila_melanogaster,IBet,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ims2186:caenorhabditis_elegans,IMS2186,drug,DrugAge,Caenorhabditis elegans,-5.2,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ims2186:drosophila_melanogaster,IMS2186,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:int_767d__fxr_tgr5_agonist:mus_musculus,INT-767d (FXR/TGR5 agonist),drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ip6:caenorhabditis_elegans,IP6,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:isrib:caenorhabditis_elegans,ISRIB,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ibuprofen:caenorhabditis_elegans,Ibuprofen,drug,DrugAge,Caenorhabditis elegans,7.13,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:ibuprofen:drosophila_melanogaster,Ibuprofen,drug,DrugAge,Drosophila melanogaster,16.375,,https://genomics.senescence.info/drugs/,7
+DRUGAGE:icariin:caenorhabditis_elegans,Icariin,drug,DrugAge,Caenorhabditis elegans,20.7,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:icariin:mus_musculus,Icariin,drug,DrugAge,Mus musculus,8.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ikarugamycin:caenorhabditis_elegans,Ikarugamycin,drug,DrugAge,Caenorhabditis elegans,22.25,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:imatinib_mesylate:caenorhabditis_briggsae,Imatinib mesylate,drug,DrugAge,Caenorhabditis briggsae,-14.945,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:imatinib_mesylate:caenorhabditis_elegans,Imatinib mesylate,drug,DrugAge,Caenorhabditis elegans,-58.91,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:imatinib_mesylate:caenorhabditis_tropicalis,Imatinib mesylate,drug,DrugAge,Caenorhabditis tropicalis,-6.34,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:indirubin:drosophila_melanogaster,Indirubin,drug,DrugAge,Drosophila melanogaster,8.2,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:indole:caenorhabditis_elegans,Indole,drug,DrugAge,Caenorhabditis elegans,15.91,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:indole_3_acetic_acid:rattus_norvegicus,Indole-3-acetic acid,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:indolepropionamide:philodina_acuticornis,Indolepropionamide,drug,DrugAge,Philodina acuticornis,229.7,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:indomethacin:drosophila_melanogaster,Indomethacin,drug,DrugAge,Drosophila melanogaster,-26.655,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:inositol:caenorhabditis_elegans,Inositol,drug,DrugAge,Caenorhabditis elegans,21.0,,https://genomics.senescence.info/drugs/,8
+DRUGAGE:inositol:drosophila_melanogaster,Inositol,drug,DrugAge,Drosophila melanogaster,15.8,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:inulin:mus_musculus,Inulin,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:iodine:drosophila_melanogaster,Iodine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:iodoform:drosophila_melanogaster,Iodoform,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:isoleucine:caenorhabditis_elegans,Isoleucine,drug,DrugAge,Caenorhabditis elegans,6.25,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:isoprenol:caenorhabditis_elegans,Isoprenol,drug,DrugAge,Caenorhabditis elegans,19.23,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:isorhamnetin:caenorhabditis_elegans,Isorhamnetin,drug,DrugAge,Caenorhabditis elegans,15.92,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:isorhamnetin:podospora_anserina,Isorhamnetin,drug,DrugAge,Podospora anserina,17.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:isosilybin_a_b:caenorhabditis_elegans,Isosilybin A/B,drug,DrugAge,Caenorhabditis elegans,6.82,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:itraconazole:caenorhabditis_elegans,Itraconazole,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:itraconazole:drosophila_melanogaster,Itraconazole,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ivabradine:mus_musculus,Ivabradine,drug,DrugAge,Mus musculus,6.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ivermectin:brachionus_manjavacas,Ivermectin,drug,DrugAge,Brachionus manjavacas,21.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:j147:drosophila_melanogaster,J147,drug,DrugAge,Drosophila melanogaster,12.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:jjh221:caenorhabditis_elegans,JJH221,drug,DrugAge,Caenorhabditis elegans,-18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jjh248:caenorhabditis_elegans,JJH248,drug,DrugAge,Caenorhabditis elegans,-21.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jjh250:caenorhabditis_elegans,JJH250,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jjh253:caenorhabditis_elegans,JJH253,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jjh254:caenorhabditis_elegans,JJH254,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jjh322:caenorhabditis_elegans,JJH322,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jjh331:caenorhabditis_elegans,JJH331,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jmn21:caenorhabditis_elegans,JMN21,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:js_k:caenorhabditis_elegans,JS-K,drug,DrugAge,Caenorhabditis elegans,-2.97,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:jsk:drosophila_melanogaster,JSK,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jt271_3:caenorhabditis_elegans,JT271-3,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jw1036:caenorhabditis_elegans,JW1036,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jw1038:caenorhabditis_elegans,JW1038,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jw1039:caenorhabditis_elegans,JW1039,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jw480:caenorhabditis_elegans,JW480,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jw651:caenorhabditis_elegans,JW651,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jania_acutilobum_extract:brachionus_manjavacas,Jania acutilobum extract,drug,DrugAge,Brachionus manjavacas,9.1,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:juglone:caenorhabditis_elegans,Juglone,drug,DrugAge,Caenorhabditis elegans,29.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:jujube_fruit_extract:drosophila_melanogaster,Jujube fruit extract,drug,DrugAge,Drosophila melanogaster,11.1,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kc01:caenorhabditis_elegans,KC01,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kc02:caenorhabditis_elegans,KC02,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kc03:caenorhabditis_elegans,KC03,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kc07:caenorhabditis_elegans,KC07,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:klh40_1:caenorhabditis_elegans,KLH40-1,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:klh45b:caenorhabditis_elegans,KLH45b,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:klh46:caenorhabditis_elegans,KLH46,drug,DrugAge,Caenorhabditis elegans,-43.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kml29:caenorhabditis_elegans,KML29,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kn_93:drosophila_melanogaster,KN-93,drug,DrugAge,Drosophila melanogaster,20.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt109:caenorhabditis_elegans,KT109,drug,DrugAge,Caenorhabditis elegans,-24.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt116:caenorhabditis_elegans,KT116,drug,DrugAge,Caenorhabditis elegans,-34.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt117:caenorhabditis_elegans,KT117,drug,DrugAge,Caenorhabditis elegans,-31.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt120:caenorhabditis_elegans,KT120,drug,DrugAge,Caenorhabditis elegans,17.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt135:caenorhabditis_elegans,KT135,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt138:caenorhabditis_elegans,KT138,drug,DrugAge,Caenorhabditis elegans,-22.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt140:caenorhabditis_elegans,KT140,drug,DrugAge,Caenorhabditis elegans,26.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt167:caenorhabditis_elegans,KT167,drug,DrugAge,Caenorhabditis elegans,17.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt170:caenorhabditis_elegans,KT170,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt172:caenorhabditis_elegans,KT172,drug,DrugAge,Caenorhabditis elegans,13.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt186:caenorhabditis_elegans,KT186,drug,DrugAge,Caenorhabditis elegans,-16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt195:caenorhabditis_elegans,KT195,drug,DrugAge,Caenorhabditis elegans,-9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kt203:caenorhabditis_elegans,KT203,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ku0063794:mus_musculus,KU0063794,drug,DrugAge,Mus Musculus,6.7,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kaempferol:caenorhabditis_elegans,Kaempferol,drug,DrugAge,Caenorhabditis elegans,5.63,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kanamycin_a_sulfate:caenorhabditis_elegans,Kanamycin A sulfate,drug,DrugAge,Caenorhabditis elegans,0.595,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:kenpaullone:caenorhabditis_elegans,Kenpaullone,drug,DrugAge,Caenorhabditis elegans,27.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ketanserin_tartrate:caenorhabditis_elegans,Ketanserin tartrate,drug,DrugAge,Caenorhabditis elegans,13.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kinetin:caenorhabditis_elegans,Kinetin,drug,DrugAge,Caenorhabditis elegans,21.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kinetin:zaprionus_paravittiger,Kinetin,drug,DrugAge,Zaprionus paravittiger,14.6,,https://genomics.senescence.info/drugs/,18
+DRUGAGE:korean_mistletoe_extract:caenorhabditis_elegans,Korean mistletoe extract,drug,DrugAge,Caenorhabditis elegans,9.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:korean_mistletoe_extract:drosophila_melanogaster,Korean mistletoe extract,drug,DrugAge,Drosophila melanogaster,19.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:krill_oil:mus_musculus,Krill oil,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kynurenic_acid:adineta_vaga,Kynurenic acid,drug,DrugAge,Adineta vaga,44.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:kynurenic_acid:philodina_acuticornis,Kynurenic acid,drug,DrugAge,Philodina acuticornis,55.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:l_carnitine:caenorhabditis_elegans,L-Carnitine,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:l_carnitine:saccharomyces_cerevisiae,L-Carnitine,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:l_glu_l_trp_dipeptide:rattus_norvegicus,L-Glu-L-Trp dipeptide,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:l_gulonolactone:drosophila_melanogaster,L-Gulonolactone,drug,DrugAge,Drosophila melanogaster,-24.65,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:l_thyroxine_sodium:rattus_norvegicus,L-Thyroxine sodium,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:l_valine:caenorhabditis_elegans,L-Valine,drug,DrugAge,Caenorhabditis elegans,7.05,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:l_deprenyl:canis_lupus_familiaris,L-deprenyl,drug,DrugAge,Canis lupus familiaris,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:l_deprenyl:mesocricetus_auratus,L-deprenyl,drug,DrugAge,Mesocricetus auratus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:l_deprenyl:mus_musculus,L-deprenyl,drug,DrugAge,Mus musculus,8.0,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:l_deprenyl:rattus_norvegicus,L-deprenyl,drug,DrugAge,Rattus norvegicus,8.1,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:l_histidine_methyl_ester:caenorhabditis_elegans,L-histidine methyl ester,drug,DrugAge,Caenorhabditis elegans,8.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:l_theanine:caenorhabditis_elegans,L-theanine,drug,DrugAge,Caenorhabditis elegans,8.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:l2_cmu__igf_1r_antagonist:mus_musculus,L2-Cmu (IGF-1R antagonist),drug,DrugAge,Mus musculus,9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lfm_a13:caenorhabditis_elegans,LFM-A13,drug,DrugAge,Caenorhabditis elegans,27.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ly_165_163:caenorhabditis_elegans,"LY-165,163",drug,DrugAge,Caenorhabditis elegans,33.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ly_294002:caenorhabditis_elegans,LY-294002,drug,DrugAge,Caenorhabditis elegans,20.9,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:ly_294002:drosophila_melanogaster,LY-294002,drug,DrugAge,Drosophila melanogaster,14.15,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ly_367_265:caenorhabditis_elegans,"LY-367,265",drug,DrugAge,Caenorhabditis elegans,34.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ly165_163:drosophila_melanogaster,LY165_163,drug,DrugAge,Drosophila melanogaster,5.71,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ly444711__ghs_r1a_agonist:mus_musculus,LY444711 (GHS-R1a agonist),drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lactic_acid:drosophila_melanogaster,Lactic acid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,9
+DRUGAGE:lamotrigine:caenorhabditis_elegans,Lamotrigine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lamotrigine:drosophila_melanogaster,Lamotrigine,drug,DrugAge,Drosophila melanogaster,16.3,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:lappaol_c:caenorhabditis_elegans,Lappaol C,drug,DrugAge,Caenorhabditis elegans,11.4,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:lappaol_f:caenorhabditis_elegans,Lappaol F,drug,DrugAge,Caenorhabditis elegans,12.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lead_acetate:mus_musculus,Lead acetate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:leucine:caenorhabditis_elegans,Leucine,drug,DrugAge,Caenorhabditis elegans,6.92,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:leucine:mus_musculus,Leucine,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:levodopa:mus_musculus,Levodopa,drug,DrugAge,Mus musculus,21.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:levosulpiride:caenorhabditis_elegans,Levosulpiride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:levosulpiride:drosophila_melanogaster,Levosulpiride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:licochalcone_a:caenorhabditis_elegans,Licochalcone A,drug,DrugAge,Caenorhabditis elegans,-20.92,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:limonin:caenorhabditis_elegans,Limonin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:limonin:drosophila_melanogaster,Limonin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lithium_chloride:caenorhabditis_elegans,Lithium Chloride,drug,DrugAge,Caenorhabditis elegans,23.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:lithium_chloride:drosophila_melanogaster,Lithium Chloride,drug,DrugAge,Drosophila melanogaster,18.25,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:lithocholic_acid:drosophila_melanogaster,Lithocholic acid,drug,DrugAge,Drosophila melanogaster,24.94,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lithocholic_acid:saccharomyces_cerevisiae,Lithocholic acid,drug,DrugAge,Saccharomyces cerevisiae,102.75,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:liuwei_dihuang_wan:caenorhabditis_elegans,Liuwei Dihuang Wan,drug,DrugAge,Caenorhabditis elegans,12.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lomefloxacin_hydrochloride:caenorhabditis_elegans,Lomefloxacin Hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:lomefloxacin_hydrochloride:drosophila_melanogaster,Lomefloxacin Hydrochloride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lonicera_japonica_extract:caenorhabditis_elegans,Lonicera japonica extract,drug,DrugAge,Caenorhabditis elegans,19.47,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:lonidamine:caenorhabditis_elegans,Lonidamine,drug,DrugAge,Caenorhabditis elegans,8.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:loratadine:caenorhabditis_elegans,Loratadine,drug,DrugAge,Caenorhabditis elegans,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lorglumide_sodium:caenorhabditis_elegans,Lorglumide Sodium,drug,DrugAge,Caenorhabditis elegans,-3.92,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:lorglumide_sodium:drosophila_melanogaster,Lorglumide Sodium,drug,DrugAge,Drosophila melanogaster,5.31,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:losartan:rattus_norvegicus,Losartan,drug,DrugAge,Rattus norvegicus,19.32,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:lovastin:caenorhabditis_elegans,Lovastin,drug,DrugAge,Caenorhabditis elegans,13.14,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:lovaza:mus_musculus,Lovaza,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:loxapine:drosophila_melanogaster,Loxapine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:loxapine_succinate:caenorhabditis_elegans,Loxapine succinate,drug,DrugAge,Caenorhabditis elegans,43.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ludwigia_octovalvis_extract:drosophila_melanogaster,Ludwigia octovalvis extract,drug,DrugAge,Drosophila melanogaster,20.15,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:lutein:drosophila_melanogaster,Lutein,drug,DrugAge,Drosophila melanogaster,11.4,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:luteolin:caenorhabditis_elegans,Luteolin,drug,DrugAge,Caenorhabditis elegans,-0.6,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:lysine:caenorhabditis_elegans,Lysine,drug,DrugAge,Caenorhabditis elegans,7.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:m084:caenorhabditis_elegans,M084,drug,DrugAge,Caenorhabditis elegans,9.11,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:mahma_nonoate:caenorhabditis_elegans,MAHMA-NONOate,drug,DrugAge,Caenorhabditis elegans,14.1,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mg624:caenorhabditis_elegans,MG624,drug,DrugAge,Caenorhabditis elegans,-5.67,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mg624:drosophila_melanogaster,MG624,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:mif098__cd74_antagonist:mus_musculus,MIF098 (CD74 antagonist),drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:mjn200:caenorhabditis_elegans,MJN200,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mjn202:caenorhabditis_elegans,MJN202,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mptp:caenorhabditis_elegans,MPTP,drug,DrugAge,Caenorhabditis elegans,8.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:magnesium_chloride:asplanchna_brightwelli,Magnesium chloride,drug,DrugAge,Asplanchna brightwelli,-21.47,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:malate:caenorhabditis_elegans,Malate,drug,DrugAge,Caenorhabditis elegans,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:maltose:caenorhabditis_elegans,Maltose,drug,DrugAge,Caenorhabditis elegans,8.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:marine_collagen_peptides:rattus_norvegicus,Marine collagen peptides,drug,DrugAge,Rattus norvegicus,11.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:matairesinol:caenorhabditis_elegans,Matairesinol,drug,DrugAge,Caenorhabditis elegans,19.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:mebhydroline_1_5_napthalenedisulfonate:caenorhabditis_elegans,"Mebhydroline 1,5-napthalenedisulfonate",drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:meclizine:mus_musculus,Meclizine,drug,ITP,Mus musculus,5.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:meclofenoxate:drosophila_melanogaster,Meclofenoxate,drug,DrugAge,Drosophila melanogaster,28.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:medium_chain_triglyceride_oil:mus_musculus,Medium-chain triglyceride oil,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:melatonin:drosophila_melanogaster,Melatonin,drug,DrugAge,Drosophila melanogaster,5.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:melatonin:mus_musculus,Melatonin,drug,DrugAge,Mus musculus,17.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:melatonin:paramecium_tetraurelia,Melatonin,drug,DrugAge,Paramecium tetraurelia,21.8,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:memantine_hydrochloride:caenorhabditis_elegans,Memantine Hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:memantine_hydrochloride:drosophila_melanogaster,Memantine Hydrochloride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:menadione:caenorhabditis_elegans,Menadione,drug,DrugAge,Caenorhabditis elegans,-8.72,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mercuric_chloride:drosophila_melanogaster,Mercuric chloride,drug,DrugAge,Drosophila melanogaster,0.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:mercuric_chloride:mus_musculus,Mercuric chloride,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:metamizole:caenorhabditis_elegans,Metamizole,drug,DrugAge,Caenorhabditis elegans,18.3,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:metergoline:caenorhabditis_elegans,Metergoline,drug,DrugAge,Caenorhabditis elegans,23.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:metformin:acheta_domesticus,Metformin,drug,DrugAge,Acheta domesticus,59.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:metformin:caenorhabditis_elegans,Metformin,drug,DrugAge,Caenorhabditis elegans,30.15,,https://genomics.senescence.info/drugs/,20
+DRUGAGE:metformin:drosophila_melanogaster,Metformin,drug,DrugAge,Drosophila melanogaster,-26.5,,https://genomics.senescence.info/drugs/,21
+DRUGAGE:metformin:mus_musculus,Metformin,drug,ITP,Mus musculus,2.0,,https://genomics.senescence.info/drugs/,9
+DRUGAGE:metformin:nothobranchius_guentheri,Metformin,drug,DrugAge,Nothobranchius guentheri,34.7,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:metformin:rattus_norvegicus,Metformin,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:methanol:drosophila_melanogaster,Methanol,drug,DrugAge,Drosophila melanogaster,7.93,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:methionine:caenorhabditis_elegans,Methionine,drug,DrugAge,Caenorhabditis elegans,11.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:methionine:mus_musculus,Methionine,drug,DrugAge,Mus musculus,-17.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:methionine:zaprionus_paravittiger,Methionine,drug,DrugAge,Zaprionus paravittiger,15.98,,https://genomics.senescence.info/drugs/,10
+DRUGAGE:methoxycatechol:drosophila_melanogaster,Methoxycatechol,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:methoxypsoralen:drosophila_melanogaster,Methoxypsoralen,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:methyl_3_4_dihydroxybenzoate:caenorhabditis_elegans,"Methyl 3,4-dihydroxybenzoate",drug,DrugAge,Caenorhabditis elegans,19.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:methylbenzethonium_cl:caenorhabditis_elegans,Methylbenzethonium Cl,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:methylene_blue:drosophila_melanogaster,Methylene blue,drug,DrugAge,Drosophila melanogaster,-20.5,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:methylene_blue:mus_musculus,Methylene blue,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:methylergonovine_maleate:caenorhabditis_elegans,Methylergonovine maleate,drug,DrugAge,Caenorhabditis elegans,28.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:methylmercury_acetate:mus_musculus,Methylmercury acetate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:metolazone:caenorhabditis_elegans,Metolazone,drug,DrugAge,Caenorhabditis elegans,29.46,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:metoprolol:mus_musculus,Metoprolol,drug,DrugAge,Mus musculus,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mianserin:caenorhabditis_elegans,Mianserin,drug,DrugAge,Caenorhabditis elegans,31.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:mianserin:drosophila_melanogaster,Mianserin,drug,DrugAge,Drosophila melanogaster,6.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:mifepristone:caenorhabditis_elegans,Mifepristone,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:mifepristone:drosophila_melanogaster,Mifepristone,drug,DrugAge,Drosophila melanogaster,35.84,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:milnacipran_hydrochloride:caenorhabditis_elegans,Milnacipran Hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:milnacipran_hydrochloride:drosophila_melanogaster,Milnacipran Hydrochloride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:minocycline:caenorhabditis_elegans,Minocycline,drug,DrugAge,Caenorhabditis elegans,33.0,,https://genomics.senescence.info/drugs/,14
+DRUGAGE:minocycline:drosophila_melanogaster,Minocycline,drug,DrugAge,Drosophila melanogaster,16.9,,https://genomics.senescence.info/drugs/,12
+DRUGAGE:minocycline:mus_musculus,Minocycline,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:minocycline_hydrochloride:caenorhabditis_elegans,Minocycline hydrochloride,drug,DrugAge,Caenorhabditis elegans,29.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mitoq:mus_musculus,MitoQ,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:monorden:caenorhabditis_elegans,Monorden,drug,DrugAge,Caenorhabditis elegans,24.55,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:morphine:drosophila_melanogaster,Morphine,drug,DrugAge,Drosophila melanogaster,2.9,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:morpholinosydnonimine_hcl:drosophila_melanogaster,Morpholinosydnonimine HCl,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mulberry_extract:caenorhabditis_elegans,Mulberry extract,drug,DrugAge,Caenorhabditis elegans,22.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mussel_extract:caenorhabditis_elegans,Mussel extract,drug,DrugAge,Caenorhabditis elegans,29.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mycophenolic_acid:caenorhabditis_elegans,Mycophenolic acid,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:mycophenolic_acid:drosophila_melanogaster,Mycophenolic acid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:mycophenolic_acid:mus_musculus,Mycophenolic acid,drug,ITP,Mus musculus,-1.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:mycophenolic_acid:saccharomyces_cerevisiae,Mycophenolic acid,drug,DrugAge,Saccharomyces cerevisiae,21.11,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:myleran:rattus_norvegicus,Myleran,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:myricetin:caenorhabditis_elegans,Myricetin,drug,DrugAge,Caenorhabditis elegans,25.445,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:myriocin:caenorhabditis_elegans,Myriocin,drug,DrugAge,Caenorhabditis elegans,31.25,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:myriocin:saccharomyces_cerevisiae,Myriocin,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:myxothiazol:caenorhabditis_elegans,Myxothiazol,drug,DrugAge,Caenorhabditis elegans,32.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:n__2__4__4_chlorophenyl_piperazin_1_yl_ethyl__3_methoxybenzamide:caenorhabditis_elegans,N-(2-[4-(4-chlorophenyl)piperazin-1-yl]ethyl)-3-methoxybenzamide,drug,DrugAge,Caenorhabditis elegans,35.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:n__3__aminomethyl_benzyl_acetamidine:drosophila_melanogaster,N-(3-(aminomethyl)benzyl)acetamidine,drug,DrugAge,Drosophila melanogaster,3.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:n_acetyl_serine:caenorhabditis_elegans,N-acetyl serine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:n_acetyl_l_cysteine:caenorhabditis_elegans,N-acetyl-L-cysteine,drug,DrugAge,Caenorhabditis elegans,18.51,,https://genomics.senescence.info/drugs/,12
+DRUGAGE:n_acetyl_l_cysteine:drosophila_kikkawai,N-acetyl-L-cysteine,drug,DrugAge,Drosophila kikkawai,14.0,,https://genomics.senescence.info/drugs/,8
+DRUGAGE:n_acetyl_l_cysteine:drosophila_melanogaster,N-acetyl-L-cysteine,drug,DrugAge,Drosophila melanogaster,6.5,,https://genomics.senescence.info/drugs/,9
+DRUGAGE:n_acetyl_l_cysteine:drosophila_virilis,N-acetyl-L-cysteine,drug,DrugAge,Drosophila virilis,27.8,,https://genomics.senescence.info/drugs/,12
+DRUGAGE:n_acetyl_l_cysteine:mus_musculus,N-acetyl-L-cysteine,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:n_acetyl_l_histidine:caenorhabditis_elegans,N-acetyl-l-histidine,drug,DrugAge,Caenorhabditis elegans,12.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:n_acetylglucosamine:caenorhabditis_elegans,N-acetylglucosamine,drug,DrugAge,Caenorhabditis elegans,50.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:n_nitrosodimethylamine:caenorhabditis_elegans,N-nitrosodimethylamine,drug,DrugAge,Caenorhabditis elegans,5.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:n_tert_butyl_alpha_phenylnitrone:mus_musculus,N-tert-butyl-alpha-phenylnitrone,drug,DrugAge,Mus musculus,4.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:n6_benzyladenine:caenorhabditis_elegans,N6-benzyladenine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:n6_isopentenyladenine:caenorhabditis_elegans,N6-isopentenyladenine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:np1:caenorhabditis_briggsae,NP1,drug,DrugAge,Caenorhabditis briggsae,-18.27,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:np1:caenorhabditis_elegans,NP1,drug,DrugAge,Caenorhabditis elegans,23.53,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:ns_398:drosophila_melanogaster,NS-398,drug,DrugAge,Drosophila melanogaster,9.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nsc_11926__aristolochic_acid_i:caenorhabditis_elegans,NSC 11926 (Aristolochic acid I),drug,DrugAge,Caenorhabditis elegans,-45.755,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nsc_45923__8_methyoxypsoralen:caenorhabditis_elegans,NSC 45923 (8-Methyoxypsoralen),drug,DrugAge,Caenorhabditis elegans,-4.56,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nsc170984__pimozide:caenorhabditis_elegans,NSC170984 (Pimozide),drug,DrugAge,Caenorhabditis elegans,6.695,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nsc666076:caenorhabditis_elegans,NSC666076,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nsc666076:drosophila_melanogaster,NSC666076,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nt219:caenorhabditis_elegans,NT219,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nafadotride:caenorhabditis_elegans,Nafadotride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nafadotride:drosophila_melanogaster,Nafadotride,drug,DrugAge,Drosophila melanogaster,5.55,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:naftopidil_dihydrochloride:caenorhabditis_elegans,Naftopidil dihydrochloride,drug,DrugAge,Caenorhabditis elegans,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:naphthazarin:caenorhabditis_elegans,Naphthazarin,drug,DrugAge,Caenorhabditis elegans,10.5,,https://genomics.senescence.info/drugs/,10
+DRUGAGE:naproxen:brachionus_manjavacas,Naproxen,drug,DrugAge,Brachionus manjavacas,13.93,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:naringenin:caenorhabditis_elegans,Naringenin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:naringin:caenorhabditis_elegans,Naringin,drug,DrugAge,Caenorhabditis elegans,12.57,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:nebirapine:drosophila_melanogaster,Nebirapine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nebivolol:mus_musculus,Nebivolol,drug,ITP,Mus musculus,0.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:nectarine_extract:drosophila_melanogaster,Nectarine extract,drug,DrugAge,Drosophila melanogaster,17.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nicardipine_hydrochloride:caenorhabditis_elegans,Nicardipine hydrochloride,drug,DrugAge,Caenorhabditis elegans,23.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nickelous_acetate:mus_musculus,Nickelous acetate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nicolsamide:caenorhabditis_elegans,Nicolsamide,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nicolsamide:drosophila_melanogaster,Nicolsamide,drug,DrugAge,Drosophila melanogaster,-7.45,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nicotinamide:caenorhabditis_elegans,Nicotinamide,drug,DrugAge,Caenorhabditis elegans,6.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nicotinamide:mus_musculus,Nicotinamide,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nicotinamide:saccharomyces_cerevisiae,Nicotinamide,drug,DrugAge,Saccharomyces cerevisiae,28.08,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nicotinamide_adenine_dinucleotide:caenorhabditis_elegans,Nicotinamide adenine dinucleotide,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nicotinamide_mononucleotide:drosophila_melanogaster,Nicotinamide mononucleotide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nicotinamide_riboside:mus_musculus,Nicotinamide riboside,drug,ITP,Mus musculus,5.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:nicotinamide_riboside:saccharomyces_cerevisiae,Nicotinamide riboside,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nicotine:rattus_norvegicus,Nicotine,drug,DrugAge,Rattus norvegicus,-9.98,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nisoldipine:caenorhabditis_elegans,Nisoldipine,drug,DrugAge,Caenorhabditis elegans,-10.2,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nisoldipine:drosophila_melanogaster,Nisoldipine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nitrendipine:caenorhabditis_elegans,Nitrendipine,drug,DrugAge,Caenorhabditis elegans,25.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nitroflurbiprofen:mus_musculus,Nitroflurbiprofen,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:nitrophenyl_piperazine_containing_compound_1:caenorhabditis_elegans,Nitrophenyl piperazine containing compound 1,drug,DrugAge,Caenorhabditis elegans,23.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:nitrosodimethylurea:drosophila_melanogaster,Nitrosodimethylurea,drug,DrugAge,Drosophila melanogaster,-37.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nobiletin:caenorhabditis_elegans,Nobiletin,drug,DrugAge,Caenorhabditis elegans,14.85,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:nocodazole:caenorhabditis_elegans,Nocodazole,drug,DrugAge,Caenorhabditis elegans,-10.66,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nocodazole:drosophila_melanogaster,Nocodazole,drug,DrugAge,Drosophila melanogaster,9.03,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nolinospiroside_f:saccharomyces_cerevisiae,Nolinospiroside F,drug,DrugAge,Saccharomyces cerevisiae,21.3,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:norcantharidin:drosophila_melanogaster,Norcantharidin,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:nordihydroguaiaretic_acid:aedes_aegypti,Nordihydroguaiaretic acid,drug,DrugAge,Aedes aegypti,53.5,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:nordihydroguaiaretic_acid:caenorhabditis_elegans,Nordihydroguaiaretic acid,drug,DrugAge,Caenorhabditis elegans,-16.08,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:nordihydroguaiaretic_acid:drosophila_melanogaster,Nordihydroguaiaretic acid,drug,DrugAge,Drosophila melanogaster,23.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:nordihydroguaiaretic_acid:mus_musculus,Nordihydroguaiaretic acid,drug,ITP,Mus musculus,10.0,,https://genomics.senescence.info/drugs/,11
+DRUGAGE:nortriptyline_hydrochloride:caenorhabditis_elegans,Nortriptyline hydrochloride,drug,DrugAge,Caenorhabditis elegans,21.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:o13:caenorhabditis_elegans,O13,drug,DrugAge,Caenorhabditis elegans,32.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:o6_benzylguanine:caenorhabditis_elegans,O6-benzylguanine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:o6_benzylguanine:drosophila_melanogaster,O6-benzylguanine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:obeticholic_acid:caenorhabditis_tropicalis,Obeticholic acid,drug,DrugAge,Caenorhabditis tropicalis,6.26,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:octoclothepin_maleate:caenorhabditis_elegans,Octoclothepin maleate,drug,DrugAge,Caenorhabditis elegans,38.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:octoclothepin_loxapine:drosophila_melanogaster,Octoclothepin/Loxapine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:oleanolic_acid:caenorhabditis_elegans,Oleanolic acid,drug,DrugAge,Caenorhabditis elegans,13.905,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:oleic_acid:caenorhabditis_elegans,Oleic Acid,drug,DrugAge,Caenorhabditis elegans,17.29,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:olive_oil:rattus_norvegicus,Olive Oil,drug,DrugAge,Rattus norvegicus,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:omega_3_monoacylglyceride_docosahexaenoic_acid:drosophila_melanogaster,Omega-3 Monoacylglyceride Docosahexaenoic acid,drug,DrugAge,Drosophila melanogaster,14.58,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:omega_6:caenorhabditis_elegans,Omega-6,drug,DrugAge,Caenorhabditis elegans,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ononetin:caenorhabditis_elegans,Ononetin,drug,DrugAge,Caenorhabditis elegans,-22.11,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ononetin:drosophila_melanogaster,Ononetin,drug,DrugAge,Drosophila melanogaster,8.08,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:oregano_extract:anastrepha_ludens,Oregano extract,drug,DrugAge,Anastrepha ludens,43.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:oridonin:mus_musculus,Oridonin,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ornithine:caenorhabditis_elegans,Ornithine,drug,DrugAge,Caenorhabditis elegans,-1.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:orotate:caenorhabditis_elegans,Orotate,drug,DrugAge,Caenorhabditis elegans,14.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:otophylloside_b:caenorhabditis_elegans,Otophylloside B,drug,DrugAge,Caenorhabditis elegans,30.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:oxaloacetate:caenorhabditis_elegans,Oxaloacetate,drug,DrugAge,Caenorhabditis elegans,25.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:oxaloacetate:mus_musculus,Oxaloacetate,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:oxarbazepine:drosophila_melanogaster,Oxarbazepine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:oxatomide:caenorhabditis_elegans,Oxatomide,drug,DrugAge,Caenorhabditis elegans,25.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:oxcarbazepine:caenorhabditis_elegans,Oxcarbazepine,drug,DrugAge,Caenorhabditis elegans,-17.92,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:oxoline:caenorhabditis_elegans,Oxoline,drug,DrugAge,Caenorhabditis elegans,13.0,,https://genomics.senescence.info/drugs/,11
+DRUGAGE:oxyresveratrol:caenorhabditis_elegans,Oxyresveratrol,drug,DrugAge,Caenorhabditis elegans,17.8,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:pb125__carnosol__withaferin_a_and_luteolin:mus_musculus,"PB125 (carnosol, withaferin A and luteolin)",drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:pd_98059:drosophila_melanogaster,PD-98059,drug,DrugAge,Drosophila melanogaster,27.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pdmp:caenorhabditis_elegans,PDMP,drug,DrugAge,Caenorhabditis elegans,37.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pf_04457845:caenorhabditis_elegans,PF-04457845,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pnu_74654:caenorhabditis_elegans,PNU-74654,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:pnu_74654:drosophila_melanogaster,PNU-74654,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pp2_ag1879:drosophila_melanogaster,PP2 AG1879,drug,DrugAge,Drosophila melanogaster,22.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ppg:drosophila_melanogaster,PPG,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:palmatine:caenorhabditis_elegans,Palmatine,drug,DrugAge,Caenorhabditis elegans,-9.4,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:palmitic_acid:caenorhabditis_elegans,Palmitic acid,drug,DrugAge,Caenorhabditis elegans,-5.55,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:palmitoleic_acid:caenorhabditis_elegans,Palmitoleic acid,drug,DrugAge,Caenorhabditis elegans,17.09,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:palmostatin_b:caenorhabditis_elegans,Palmostatin B,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:palmostatin_m:caenorhabditis_elegans,Palmostatin M,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:panax_notoginseng_extract:caenorhabditis_elegans,Panax notoginseng extract,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pantothenic_acid:drosophila_melanogaster,Pantothenic acid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:paraquat:caenorhabditis_elegans,Paraquat,drug,DrugAge,Caenorhabditis elegans,24.165,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:paraquat:drosophila_melanogaster,Paraquat,drug,DrugAge,Drosophila melanogaster,-41.4,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:paraquat:musca_domestica,Paraquat,drug,DrugAge,Musca domestica,-36.21,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:paxilline:caenorhabditis_elegans,Paxilline,drug,DrugAge,Caenorhabditis elegans,26.62,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pergolide_methanesulfonate:caenorhabditis_elegans,Pergolide methanesulfonate,drug,DrugAge,Caenorhabditis elegans,37.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pergolide_methanesulfonate:drosophila_melanogaster,Pergolide methanesulfonate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:perphenazine:caenorhabditis_elegans,Perphenazine,drug,DrugAge,Caenorhabditis elegans,-16.16,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:perphenazine:drosophila_melanogaster,Perphenazine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:peyssonnelia_extract:brachionus_manjavacas,Peyssonnelia extract,drug,DrugAge,Brachionus manjavacas,8.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phaseolus_vulgaris_extract:caenorhabditis_elegans,Phaseolus vulgaris extract,drug,DrugAge,Caenorhabditis elegans,13.2,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phenelzine:drosophila_melanogaster,Phenelzine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:phenelzine_sulfate:caenorhabditis_elegans,Phenelzine sulfate,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:phenformin:caenorhabditis_elegans,Phenformin,drug,DrugAge,Caenorhabditis elegans,29.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phenformin:mus_musculus,Phenformin,drug,DrugAge,Mus musculus,21.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phenobarbital:rattus_norvegicus,Phenobarbital,drug,DrugAge,Rattus norvegicus,-13.115,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:phenol:drosophila_melanogaster,Phenol,drug,DrugAge,Drosophila melanogaster,-6.59,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:phenoxybenzamine_hydrochloride:caenorhabditis_elegans,Phenoxybenzamine Hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:phenoxybenzamine_hydrochloride:drosophila_melanogaster,Phenoxybenzamine Hydrochloride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phenyl_furoxancarbonitrile:drosophila_melanogaster,Phenyl furoxancarbonitrile,drug,DrugAge,Drosophila melanogaster,7.69,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:phenylfuroxancarbonitrile:drosophila_melanogaster,PhenylFuroxancarbonitrile,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phenylbutazone:drosophila_melanogaster,Phenylbutazone,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phloridzin:saccharomyces_cerevisiae,Phloridzin,drug,DrugAge,Saccharomyces cerevisiae,25.36,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:phosphatidylcholine:caenorhabditis_elegans,Phosphatidylcholine,drug,DrugAge,Caenorhabditis elegans,16.38,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:phosphatidylethanolamine:caenorhabditis_elegans,Phosphatidylethanolamine,drug,DrugAge,Caenorhabditis elegans,12.7,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phosphatidylinositol_ether_lipid_analogue_24:caenorhabditis_elegans,Phosphatidylinositol ether lipid analogue 24,drug,DrugAge,Caenorhabditis elegans,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phosphatidylinositol_ether_lipid_analogue_6:caenorhabditis_elegans,Phosphatidylinositol ether lipid analogue 6,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phosphatidylserine:caenorhabditis_elegans,Phosphatidylserine,drug,DrugAge,Caenorhabditis elegans,7.02,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:phosphoenolpyruvate:caenorhabditis_elegans,Phosphoenolpyruvate,drug,DrugAge,Caenorhabditis elegans,12.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:piceatannol:caenorhabditis_elegans,Piceatannol,drug,DrugAge,Caenorhabditis elegans,18.3,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:picolinic_acid:caenorhabditis_elegans,Picolinic acid,drug,DrugAge,Caenorhabditis elegans,7.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pictilisib:caenorhabditis_elegans,Pictilisib,drug,DrugAge,Caenorhabditis elegans,9.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:piericidin_a:caenorhabditis_elegans,Piericidin A,drug,DrugAge,Caenorhabditis elegans,5.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pilocarpine:rattus_norvegicus,Pilocarpine,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:pinaverium_bromide:caenorhabditis_elegans,Pinaverium bromide,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pinaverium_bromide:drosophila_melanogaster,Pinaverium bromide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pine_bark_extract:caenorhabditis_elegans,Pine bark extract,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pineal_gland_extract:mus_musculus,Pineal gland extract,drug,DrugAge,Mus musculus,31.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:pineal_gland_extract:rattus_norvegicus,Pineal gland extract,drug,DrugAge,Rattus norvegicus,25.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pinitol:drosophila_melanogaster,Pinitol,drug,DrugAge,Drosophila melanogaster,10.6,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:pinvarium_bromide:drosophila_melanogaster,Pinvarium Bromide,drug,DrugAge,Drosophila melanogaster,-7.35,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:pirenperone:caenorhabditis_elegans,Pirenperone,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pirenperone:drosophila_melanogaster,Pirenperone,drug,DrugAge,Drosophila melanogaster,7.15,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:platanus_orientalis_extract:drosophila_melanogaster,Platanus orientalis extract,drug,DrugAge,Drosophila melanogaster,3.26,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:platinum_nanoparticles:caenorhabditis_elegans,Platinum nanoparticles,drug,DrugAge,Caenorhabditis elegans,18.2,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:platycladus_orientalis_extract:caenorhabditis_elegans,Platycladus orientalis extract,drug,DrugAge,Caenorhabditis elegans,26.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:plumbagin:caenorhabditis_elegans,Plumbagin,drug,DrugAge,Caenorhabditis elegans,-23.0,,https://genomics.senescence.info/drugs/,24
+DRUGAGE:plusminusbutaclamol_hcl:drosophila_melanogaster,PlusMinusButaclamol-HCL,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:podofilox:caenorhabditis_elegans,Podofilox,drug,DrugAge,Caenorhabditis elegans,-5.45,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:polydatin:caenorhabditis_elegans,Polydatin,drug,DrugAge,Caenorhabditis elegans,30.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:polygonum_multiflorum_extract:caenorhabditis_elegans,Polygonum multiflorum extract,drug,DrugAge,Caenorhabditis elegans,18.6,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:polyherbal_phytomedicine:caenorhabditis_elegans,Polyherbal phytomedicine,drug,DrugAge,Caenorhabditis elegans,16.09,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:polyvinylpyrrotidone:drosophila_melanogaster,Polyvinylpyrrotidone,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:pomegrenate_juice:drosophila_melanogaster,Pomegrenate juice,drug,DrugAge,Drosophila melanogaster,13.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:potassium_chloride:caenorhabditis_elegans,Potassium Chloride,drug,DrugAge,Caenorhabditis elegans,23.23,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:potassium_titanium_oxalate:mus_musculus,Potassium titanium oxalate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:pravastatin:brachionus_manjavacas,Pravastatin,drug,DrugAge,Brachionus manjavacas,7.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:prednisolone_sodium_phosphate:mus_musculus,Prednisolone sodium phosphate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pregnenolone:caenorhabditis_elegans,Pregnenolone,drug,DrugAge,Caenorhabditis elegans,20.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:prenol:caenorhabditis_elegans,Prenol,drug,DrugAge,Caenorhabditis elegans,20.59,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:proanthocycanidin:caenorhabditis_elegans,Proanthocycanidin,drug,DrugAge,Caenorhabditis elegans,36.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:procaine:rattus_norvegicus,Procaine,drug,DrugAge,Rattus norvegicus,19.25,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:procaine_hcl:drosophila_melanogaster,Procaine HCl,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:procyanidin_c1:mus_musculus,Procyanidin C1,drug,DrugAge,Mus musculus,9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:procyanidins:caenorhabditis_elegans,Procyanidins,drug,DrugAge,Caenorhabditis elegans,12.1,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:proline:caenorhabditis_elegans,Proline,drug,DrugAge,Caenorhabditis elegans,17.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:promazine_hydrochloride:caenorhabditis_elegans,Promazine Hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:promazine_hydrochloride:drosophila_melanogaster,Promazine Hydrochloride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:promethazine:drosophila_melanogaster,Promethazine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:promethazine_hydrochloride:caenorhabditis_elegans,Promethazine hydrochloride,drug,DrugAge,Caenorhabditis elegans,32.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:promethazine_hydrochloride:drosophila_melanogaster,Promethazine hydrochloride,drug,DrugAge,Drosophila melanogaster,10.91,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:propafenone_hydrochloride:caenorhabditis_elegans,Propafenone hydrochloride,drug,DrugAge,Caenorhabditis elegans,-14.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:propantheline_bromide:caenorhabditis_elegans,Propantheline Bromide,drug,DrugAge,Caenorhabditis elegans,-9.53,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:propanthelinebromide:drosophila_melanogaster,PropanthelineBromide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:propionylpromazine_hydrochloride:caenorhabditis_elegans,Propionylpromazine hydrochloride,drug,DrugAge,Caenorhabditis elegans,20.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:propyl_gallate:caenorhabditis_briggsae,Propyl gallate,drug,DrugAge,Caenorhabditis briggsae,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:propyl_gallate:caenorhabditis_elegans,Propyl gallate,drug,DrugAge,Caenorhabditis elegans,12.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:propyl_gallate:zaprionus_paravittiger,Propyl gallate,drug,DrugAge,Zaprionus paravittiger,11.9,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:protandim:mus_musculus,Protandim,drug,ITP,Mus musculus,5.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:protocatechuic_acid:caenorhabditis_elegans,Protocatechuic acid,drug,DrugAge,Caenorhabditis elegans,30.95,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:prunetin:drosophila_melanogaster,Prunetin,drug,DrugAge,Drosophila melanogaster,5.19,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:psora_4:caenorhabditis_elegans,Psora-4,drug,DrugAge,Caenorhabditis elegans,37.425,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:psoralea_corylifolia_extract:caenorhabditis_elegans,Psoralea corylifolia extract,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pterostilbene:caenorhabditis_elegans,Pterostilbene,drug,DrugAge,Caenorhabditis elegans,-33.99,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pterostilbene:drosophila_melanogaster,Pterostilbene,drug,DrugAge,Drosophila melanogaster,-1.83,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:puer_tea_extract:caenorhabditis_elegans,Puer tea extract,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:purple_sweet_potato_extract:drosophila_melanogaster,Purple sweet potato extract,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:putrescine:caenorhabditis_elegans,Putrescine,drug,DrugAge,Caenorhabditis elegans,-1.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:putrescine:mus_musculus,Putrescine,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pyridoxine:drosophila_melanogaster,Pyridoxine,drug,DrugAge,Drosophila melanogaster,10.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:pyrrolidine_dithiocarbamate:drosophila_melanogaster,Pyrrolidine dithiocarbamate,drug,DrugAge,Drosophila melanogaster,13.5,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:pyrroloquinoline_quinone:caenorhabditis_elegans,Pyrroloquinoline quinone,drug,DrugAge,Caenorhabditis elegans,25.0,,https://genomics.senescence.info/drugs/,7
+DRUGAGE:pyruvate:caenorhabditis_elegans,Pyruvate,drug,DrugAge,Caenorhabditis elegans,-0.09,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:q3_g:caenorhabditis_elegans,Q3'G,drug,DrugAge,Caenorhabditis elegans,12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:q3m:caenorhabditis_elegans,Q3M,drug,DrugAge,Caenorhabditis elegans,20.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:quercetin:aedes_aegypti,Quercetin,drug,DrugAge,Aedes aegypti,44.925,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:quercetin:aedes_albopictus,Quercetin,drug,DrugAge,Aedes albopictus,20.53,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:quercetin:caenorhabditis_elegans,Quercetin,drug,DrugAge,Caenorhabditis elegans,10.0,,https://genomics.senescence.info/drugs/,21
+DRUGAGE:quercetin:drosophila_melanogaster,Quercetin,drug,DrugAge,Drosophila melanogaster,-4.82,,https://genomics.senescence.info/drugs/,8
+DRUGAGE:quercetin:mus_musculus,Quercetin,drug,DrugAge,Mus musculus,-14.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:quercetin:podospora_anserina,Quercetin,drug,DrugAge,Podospora anserina,10.2,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:quercetin_dihydrate:drosophila_melanogaster,Quercetin dihydrate,drug,DrugAge,Drosophila melanogaster,23.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:quinic_acid:caenorhabditis_elegans,Quinic acid,drug,DrugAge,Caenorhabditis elegans,5.05,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:quinidine_sulfate:caenorhabditis_elegans,Quinidine sulfate,drug,DrugAge,Caenorhabditis elegans,12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:r____sch_23390_hydrochloride:caenorhabditis_elegans,R(+)-SCH-23390 hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:rapamycin:caenorhabditis_elegans,Rapamycin,drug,DrugAge,Caenorhabditis elegans,19.8,,https://genomics.senescence.info/drugs/,8
+DRUGAGE:rapamycin:drosophila_melanogaster,Rapamycin,drug,DrugAge,Drosophila melanogaster,14.675,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:rapamycin:mus_musculus,Rapamycin,drug,ITP,Mus musculus,13.0,,https://genomics.senescence.info/drugs/,24
+DRUGAGE:rasayana_diet:drosophila_melanogaster,Rasayana diet,drug,DrugAge,Drosophila melanogaster,53.05,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:raspberry_extract:caenorhabditis_elegans,Raspberry extract,drug,DrugAge,Caenorhabditis elegans,22.9,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:rebaudioside_a:caenorhabditis_elegans,Rebaudioside A,drug,DrugAge,Caenorhabditis elegans,17.65,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:reishi_extract:caenorhabditis_elegans,Reishi extract,drug,DrugAge,Caenorhabditis elegans,35.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:reserpine:caenorhabditis_elegans,Reserpine,drug,DrugAge,Caenorhabditis elegans,30.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:resveratrol:aedes_aegypti,Resveratrol,drug,DrugAge,Aedes aegypti,51.295,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:resveratrol:anastrepha_ludens,Resveratrol,drug,DrugAge,Anastrepha ludens,-4.85,,https://genomics.senescence.info/drugs/,24
+DRUGAGE:resveratrol:anopheles_stephensi,Resveratrol,drug,DrugAge,Anopheles stephensi,-5.74,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:resveratrol:apis_mellifera,Resveratrol,drug,DrugAge,Apis mellifera,38.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:resveratrol:caenorhabditis_briggsae,Resveratrol,drug,DrugAge,Caenorhabditis briggsae,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:resveratrol:caenorhabditis_elegans,Resveratrol,drug,DrugAge,Caenorhabditis elegans,13.15,,https://genomics.senescence.info/drugs/,31
+DRUGAGE:resveratrol:daphnia_pulex,Resveratrol,drug,DrugAge,Daphnia pulex,-32.3,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:resveratrol:drosophila_melanogaster,Resveratrol,drug,DrugAge,Drosophila melanogaster,-3.4,,https://genomics.senescence.info/drugs/,76
+DRUGAGE:resveratrol:mus_musculus,Resveratrol,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:resveratrol:nothobranchius_furzeri,Resveratrol,drug,DrugAge,Nothobranchius furzeri,56.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:resveratrol:nothobranchius_guentheri,Resveratrol,drug,DrugAge,Nothobranchius guentheri,19.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:resveratrol:saccharomyces_cerevisiae,Resveratrol,drug,DrugAge,Saccharomyces cerevisiae,33.9,,https://genomics.senescence.info/drugs/,15
+DRUGAGE:rhodiola_rosea_extract:bombyx_mori,Rhodiola rosea extract,drug,DrugAge,Bombyx mori,2.1,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:rhodiola_rosea_extract:caenorhabditis_elegans,Rhodiola rosea extract,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:rhodiola_rosea_extract:drosophila_melanogaster,Rhodiola rosea extract,drug,DrugAge,Drosophila melanogaster,14.15,,https://genomics.senescence.info/drugs/,16
+DRUGAGE:ribes_fasciculatum_extract:caenorhabditis_elegans,Ribes fasciculatum extract,drug,DrugAge,Caenorhabditis elegans,13.7,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:riboflavin:drosophila_melanogaster,Riboflavin,drug,DrugAge,Drosophila melanogaster,7.1,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:ribose:caenorhabditis_elegans,Ribose,drug,DrugAge,Caenorhabditis elegans,9.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:rifampicin:caenorhabditis_elegans,Rifampicin,drug,DrugAge,Caenorhabditis elegans,45.3,,https://genomics.senescence.info/drugs/,11
+DRUGAGE:rifampicin:drosophila_melanogaster,Rifampicin,drug,DrugAge,Drosophila melanogaster,10.6,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:rifamycin_sv:caenorhabditis_elegans,Rifamycin SV,drug,DrugAge,Caenorhabditis elegans,20.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ritodrine_hydrochloride:caenorhabditis_elegans,Ritodrine hydrochloride,drug,DrugAge,Caenorhabditis elegans,-4.95,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ritodrine_hydrochloride:drosophila_melanogaster,Ritodrine hydrochloride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:rizatriptan_benzoate:caenorhabditis_elegans,Rizatriptan Benzoate,drug,DrugAge,Caenorhabditis elegans,-11.71,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:rizatriptan_benzoate:drosophila_melanogaster,Rizatriptan Benzoate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:rosa_damascena_extract:drosophila_melanogaster,Rosa damascena extract,drug,DrugAge,Drosophila melanogaster,22.4,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:rosmarinic_acid:caenorhabditis_elegans,Rosmarinic acid,drug,DrugAge,Caenorhabditis elegans,44.66,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:rotenone:caenorhabditis_elegans,Rotenone,drug,DrugAge,Caenorhabditis elegans,-6.785,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:rotenone:drosophila_melanogaster,Rotenone,drug,DrugAge,Drosophila melanogaster,-12.885,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:rotenone:nothobranchius_furzeri,Rotenone,drug,DrugAge,Nothobranchius furzeri,-5.995,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:rotenone_ii:caenorhabditis_elegans,Rotenone II,drug,DrugAge,Caenorhabditis elegans,-33.395,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:royal_jelly:caenorhabditis_elegans,Royal Jelly,drug,DrugAge,Caenorhabditis elegans,18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:royal_jelly:drosophila_melanogaster,Royal Jelly,drug,DrugAge,Drosophila melanogaster,10.695,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:royal_jelly:mus_musculus,Royal Jelly,drug,DrugAge,Mus musculus,25.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:royalactin:caenorhabditis_elegans,Royalactin,drug,DrugAge,Caenorhabditis elegans,29.1,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:rutin:drosophila_melanogaster,Rutin,drug,DrugAge,Drosophila melanogaster,1.835,,https://genomics.senescence.info/drugs/,8
+DRUGAGE:s_s_trolox_carnosine:drosophila_melanogaster,"S,S-trolox-carnosine",drug,DrugAge,Drosophila melanogaster,26.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:s_allylmercapto_n_acetylcysteine:caenorhabditis_elegans,S-allylmercapto-N-acetylcysteine,drug,DrugAge,Caenorhabditis elegans,14.24,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:sb203580:drosophila_melanogaster,SB203580,drug,DrugAge,Drosophila melanogaster,30.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sc_560:drosophila_melanogaster,SC-560,drug,DrugAge,Drosophila melanogaster,-6.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sch23390:drosophila_melanogaster,SCH23390,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sg1002__hydrogen_sulfide_donor:mus_musculus,SG1002 (hydrogen sulfide donor),drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:skf83959:drosophila_melanogaster,SKF83959,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:skf83959_hydrobromide:caenorhabditis_elegans,SKF83959 hydrobromide,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:skf95282:drosophila_melanogaster,SKF95282,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:skf95282_dimaleate:caenorhabditis_elegans,SKF95282 dimaleate,drug,DrugAge,Caenorhabditis elegans,10.15,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sp600125:drosophila_melanogaster,SP600125,drug,DrugAge,Drosophila melanogaster,23.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sqdb:caenorhabditis_elegans,SQDB,drug,DrugAge,Caenorhabditis elegans,12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sr27897:caenorhabditis_elegans,SR27897,drug,DrugAge,Caenorhabditis elegans,-9.03,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sr27897:drosophila_melanogaster,SR27897,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:srt1720__sirt1_activator:mus_musculus,SRT1720 (SIRT1 activator),drug,DrugAge,Mus musculus,9.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:stx64:caenorhabditis_elegans,STX64,drug,DrugAge,Caenorhabditis elegans,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:su_4312:caenorhabditis_elegans,SU 4312,drug,DrugAge,Caenorhabditis elegans,5.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:salicylamide:drosophila_melanogaster,Salicylamide,drug,DrugAge,Drosophila melanogaster,44.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:salicylamine:caenorhabditis_elegans,Salicylamine,drug,DrugAge,Caenorhabditis elegans,44.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:salicylic_acid:caenorhabditis_elegans,Salicylic acid,drug,DrugAge,Caenorhabditis elegans,13.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:salicylic_acid:drosophila_melanogaster,Salicylic acid,drug,DrugAge,Drosophila melanogaster,-13.2,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:salsalate:caenorhabditis_elegans,Salsalate,drug,DrugAge,Caenorhabditis elegans,-5.395,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:salsalate:drosophila_melanogaster,Salsalate,drug,DrugAge,Drosophila melanogaster,6.76,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sandalwood_oil:caenorhabditis_elegans,Sandalwood oil,drug,DrugAge,Caenorhabditis elegans,21.73,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:sappanone_a:caenorhabditis_elegans,Sappanone A,drug,DrugAge,Caenorhabditis elegans,15.835,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:scopolamine_n_butylbromide:caenorhabditis_elegans,Scopolamine N-butylbromide,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:scopolaminenbutylbromide:drosophila_melanogaster,ScopolamineNbutylbromide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:scriptaid:drosophila_melanogaster,Scriptaid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:scutellarein:caenorhabditis_elegans,Scutellarein,drug,DrugAge,Caenorhabditis elegans,-7.13,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:secoisolariciresinol_diglucoside:caenorhabditis_elegans,Secoisolariciresinol Diglucoside,drug,DrugAge,Caenorhabditis elegans,16.36,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:selenocysteine:caenorhabditis_elegans,Selenocysteine,drug,DrugAge,Caenorhabditis elegans,24.16,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:selenomethionine:saccharomyces_cerevisiae,Selenomethionine,drug,DrugAge,Saccharomyces cerevisiae,30.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:serine:caenorhabditis_elegans,Serine,drug,DrugAge,Caenorhabditis elegans,18.0,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:sesame_extract:caenorhabditis_elegans,Sesame extract,drug,DrugAge,Caenorhabditis elegans,13.29,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:sesame_extract:drosophila_melanogaster,Sesame extract,drug,DrugAge,Drosophila melanogaster,12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sesamin:caenorhabditis_elegans,Sesamin,drug,DrugAge,Caenorhabditis elegans,10.9,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:sesamol:caenorhabditis_elegans,Sesamol,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sesamolin:caenorhabditis_elegans,Sesamolin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sevelamer:drosophila_melanogaster,Sevelamer,drug,DrugAge,Drosophila melanogaster,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:shatavarin_iv:caenorhabditis_elegans,Shatavarin IV,drug,DrugAge,Caenorhabditis elegans,17.26,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:shengmai_yin:caenorhabditis_elegans,Shengmai Yin,drug,DrugAge,Caenorhabditis elegans,47.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:shi_quan_da_bu_wan:caenorhabditis_elegans,Shi Quan Da Bu Wan,drug,DrugAge,Caenorhabditis elegans,14.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:silybin_a_b:caenorhabditis_elegans,Silybin A/B,drug,DrugAge,Caenorhabditis elegans,9.04,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:silychristin_a_b:caenorhabditis_elegans,Silychristin A/B,drug,DrugAge,Caenorhabditis elegans,7.06,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:silydianin:caenorhabditis_elegans,Silydianin,drug,DrugAge,Caenorhabditis elegans,5.88,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:silymarin:caenorhabditis_elegans,Silymarin,drug,DrugAge,Caenorhabditis elegans,9.095,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:simvastatin:caenorhabditis_elegans,Simvastatin,drug,DrugAge,Caenorhabditis elegans,13.05,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:simvastatin:drosophila_melanogaster,Simvastatin,drug,DrugAge,Drosophila melanogaster,25.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:simvastatin:mus_musculus,Simvastatin,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:skq1:ceriodaphnia_affinis,SkQ1,drug,DrugAge,Ceriodaphnia affinis,100.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:skq1:drosophila_melanogaster,SkQ1,drug,DrugAge,Drosophila melanogaster,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:skq1:podospora_anserina,SkQ1,drug,DrugAge,Podospora anserina,50.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sodim_cyclamate:rattus_norvegicus,Sodim cyclamate,drug,DrugAge,Rattus norvegicus,9.77,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sodium_chloride:caenorhabditis_elegans,Sodium Chloride,drug,DrugAge,Caenorhabditis elegans,40.53,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:sodium_nitroprusside:caenorhabditis_elegans,Sodium Nitroprusside,drug,DrugAge,Caenorhabditis elegans,-10.95,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sodium_nitroprusside:drosophila_melanogaster,Sodium Nitroprusside,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sodium_yeast_nucleate:drosophila_melanogaster,Sodium Yeast Nucleate,drug,DrugAge,Drosophila melanogaster,20.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sodium_azide:adineta_vaga,Sodium azide,drug,DrugAge,Adineta vaga,-67.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sodium_azide:philodina_acuticornis,Sodium azide,drug,DrugAge,Philodina acuticornis,-18.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sodium_borate:drosophila_melanogaster,Sodium borate,drug,DrugAge,Drosophila melanogaster,-21.2,,https://genomics.senescence.info/drugs/,14
+DRUGAGE:sodium_borate:mus_musculus,Sodium borate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sodium_butyrate:drosophila_melanogaster,Sodium butyrate,drug,DrugAge,Drosophila melanogaster,8.3,,https://genomics.senescence.info/drugs/,10
+DRUGAGE:sodium_citrate:asplanchna_brightwelli,Sodium citrate,drug,DrugAge,Asplanchna brightwelli,-27.09,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sodium_citrate:philodina_acuticornis,Sodium citrate,drug,DrugAge,Philodina acuticornis,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sodium_fluoride:drosophila_melanogaster,Sodium fluoride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:sodium_hypophosphite:zaprionus_paravittiger,Sodium hypophosphite,drug,DrugAge,Zaprionus paravittiger,1.0,,https://genomics.senescence.info/drugs/,20
+DRUGAGE:sodium_metaborate:mus_musculus,Sodium metaborate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sodium_pyruvate:caenorhabditis_elegans,Sodium pyruvate,drug,DrugAge,Caenorhabditis elegans,13.9,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sodium_salicylate:drosophila_melanogaster,Sodium salicylate,drug,DrugAge,Drosophila melanogaster,6.53,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:sodium_thiosulfate:mus_musculus,Sodium thiosulfate,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sodium_tungstate:mus_musculus,Sodium tungstate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sodium_tungstate:rattus_norvegicus,Sodium tungstate,drug,DrugAge,Rattus norvegicus,-13.37,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sorbitol:caenorhabditis_elegans,Sorbitol,drug,DrugAge,Caenorhabditis elegans,27.12,,https://genomics.senescence.info/drugs/,7
+DRUGAGE:sorbitol:saccharomyces_cerevisiae,Sorbitol,drug,DrugAge,Saccharomyces cerevisiae,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:soybean_trypsin_inhibitor:caenorhabditis_elegans,Soybean trypsin inhibitor,drug,DrugAge,Caenorhabditis elegans,9.55,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:specioside:caenorhabditis_elegans,Specioside,drug,DrugAge,Caenorhabditis elegans,11.8,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:spermidine:adineta_vaga,Spermidine,drug,DrugAge,Adineta vaga,79.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:spermidine:caenorhabditis_elegans,Spermidine,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:spermidine:drosophila_melanogaster,Spermidine,drug,DrugAge,Drosophila melanogaster,30.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:spermidine:mus_musculus,Spermidine,drug,DrugAge,Mus musculus,12.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:spermidine:philodina_acuticornis,Spermidine,drug,DrugAge,Philodina acuticornis,81.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:spermidine:saccharomyces_cerevisiae,Spermidine,drug,DrugAge,Saccharomyces cerevisiae,233.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:spermine:mus_musculus,Spermine,drug,DrugAge,Mus musculus,14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:stachys_lavandulifolia_extract:drosophila_melanogaster,Stachys lavandulifolia extract,drug,DrugAge,Drosophila melanogaster,29.05,,https://genomics.senescence.info/drugs/,10
+DRUGAGE:staurosporine:drosophila_melanogaster,Staurosporine,drug,DrugAge,Drosophila melanogaster,34.8,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:succinate:caenorhabditis_elegans,Succinate,drug,DrugAge,Caenorhabditis elegans,10.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:sucrose:caenorhabditis_elegans,Sucrose,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sulfacetamide:caenorhabditis_elegans,Sulfacetamide,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sulfacetamide:drosophila_melanogaster,Sulfacetamide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sulfamerazine:rattus_norvegicus,Sulfamerazine,drug,DrugAge,Rattus norvegicus,25.025,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sulfamethoxazole:caenorhabditis_elegans,Sulfamethoxazole,drug,DrugAge,Caenorhabditis elegans,28.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:sulforaphane:caenorhabditis_elegans,Sulforaphane,drug,DrugAge,Caenorhabditis elegans,15.46,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:sulindac:mus_musculus,Sulindac,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sulindac_sulfide:caenorhabditis_elegans,Sulindac Sulfide,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:sulindac_sulfide:drosophila_melanogaster,Sulindac Sulfide,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:supercinnamaldehyde:caenorhabditis_elegans,Supercinnamaldehyde,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:syringaresinol:mus_musculus,Syringaresinol,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:tm5441__pai_1_inhibitor:mus_musculus,TM5441 (PAI-1 inhibitor),drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:tpen:caenorhabditis_elegans,TPEN,drug,DrugAge,Caenorhabditis elegans,43.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tamarixetin:caenorhabditis_elegans,Tamarixetin,drug,DrugAge,Caenorhabditis elegans,11.46,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:tanespimycin:caenorhabditis_elegans,Tanespimycin,drug,DrugAge,Caenorhabditis elegans,23.52,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:tannic_acid:caenorhabditis_elegans,Tannic acid,drug,DrugAge,Caenorhabditis elegans,13.13,,https://genomics.senescence.info/drugs/,14
+DRUGAGE:tannic_acid:drosophila_melanogaster,Tannic acid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:tartaric_acid:drosophila_melanogaster,Tartaric acid,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:tartrate:mytilina_brevispina,Tartrate,drug,DrugAge,Mytilina brevispina,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:taurine:caenorhabditis_elegans,Taurine,drug,DrugAge,Caenorhabditis elegans,6.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:taurine:drosophila_melanogaster,Taurine,drug,DrugAge,Drosophila melanogaster,-14.29,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:taurine:mus_musculus,Taurine,drug,DrugAge,Mus musculus,10.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:taxifolin:caenorhabditis_elegans,Taxifolin,drug,DrugAge,Caenorhabditis elegans,51.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tectochrysin:caenorhabditis_elegans,Tectochrysin,drug,DrugAge,Caenorhabditis elegans,21.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:terreic_acid:saccharomyces_cerevisiae,Terreic acid,drug,DrugAge,Saccharomyces cerevisiae,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tert_butyl_hydroperoxide:drosophila_melanogaster,Tert-butyl hydroperoxide,drug,DrugAge,Drosophila melanogaster,17.85,,https://genomics.senescence.info/drugs/,10
+DRUGAGE:tetracaine:drosophila_melanogaster,Tetracaine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tetracaine_hcl:caenorhabditis_elegans,Tetracaine HCl,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tetracycline_hcl:caenorhabditis_elegans,Tetracycline HCL,drug,DrugAge,Caenorhabditis elegans,10.45,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:tetracycline_hcl:drosophila_melanogaster,Tetracycline HCL,drug,DrugAge,Drosophila melanogaster,5.23,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:tetraethylammonium_chloride:caenorhabditis_elegans,Tetraethylammonium chloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:tetrahydrocurcumin:mus_musculus,Tetrahydrocurcumin,drug,DrugAge,Mus musculus,11.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:tetramethylpyrazine:caenorhabditis_elegans,Tetramethylpyrazine,drug,DrugAge,Caenorhabditis elegans,-3.82,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:tetramethylpyrazine:drosophila_melanogaster,Tetramethylpyrazine,drug,DrugAge,Drosophila melanogaster,5.67,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:thapsigargin:caenorhabditis_elegans,Thapsigargin,drug,DrugAge,Caenorhabditis elegans,8.55,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:theobromine:caenorhabditis_elegans,Theobromine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:theophylline:caenorhabditis_elegans,Theophylline,drug,DrugAge,Caenorhabditis elegans,21.185,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:thiazolidine_carboxylic_acid:drosophila_melanogaster,Thiazolidine carboxylic acid,drug,DrugAge,Drosophila melanogaster,31.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:thioflavin_t:caenorhabditis_briggsae,Thioflavin T,drug,DrugAge,Caenorhabditis briggsae,10.53,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:thioflavin_t:caenorhabditis_elegans,Thioflavin T,drug,DrugAge,Caenorhabditis elegans,60.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:thioridazine_hydrochloride:caenorhabditis_elegans,Thioridazine hydrochloride,drug,DrugAge,Caenorhabditis elegans,31.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:thioridazine_hydrochloride:drosophila_melanogaster,Thioridazine hydrochloride,drug,DrugAge,Drosophila melanogaster,16.16,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:thiostrepton:caenorhabditis_elegans,Thiostrepton,drug,DrugAge,Caenorhabditis elegans,-7.42,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:thiostrepton:drosophila_melanogaster,Thiostrepton,drug,DrugAge,Drosophila melanogaster,-12.13,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:threonine:caenorhabditis_elegans,Threonine,drug,DrugAge,Caenorhabditis elegans,4.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:thymidine:caenorhabditis_elegans,Thymidine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:thymine:caenorhabditis_elegans,Thymine,drug,DrugAge,Caenorhabditis elegans,15.23,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:thymus_extract:mus_musculus,Thymus extract,drug,DrugAge,Mus musculus,28.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:thyroxin:rattus_norvegicus,Thyroxin,drug,DrugAge,Rattus norvegicus,,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:tiapride_hydrochloride:caenorhabditis_elegans,Tiapride Hydrochloride,drug,DrugAge,Caenorhabditis elegans,-6.63,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:tiapride_hydrochloride:drosophila_melanogaster,Tiapride Hydrochloride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tiliroside:drosophila_melanogaster,Tiliroside,drug,DrugAge,Drosophila melanogaster,15.56,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tinospora_cordifolia_extract:drosophila_melanogaster,Tinospora cordifolia extract,drug,DrugAge,Drosophila melanogaster,155.65,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:tocotrienol:caenorhabditis_elegans,Tocotrienol,drug,DrugAge,Caenorhabditis elegans,12.0,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:tomatidine:caenorhabditis_elegans,Tomatidine,drug,DrugAge,Caenorhabditis elegans,7.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:torin_1:drosophila_melanogaster,Torin 1,drug,DrugAge,Drosophila melanogaster,36.36,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:trametinib:drosophila_melanogaster,Trametinib,drug,DrugAge,Drosophila melanogaster,12.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trehalose:caenorhabditis_elegans,Trehalose,drug,DrugAge,Caenorhabditis elegans,32.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trequinsin_hydrochloride:caenorhabditis_elegans,Trequinsin hydrochloride,drug,DrugAge,Caenorhabditis elegans,27.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trichostatin_a:caenorhabditis_elegans,Trichostatin A,drug,DrugAge,Caenorhabditis elegans,22.1,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trichostatin_a:drosophila_melanogaster,Trichostatin A,drug,DrugAge,Drosophila melanogaster,25.3,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:trielaidin:caenorhabditis_elegans,Trielaidin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trifluoperazine_hcl:drosophila_melanogaster,Trifluoperazine-HCl,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:triflupromazine_hydrochloride:caenorhabditis_elegans,Triflupromazine hydrochloride,drug,DrugAge,Caenorhabditis elegans,-30.585,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:triflupromazine_hydrochloride:drosophila_melanogaster,Triflupromazine hydrochloride,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:triiodothyronine:caenorhabditis_elegans,Triiodothyronine,drug,DrugAge,Caenorhabditis elegans,14.29,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trilobatin:caenorhabditis_elegans,Trilobatin,drug,DrugAge,Caenorhabditis elegans,11.7,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:trimethadione:caenorhabditis_elegans,Trimethadione,drug,DrugAge,Caenorhabditis elegans,40.0,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:trimethobenzamine_hcl:drosophila_melanogaster,Trimethobenzamine-HCL,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:triolein:caenorhabditis_elegans,Triolein,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tripelennamine_hcl:drosophila_melanogaster,Tripelennamine HCl,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:triptolide:caenorhabditis_elegans,Triptolide,drug,DrugAge,Caenorhabditis elegans,20.1,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trolox:caenorhabditis_elegans,Trolox,drug,DrugAge,Caenorhabditis elegans,31.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tryptophan:caenorhabditis_elegans,Tryptophan,drug,DrugAge,Caenorhabditis elegans,9.0,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:tryptophan:drosophila_melanogaster,Tryptophan,drug,DrugAge,Drosophila melanogaster,-3.93,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:tryptophen:caenorhabditis_elegans,Tryptophen,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:turmeric_extract:drosophila_melanogaster,Turmeric extract,drug,DrugAge,Drosophila melanogaster,17.6,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:tyrosine:caenorhabditis_elegans,Tyrosine,drug,DrugAge,Caenorhabditis elegans,7.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:tyrosine_alanine_dipeptide:caenorhabditis_elegans,Tyrosine-Alanine Dipeptide,drug,DrugAge,Caenorhabditis elegans,11.4,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:tyrosol:caenorhabditis_elegans,Tyrosol,drug,DrugAge,Caenorhabditis elegans,19.1,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tyrphostin_1:drosophila_melanogaster,Tyrphostin 1,drug,DrugAge,Drosophila melanogaster,19.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tyrphostin_9:drosophila_melanogaster,Tyrphostin 9,drug,DrugAge,Drosophila melanogaster,17.3,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tyrphostin_ag_1295:drosophila_melanogaster,Tyrphostin AG 1295,drug,DrugAge,Drosophila melanogaster,22.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tyrphostin_ag_1478:caenorhabditis_elegans,Tyrphostin AG 1478,drug,DrugAge,Caenorhabditis elegans,11.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:tyrphostin_ag_1478:drosophila_melanogaster,Tyrphostin AG 1478,drug,DrugAge,Drosophila melanogaster,19.5,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:urb597:caenorhabditis_elegans,URB597,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:uracil:caenorhabditis_elegans,Uracil,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:uric_acid:caenorhabditis_elegans,Uric acid,drug,DrugAge,Caenorhabditis elegans,1.98,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:urolithin_a:caenorhabditis_elegans,Urolithin A,drug,DrugAge,Caenorhabditis elegans,39.1,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:urolithin_b:caenorhabditis_elegans,Urolithin B,drug,DrugAge,Caenorhabditis elegans,36.6,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:urolithin_c:caenorhabditis_elegans,Urolithin C,drug,DrugAge,Caenorhabditis elegans,36.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:urolithin_d:caenorhabditis_elegans,Urolithin D,drug,DrugAge,Caenorhabditis elegans,19.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ursodeoxycholic_acid:mus_musculus,Ursodeoxycholic acid,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ursolic__acid:caenorhabditis_elegans,Ursolic  acid,drug,DrugAge,Caenorhabditis elegans,31.89,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ursolic__acid:drosophila_melanogaster,Ursolic  acid,drug,DrugAge,Drosophila melanogaster,12.78,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ursolic__acid:mus_musculus,Ursolic  acid,drug,ITP,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:vaccinium_angustifolium_extract:caenorhabditis_elegans,Vaccinium angustifolium extract,drug,DrugAge,Caenorhabditis elegans,37.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:valine:caenorhabditis_elegans,Valine,drug,DrugAge,Caenorhabditis elegans,3.5,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:valproic_acid:caenorhabditis_elegans,Valproic acid,drug,DrugAge,Caenorhabditis elegans,24.12,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:vanadyl_sulfate:mus_musculus,Vanadyl sulfate,drug,DrugAge,Mus musculus,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:verapamil:caenorhabditis_elegans,Verapamil,drug,DrugAge,Caenorhabditis elegans,18.65,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:verminoside:caenorhabditis_elegans,Verminoside,drug,DrugAge,Caenorhabditis elegans,9.8,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:vigconic_28:mus_musculus,Vigconic 28,drug,DrugAge,Mus musculus,14.0,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:vinblastine_sulfate:drosophila_melanogaster,Vinblastine Sulfate,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:vincristine_sulfate:caenorhabditis_elegans,Vincristine sulfate,drug,DrugAge,Caenorhabditis elegans,3.84,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:vincristine_sulfate:drosophila_melanogaster,Vincristine sulfate,drug,DrugAge,Drosophila melanogaster,-8.36,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:vinpocetine:caenorhabditis_elegans,Vinpocetine,drug,DrugAge,Caenorhabditis elegans,15.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:viramune:caenorhabditis_elegans,Viramune,drug,DrugAge,Caenorhabditis elegans,-5.46,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:vitamin_a_palmitate:drosophila_melanogaster,Vitamin A palmitate,drug,DrugAge,Drosophila melanogaster,10.7,,https://genomics.senescence.info/drugs/,6
+DRUGAGE:vitamin_d3:caenorhabditis_elegans,Vitamin D3,drug,DrugAge,Caenorhabditis elegans,23.29,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:vitamin_e:asplanchna_brightwelli,Vitamin E,drug,DrugAge,Asplanchna brightwelli,21.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:vitamin_e:caenorhabditis_elegans,Vitamin E,drug,DrugAge,Caenorhabditis elegans,17.0,,https://genomics.senescence.info/drugs/,9
+DRUGAGE:vitamin_e:drosophila_melanogaster,Vitamin E,drug,DrugAge,Drosophila melanogaster,8.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:vitamin_e:musca_domestica,Vitamin E,drug,DrugAge,Musca domestica,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:vitamin_e:paramecium_tetraurelia,Vitamin E,drug,DrugAge,Paramecium tetraurelia,49.51,,https://genomics.senescence.info/drugs/,5
+DRUGAGE:vitamin_e:philodina_acuticornis,Vitamin E,drug,DrugAge,Philodina acuticornis,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:vitamin_e:zaprionus_paravittiger,Vitamin E,drug,DrugAge,Zaprionus paravittiger,3.125,,https://genomics.senescence.info/drugs/,10
+DRUGAGE:vitexin:caenorhabditis_elegans,Vitexin,drug,DrugAge,Caenorhabditis elegans,12.6,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:vortioxetine:caenorhabditis_elegans,Vortioxetine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:vortioxetine:drosophila_melanogaster,Vortioxetine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:withaferin_a:drosophila_melanogaster,Withaferin A,drug,DrugAge,Drosophila melanogaster,8.65,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:withanolide_a:caenorhabditis_elegans,Withanolide A,drug,DrugAge,Caenorhabditis elegans,13.3,,https://genomics.senescence.info/drugs/,4
+DRUGAGE:wortmannin:caenorhabditis_elegans,Wortmannin,drug,DrugAge,Caenorhabditis elegans,4.34,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:wortmannin:drosophila_melanogaster,Wortmannin,drug,DrugAge,Drosophila melanogaster,5.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:x203__anti_il_11:mus_musculus,X203 (anti-IL-11),drug,DrugAge,Mus musculus,23.5,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:xanthine:caenorhabditis_elegans,Xanthine,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:xanthine:drosophila_melanogaster,Xanthine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:xanthohumol:drosophila_melanogaster,Xanthohumol,drug,DrugAge,Drosophila melanogaster,10.41,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:xylose:caenorhabditis_elegans,Xylose,drug,DrugAge,Caenorhabditis elegans,6.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:zd7114:drosophila_melanogaster,ZD7114,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:zd7114_hydrochloride:caenorhabditis_elegans,ZD7114 hydrochloride,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:zearalenone:caenorhabditis_elegans,Zearalenone,drug,DrugAge,Caenorhabditis elegans,-19.05,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:zinc_sulfate:caenorhabditis_elegans,Zinc Sulfate,drug,DrugAge,Caenorhabditis elegans,-14.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:zinc_acetate:drosophila_melanogaster,Zinc acetate,drug,DrugAge,Drosophila melanogaster,-9.0,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:ziprasidone_hcl:drosophila_melanogaster,Ziprasidone HCl,drug,DrugAge,Drosophila melanogaster,-3.65,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:ziprasidone_hydrochloride_monohydrate:caenorhabditis_elegans,Ziprasidone hydrochloride monohydrate,drug,DrugAge,Caenorhabditis elegans,-14.335,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:zomepirac_sodium:caenorhabditis_elegans,Zomepirac sodium,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cis_vaccenic_acid:caenorhabditis_elegans,cis-vaccenic acid,drug,DrugAge,Caenorhabditis elegans,13.06,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:cis_zeatin:caenorhabditis_elegans,cis-zeatin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:dihydrozeatin:caenorhabditis_elegans,dihydrozeatin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:magnesium_l_thiazolidine_4_carboxylate:drosophila_melanogaster,magnesium L-thiazolidine-4-carboxylate,drug,DrugAge,Drosophila melanogaster,16.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:ortho_topolin:caenorhabditis_elegans,ortho-topolin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:p_coumaric_acid:aedes_albopictus,p-coumaric acid,drug,DrugAge,Aedes albopictus,20.38,,https://genomics.senescence.info/drugs/,3
+DRUGAGE:p_fluorophenylalanine:drosophila_melanogaster,p-fluorophenylalanine,drug,DrugAge,Drosophila melanogaster,,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:p_fluorophenylalanine:mus_musculus,p-fluorophenylalanine,drug,DrugAge,Mus musculus,-14.5,,https://genomics.senescence.info/drugs/,12
+DRUGAGE:para_topolin:caenorhabditis_elegans,para-topolin,drug,DrugAge,Caenorhabditis elegans,8.0,,https://genomics.senescence.info/drugs/,2
+DRUGAGE:phenylethanoid_glycosides:caenorhabditis_elegans,phenylethanoid glycosides,drug,DrugAge,Caenorhabditis elegans,15.98,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:sodium_l_thiazolidine_4_carboxylate:drosophila_melanogaster,sodium L-thiazolidine-4-carboxylate,drug,DrugAge,Drosophila melanogaster,8.0,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trans_2_40_5_trihydroxystilbene:caenorhabditis_elegans,"trans-2,40,5-trihydroxystilbene",drug,DrugAge,Caenorhabditis elegans,6.44,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trans_3_5_dimethoxy_4_fluoro_4__hydroxystilbene:caenorhabditis_elegans,"trans-3,5-dimethoxy-4-fluoro-4'-hydroxystilbene",drug,DrugAge,Caenorhabditis elegans,3.63,,https://genomics.senescence.info/drugs/,1
+DRUGAGE:trans_zeatin:caenorhabditis_elegans,trans-zeatin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
+GENDR:dietary_restriction:caenorhabditis_elegans,dietary restriction,dietary,GenDR,Caenorhabditis elegans,,ENSG00000175567,https://genomics.senescence.info/diet/,62
+GENDR:dietary_restriction:drosophila_melanogaster,dietary restriction,dietary,GenDR,Drosophila melanogaster,,ENSG00000160200,https://genomics.senescence.info/diet/,27
+GENDR:dietary_restriction:mus_musculus,dietary restriction,dietary,GenDR,Mus musculus,,ENSG00000096717|ENSG00000112964|ENSG00000118689|ENSG00000124253|ENSG00000173175|ENSG00000175325|ENSMUSG00000029819,https://genomics.senescence.info/diet/,7
+GENDR:dietary_restriction:saccharomyces_cerevisiae,dietary restriction,dietary,GenDR,Saccharomyces cerevisiae,,ENSG00000014641|ENSG00000124253|ENSG00000142168|ENSG00000152348|ENSG00000162735|ENSG00000197548|ENSG00000291237|ENSMUSG00000038160,https://genomics.senescence.info/diet/,112
+GENDR:dietary_restriction:schizosaccharomyces_pombe,dietary restriction,dietary,GenDR,Schizosaccharomyces pombe,,,https://genomics.senescence.info/diet/,6

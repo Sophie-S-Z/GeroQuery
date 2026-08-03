@@ -8,6 +8,11 @@ dist/
 .venv/
 venv/
 
+# Full real NHANES table: reproducible from the pinned manifest via `make data`.
+# Committing it would ship a second, unverifiable copy. The seeded 600-row
+# sample (nhanes_2017_2018_sample.csv) IS committed so tests run offline.
+geroquery/sources/data/clinical_nhanes_full.csv
+
 # GeroQuery runtime build & cache (regenerated from bundled fixtures)
 geroquery/_build/
 geroquery/_cache/
@@ -29,3 +34,9 @@ frontend/dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Derived tables: reproducible from the pinned manifest, so a committed copy
+# would be a second, unverifiable one. The committed samples beside them are the
+# offline path (see docs/DATA_SOURCES.md).
+geroquery/sources/data/clinical_nhanes_full.csv
+geroquery/sources/data/signatures_full.csv

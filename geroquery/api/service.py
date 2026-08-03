@@ -13,6 +13,12 @@ import pandas as pd
 
 from .. import __version__
 from ..clocks import ClockService
+from ..exceptions import (
+    GeneNotFoundError,
+    InterventionNotFoundError,
+    ResilienceInputError,
+    UnknownSpeciesError,
+)
 from ..harmonize import random_effects
 from ..idmap import get_resolver
 from ..models import GeneCard, MetaSignature
@@ -20,6 +26,26 @@ from ..resilience import ResilienceService
 from ..sources import all_adapters
 from ..store import GeroStore
 from .cache import VersionedLRU
+
+# Identifier and study-design columns, never biomarkers. `survey_weight` matters
+# here: NHANES carries WTMEC2YR alongside the markers, and letting it fall into
+# an auto-inferred biomarker list would put the sampling design into the health
+# state itself — a variance trend that is pure survey artefact.
+NON_BIOMARKER_COLUMNS = frozenset({"subject_id", "age", "sex", "survey_weight"})
+
+# Ordering for an intervention's per-organism records. Not a claim that a mouse
+# result is better evidence than a worm one — only that when a caller asks about
+# a compound in a human-aging context, the mammalian result should not be buried
+# behind three invertebrates by alphabetical accident.
+_ORGANISM_RANK = {
+    "Homo sapiens": 0,
+    "Mus musculus": 1,
+    "Rattus norvegicus": 2,
+    "Danio rerio": 3,
+    "Drosophila melanogaster": 4,
+    "Caenorhabditis elegans": 5,
+    "Saccharomyces cerevisiae": 6,
+}
 
 
 class GeroService:
@@ -136,11 +162,17 @@ class GeroService:
         omic_layer: str | None = None,
     ) -> dict:
         resolved, unresolved, per_gene = [], [], []
+        unresolved_detail: dict[str, str] = {}
         for q in gene_queries:
             try:
                 gene = self.resolver.resolve_gene(q, species)
-            except Exception:
+            except (GeneNotFoundError, UnknownSpeciesError) as exc:
+                # Narrow on purpose. A bare `except Exception` here also swallowed
+                # network failures, bad species arguments, and genuine bugs in the
+                # resolver, reporting all of them as "gene not found" — so a broken
+                # id-mapping backend looked exactly like a typo in the gene list.
                 unresolved.append(q)
+                unresolved_detail[q] = exc.message
                 continue
             resolved.append(gene.symbol)
             sigs = self.store.query_signatures(
@@ -156,6 +188,9 @@ class GeroService:
         return {
             "resolved": resolved,
             "unresolved": unresolved,
+            # Per-query reason, so a caller can tell a typo from a bad species
+            # filter without re-running each query on its own.
+            "unresolved_detail": unresolved_detail,
             "aggregate_pooled_effect": round(aggregate, 4) if aggregate is not None else None,
             "n_genes": len(per_gene),
             "per_gene": per_gene,
@@ -165,6 +200,21 @@ class GeroService:
 
     def list_clocks(self) -> list[dict]:
         return [c.to_dict() for c in self.clocks.list_clocks()]
+
+    def clock_tiers(self) -> dict:
+        """Which clock tiers loaded, and why any of them did not.
+
+        Surfaced on /v1/clocks because "three reference clocks and nothing else"
+        has two very different causes — the optional libraries are not installed,
+        or they are installed and broke on import. Without this the caller cannot
+        tell those apart.
+        """
+        registry = self.clocks.registry
+        return {
+            "reference": {"n_clocks": 3, "always_available": True},
+            "biolearn": registry.library_status.to_dict(),
+            "pyaging": registry.pyaging_status.to_dict(),
+        }
 
     def apply_clock(
         self,
@@ -187,24 +237,33 @@ class GeroService:
     # ---- interventions ---------------------------------------------------
 
     def intervention(self, name: str) -> dict:
+        """Every organism a named intervention was tested in, not just one.
+
+        DrugAge is a table of experiments, so one compound has a record per
+        organism: rapamycin extends median lifespan ~13% in mouse and ~20% in
+        *C. elegans*. Returning a single record meant returning whichever
+        organism happened to sort first, which for rapamycin was the worm — a
+        number about nematodes presented as the answer to a question about a
+        drug. All matches are returned, ordered so mammals lead.
+        """
         matches = self.store.interventions(name=name)
         if not matches:
-            from ..exceptions import GeroQueryError
+            raise InterventionNotFoundError(f"Unknown intervention {name!r}.", detail=name)
+        matches = sorted(
+            matches, key=lambda iv: (_ORGANISM_RANK.get(iv.organism or "", 9), iv.organism or "")
+        )
 
-            class InterventionNotFound(GeroQueryError):
-                code = "intervention_not_found"
-                http_status = 404
-
-            raise InterventionNotFound(f"Unknown intervention {name!r}.", detail=name)
-        iv = matches[0]
-        # Linked signatures: pooled effect per linked gene.
         linked = []
-        for cid in iv.linked_gene_ids:
-            sigs = self.store.query_signatures(gene_id=cid)
-            metas = self._meta_from_signatures(sigs)
+        for cid in dict.fromkeys(c for iv in matches for c in iv.linked_gene_ids):
+            metas = self._meta_from_signatures(self.store.query_signatures(gene_id=cid))
             if metas:
                 linked.append({"gene_id": cid, "meta_signatures": [m.to_dict() for m in metas]})
-        return {"intervention": iv.to_dict(), "linked_signatures": linked}
+        return {
+            "name": matches[0].name,
+            "interventions": [iv.to_dict() for iv in matches],
+            "n": len(matches),
+            "linked_signatures": linked,
+        }
 
     # ---- resilience ------------------------------------------------------
 
@@ -219,15 +278,11 @@ class GeroService:
     ) -> dict:
         if data is None:
             if dataset_id is None:
-                from ..exceptions import ResilienceInputError
-
                 raise ResilienceInputError("Provide either dataset_id or inline data.")
             data = self.store.get_dataset(dataset_id)
             if biomarker_cols is None:
-                biomarker_cols = [c for c in data.columns if c not in ("subject_id", "age", "sex")]
+                biomarker_cols = [c for c in data.columns if c not in NON_BIOMARKER_COLUMNS]
         if biomarker_cols is None:
-            from ..exceptions import ResilienceInputError
-
             raise ResilienceInputError("biomarker_cols is required for inline data.")
         result = self.resilience.csd(
             data, biomarker_cols, age_col=age_col, n_strata=n_strata, longitudinal=longitudinal

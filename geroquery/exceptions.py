@@ -54,10 +54,37 @@ class ResilienceInputError(GeroQueryError):
     http_status = 422
 
 
+class InterventionNotFoundError(GeroQueryError):
+    code = "intervention_not_found"
+    http_status = 404
+
+
 class SourceError(GeroQueryError):
     """An upstream adapter failed (network, parse, rate limit)."""
 
     code = "source_error"
+    http_status = 502
+
+
+class NetworkDisabledError(SourceError):
+    """A live fetch was needed but GEROQUERY_ALLOW_NETWORK is off.
+
+    Distinct from a generic SourceError because it is a configuration state, not
+    an upstream failure: the fix is to enable network or use a cached artifact.
+    """
+
+    code = "network_disabled"
+    http_status = 503
+
+
+class ChecksumMismatchError(SourceError):
+    """Downloaded bytes do not match the SHA-256 pinned in the manifest.
+
+    Treated as fatal rather than a warning: silently accepting changed upstream
+    bytes is how an unexplained result drift gets into a paper.
+    """
+
+    code = "checksum_mismatch"
     http_status = 502
 
 

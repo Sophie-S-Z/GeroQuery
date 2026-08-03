@@ -17,8 +17,17 @@ from geroquery.store import GeroStore
 
 @pytest.fixture(scope="session")
 def store(tmp_path_factory) -> GeroStore:
+    """Built in sample mode on purpose.
+
+    Both ``prefer_full_*=False`` flags pin the store to the committed offline
+    slices: the 600-row NHANES sample and the curated-gene signature slice.
+    Without them the suite would assert against 4,895 clinical rows and the full
+    GEO panel on a machine that has run ``make data``, and against the slices in
+    CI — so the same test would pass or fail depending on the developer's
+    download cache.
+    """
     home = tmp_path_factory.mktemp("store_home")
-    return GeroStore(data_home=home).build()
+    return GeroStore(data_home=home).build(prefer_full_clinical=False, prefer_full_signatures=False)
 
 
 @pytest.fixture(scope="session")

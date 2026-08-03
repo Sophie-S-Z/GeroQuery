@@ -1,7 +1,82 @@
 import React, { useEffect, useState } from "react";
-import { api } from "./api.js";
+import { api, REAL_CLINICAL_DATASET } from "./api.js";
 
 const EXAMPLES = ["CDKN2A", "LMNB1", "KLOTHO", "GDF15", "SIRT1", "FOXO3"];
+
+const fmt = (x, digits = 5) =>
+  x == null || Number.isNaN(x) ? "—" : `${x > 0 ? "+" : ""}${x.toFixed(digits)}`;
+
+/** One critical-slowing-down indicator, reported as evidence rather than sign.
+ *  A positive slope alone is not a finding — the interval has to exclude zero. */
+function TrendRow({ label, evidence }) {
+  if (!evidence) return null;
+  const { slope, ci_low, ci_high, supported } = evidence;
+  return (
+    <tr>
+      <td>{label}</td>
+      <td className={supported ? "up" : "muted"}>{fmt(slope)}</td>
+      <td className="muted">
+        [{fmt(ci_low)}, {fmt(ci_high)}]
+      </td>
+      <td>
+        <span className={`badge ${supported ? "badge-yes" : "badge-no"}`}>
+          {supported ? "supported" : "no evidence"}
+        </span>
+      </td>
+    </tr>
+  );
+}
+
+function ResiliencePanel({ csd, error, datasetNote }) {
+  if (error) {
+    return (
+      <section className="card">
+        <h3>Resilience — real NHANES</h3>
+        <p className="notice error">{error}</p>
+      </section>
+    );
+  }
+  if (!csd) {
+    return (
+      <section className="card">
+        <h3>Resilience — real NHANES</h3>
+        <p className="muted">Loading…</p>
+      </section>
+    );
+  }
+  return (
+    <section className="card">
+      <h3>
+        Resilience — real NHANES <span className="tag tag-real">real data</span>
+      </h3>
+      <p className="muted small">
+        Critical slowing down across {csd.strata_midpoints?.length ?? 0} age strata,
+        n&nbsp;=&nbsp;{csd.n_samples} subjects. Trends are gated on a subject-level
+        bootstrap CI, not on the sign of the slope.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>indicator</th>
+            <th>slope / yr</th>
+            <th>95% CI</th>
+            <th>verdict</th>
+          </tr>
+        </thead>
+        <tbody>
+          <TrendRow label="health-state variance" evidence={csd.variance_evidence} />
+          <TrendRow label="marker cross-correlation" evidence={csd.crosscorr_evidence} />
+        </tbody>
+      </table>
+      <p className={`conclusion ${csd.resilience_declines ? "up" : "down"}`}>
+        {csd.resilience_declines
+          ? "Both early-warning signals are supported."
+          : "Only one of the two early-warning signals is supported — this is reported as a partial result, not as resilience decline."}
+      </p>
+      {datasetNote && <p className="muted small">{datasetNote}</p>}
+    </section>
+  );
+}
 
 function EffectBar({ effect, max }) {
   const pct = Math.min(100, (Math.abs(effect) / max) * 100);
@@ -24,9 +99,25 @@ export default function App() {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState(null);
   const [version, setVersion] = useState(null);
+  const [csd, setCsd] = useState(null);
+  const [csdError, setCsdError] = useState(null);
+  const [datasetNote, setDatasetNote] = useState(null);
 
   useEffect(() => {
     api.version().then(setVersion).catch(() => {});
+    api
+      .csd(REAL_CLINICAL_DATASET)
+      .then(setCsd)
+      .catch((e) => setCsdError(e.message));
+    // The store records whether the full cohort or the offline sample was built.
+    // Surfacing it stops a 600-row sample estimate being read as the headline.
+    api
+      .datasets()
+      .then(({ datasets }) => {
+        const row = datasets?.find((d) => d.dataset_id === REAL_CLINICAL_DATASET);
+        if (row) setDatasetNote(row.description);
+      })
+      .catch(() => {});
   }, []);
 
   async function search(q = query, sp = species) {
@@ -113,10 +204,21 @@ export default function App() {
             </div>
           </section>
 
+          <ResiliencePanel csd={csd} error={csdError} datasetNote={datasetNote} />
+
           <section className="card">
-            <h3>Pooled aging effect</h3>
+            <h3>
+              Pooled aging effect{" "}
+              <span className="tag tag-real">real data</span>
+            </h3>
+            <p className="muted small">
+              Random-effects pool (DerSimonian&ndash;Laird) over young-vs-old contrasts
+              from checksum-pinned NCBI GEO DataSets. Read the interval, not the point:
+              with 3&ndash;15 samples per study, a confidence interval spanning zero
+              means <em>not detected by this panel</em>, not <em>absent</em>.
+            </p>
             {metas.length === 0 ? (
-              <p className="muted">No harmonized signatures in the bundled slice.</p>
+              <p className="muted">No GEO contrast in this panel covers this gene.</p>
             ) : (
               <table>
                 <thead>

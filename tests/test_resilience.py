@@ -83,3 +83,94 @@ def test_service_csd_missing_columns_raises():
     df = pd.DataFrame({"age": range(30), "x": range(30)})
     with pytest.raises(ResilienceInputError):
         ResilienceService().csd(df, ["x", "not_here"], age_col="age", n_strata=3)
+
+
+# ---- service: control energy ------------------------------------------------
+
+
+def test_service_control_energy_returns_diagnostics_not_a_bare_number():
+    """Regression: this method referenced an undefined name and raised NameError
+    on every call, because nothing exercised it. On a near-uncontrollable system
+    the energy is numerically huge and meaningless, so the caller needs the
+    conditioning diagnostics alongside it, not just the number."""
+    A = np.array([[-1.0, 0.0], [0.0, -2.0]])
+    B = np.eye(2)
+    out = ResilienceService().control_energy(A, B, np.zeros(2), np.array([1.0, 0.0]))
+
+    assert out["control_energy"] > 0
+    assert out["horizon"] == 1.0
+    for key in ("gramian_condition_number", "gramian_rank", "dimension", "well_conditioned"):
+        assert key in out
+    assert len(out["assumptions"]) >= 4
+
+
+def test_service_control_energy_warns_when_the_gramian_is_ill_conditioned():
+    """An input direction with no actuation is unreachable; the response must
+    say the energy is a lower bound rather than present it as calibrated."""
+    A = np.array([[-1.0, 0.0], [0.0, -1.0]])
+    B = np.array([[1.0], [0.0]])  # second state has no input at all
+    service = ResilienceService()
+    # Default is strict: an ill-conditioned system is refused outright.
+    with pytest.raises(ResilienceInputError, match="ill-conditioned"):
+        service.control_energy(A, B, np.zeros(2), np.array([0.0, 1.0]))
+
+    # strict=False returns the estimate, flagged.
+    out = service.control_energy(A, B, np.zeros(2), np.array([0.0, 1.0]), strict=False)
+    assert out["unreachable_fraction"] > 0.5
+    assert out["well_conditioned"] is False
+    assert any("WARNING" in a for a in out["assumptions"])
+
+
+# ---- service: log transform -------------------------------------------------
+
+
+def _skewed_frame(seed=11):
+    rng = np.random.default_rng(seed)
+    n = 300
+    age = rng.uniform(20, 80, n)
+    return pd.DataFrame(
+        {
+            "age": age,
+            "crp": rng.lognormal(0.0, 1.0, n),
+            "albumin": rng.normal(4.2, 0.3, n),
+        }
+    )
+
+
+def test_service_log_transform_changes_the_estimate():
+    """Right-skewed markers let a few extreme values dominate a stratum's
+    variance, making the trend a story about outliers rather than the cohort."""
+    df = _skewed_frame()
+    raw = ResilienceService().csd(df, ["crp", "albumin"], n_strata=6, n_bootstrap=100)
+    logged = ResilienceService().csd(
+        df, ["crp", "albumin"], n_strata=6, n_bootstrap=100, log_columns=["crp"]
+    )
+    assert raw.variance_evidence.slope != logged.variance_evidence.slope
+
+
+def test_service_log_transform_rejects_non_positive_values():
+    df = _skewed_frame()
+    df.loc[0, "crp"] = 0.0
+    with pytest.raises(ResilienceInputError, match="non-positive"):
+        ResilienceService().csd(df, ["crp", "albumin"], n_strata=6, log_columns=["crp"])
+
+
+def test_service_log_transform_rejects_unknown_columns():
+    with pytest.raises(ResilienceInputError, match="log_columns"):
+        ResilienceService().csd(
+            _skewed_frame(), ["crp", "albumin"], n_strata=6, log_columns=["nope"]
+        )
+
+
+def test_service_log_transform_does_not_mutate_the_callers_frame():
+    df = _skewed_frame()
+    before = df["crp"].copy()
+    ResilienceService().csd(df, ["crp", "albumin"], n_strata=6, n_bootstrap=50, log_columns=["crp"])
+    pd.testing.assert_series_equal(df["crp"], before)
+
+
+def test_service_detrend_flag_is_plumbed_through():
+    df = _skewed_frame()
+    on = ResilienceService().csd(df, ["crp", "albumin"], n_strata=6, n_bootstrap=50)
+    off = ResilienceService().csd(df, ["crp", "albumin"], n_strata=6, n_bootstrap=50, detrend=False)
+    assert on.detrended is True and off.detrended is False

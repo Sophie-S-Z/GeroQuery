@@ -12,7 +12,9 @@ for S3/HF, would not change this surface.
 
 from __future__ import annotations
 
+import glob as glob_module
 import hashlib
+import re
 import sqlite3
 from pathlib import Path
 
@@ -22,7 +24,13 @@ import pandas as pd
 from .. import DATA_VERSION, config
 from ..exceptions import GeroQueryError
 from ..models import AgingSignature, CuratedFlag, Intervention, Study
-from ..sources import CuratedKnowledgeSource, InterventionSource, LocalSignatureSource
+from ..sources import (
+    CuratedKnowledgeSource,
+    InterventionSource,
+    LocalSignatureSource,
+    NhanesClinicalSource,
+    nhanes,
+)
 
 
 class DatasetNotFoundError(GeroQueryError):
@@ -36,24 +44,55 @@ class GeroStore:
         self.sig_dir = self.data_home / "signatures"  # partitioned parquet
         self.ds_dir = self.data_home / "datasets"
         self.meta_db = self.data_home / "metadata.sqlite"
+        # Once built, stays built for this process. Without the latch, every
+        # query stat()'d the filesystem twice before doing any work.
+        self._built = False
+        # One long-lived DuckDB connection per store. Reconnecting per query
+        # re-opened and re-scanned the Parquet footers each time.
+        self._duck: duckdb.DuckDBPyConnection | None = None
 
     # ---- build -----------------------------------------------------------
 
     def is_built(self) -> bool:
-        return self.meta_db.exists() and self.sig_dir.exists()
+        if self._built:
+            return True
+        self._built = self.meta_db.exists() and self.sig_dir.exists()
+        return self._built
 
     def ensure_built(self) -> GeroStore:
         if not self.is_built():
             self.build()
         return self
 
-    def build(self, clinical_csv: Path | None = None) -> GeroStore:
-        """(Re)materialize the store from the bundled source adapters."""
+    def _duck_con(self) -> duckdb.DuckDBPyConnection:
+        if self._duck is None:
+            self._duck = duckdb.connect()
+        return self._duck
+
+    def close(self) -> None:
+        """Release the DuckDB connection. Safe to call more than once."""
+        if self._duck is not None:
+            self._duck.close()
+            self._duck = None
+
+    def build(
+        self,
+        clinical_csv: Path | None = None,
+        prefer_full_clinical: bool = True,
+        prefer_full_signatures: bool = True,
+    ) -> GeroStore:
+        """(Re)materialize the store from the bundled source adapters.
+
+        Both ``prefer_full_*`` flags select between the full table built by
+        ``make data`` and the committed offline slice of the same real data.
+        Tests pin them to the slice so a result does not depend on whether the
+        developer happens to have run the download.
+        """
         self.data_home.mkdir(parents=True, exist_ok=True)
         self.sig_dir.mkdir(parents=True, exist_ok=True)
         self.ds_dir.mkdir(parents=True, exist_ok=True)
 
-        sig_source = LocalSignatureSource()
+        sig_source = LocalSignatureSource(prefer_full=prefer_full_signatures)
         # Licence gate: only persist what may be redistributed.
         sig_source.assert_cacheable()
 
@@ -72,25 +111,88 @@ class GeroStore:
             con.close()
 
         # Clinical / phenotype datasets -> one parquet each, registered below.
-        clinical_csv = clinical_csv or (config.SOURCES_DATA / "clinical_nhanes_slice.csv")
-        dataset_registry = []
-        if clinical_csv.exists():
-            df = pd.read_csv(clinical_csv)
-            out = self.ds_dir / "clinical_nhanes_slice.parquet"
-            df.to_parquet(out, index=False)
-            dataset_registry.append(
-                {
-                    "dataset_id": "clinical_nhanes_slice",
-                    "kind": "clinical",
-                    "n_rows": len(df),
-                    "columns": ",".join(df.columns),
-                    "path": out.name,
-                    "description": "NHANES-style clinical marker slice (demo) with age strata.",
-                }
-            )
+        dataset_registry = self._register_clinical(clinical_csv, prefer_full_clinical)
 
         self._build_metadata(sig_source, dataset_registry)
+        # Drop any connection held over from a previous build: it may have cached
+        # metadata for Parquet files this build just replaced.
+        self.close()
+        self._built = True
         return self
+
+    def _write_dataset(
+        self, dataset_id: str, df: pd.DataFrame, kind: str, description: str
+    ) -> dict:
+        out = self.ds_dir / f"{dataset_id}.parquet"
+        df.to_parquet(out, index=False)
+        return {
+            "dataset_id": dataset_id,
+            "kind": kind,
+            "n_rows": len(df),
+            "columns": ",".join(df.columns),
+            "path": out.name,
+            "description": description,
+        }
+
+    def _register_clinical(
+        self, clinical_csv: Path | None = None, prefer_full: bool = True
+    ) -> list[dict]:
+        """Materialize the clinical datasets, real and synthetic, kept separate.
+
+        ``clinical_nhanes_slice`` is real NHANES 2017-2018. ``clinical_synthetic_csd``
+        is the generated method-validation fixture. They are deliberately two
+        datasets rather than one: the synthetic one has a critical-slowing-down
+        signal planted in it, and a caller that cannot tell them apart will read
+        that planted signal as a finding about people.
+        """
+        registry: list[dict] = []
+
+        if clinical_csv is not None:
+            df = pd.read_csv(clinical_csv)
+            registry.append(
+                self._write_dataset(
+                    "clinical_nhanes_slice",
+                    df,
+                    "clinical",
+                    f"Clinical marker table loaded from {clinical_csv.name}.",
+                )
+            )
+        else:
+            source = NhanesClinicalSource()
+            source.assert_cacheable()  # NHANES is public domain; this must pass.
+            df, mode = source.clinical_frame(prefer_full=prefer_full)
+            caveat = (
+                "Full verified cohort."
+                if mode == "full"
+                else "OFFLINE SAMPLE of real rows — estimates from it are not the "
+                "reported cohort result. Run `make data` for the full cohort."
+            )
+            registry.append(
+                self._write_dataset(
+                    "clinical_nhanes_slice",
+                    df,
+                    "clinical",
+                    f"REAL {nhanes.RELEASE} clinical markers, joined on SEQN "
+                    f"({mode} mode, n={len(df)}). {caveat} Age topcoded at 80; "
+                    f"survey weights carried but not applied.",
+                )
+            )
+
+        synthetic_csv = config.SOURCES_DATA / "clinical_synthetic_csd.csv"
+        if synthetic_csv.exists():
+            df = pd.read_csv(synthetic_csv)
+            registry.append(
+                self._write_dataset(
+                    "clinical_synthetic_csd",
+                    df,
+                    "synthetic",
+                    "SYNTHETIC method-validation fixture. Critical slowing down is planted "
+                    "in it by construction (latent-factor variance grows with age). Use to "
+                    "check that estimators recover a known effect — never as evidence "
+                    "about human biology.",
+                )
+            )
+        return registry
 
     def _build_metadata(self, sig_source: LocalSignatureSource, dataset_registry: list[dict]):
         studies = sig_source.studies()
@@ -104,7 +206,7 @@ class GeroStore:
             con.executescript(
                 "CREATE TABLE studies (study_id TEXT PRIMARY KEY, source TEXT, omic_layer TEXT,"
                 " species TEXT, tissue TEXT, sample_size INTEGER, processing_method TEXT,"
-                " license TEXT, url TEXT, version TEXT);"
+                " license TEXT, url TEXT, version TEXT, series_id TEXT);"
                 " CREATE TABLE curated_knowledge (gene_id TEXT, database TEXT, assertion TEXT,"
                 " url TEXT);"
                 " CREATE TABLE interventions (intervention_id TEXT PRIMARY KEY, name TEXT,"
@@ -117,7 +219,9 @@ class GeroStore:
             )
             con.executemany(
                 "INSERT INTO studies VALUES (:study_id,:source,:omic_layer,:species,:tissue,"
-                ":sample_size,:processing_method,:license,:url,:version)",
+                ":sample_size,:processing_method,:license,:url,:version,:series_id)",
+                # to_dict() drops None values, so every optional column is filled
+                # back in explicitly — a missing key is a bind error, not a NULL.
                 [
                     s.to_dict()
                     | {
@@ -127,6 +231,7 @@ class GeroStore:
                         "license": s.license,
                         "url": s.url,
                         "version": s.version,
+                        "series_id": s.series_id,
                     }
                     for s in studies
                 ],
@@ -180,8 +285,29 @@ class GeroStore:
 
     # ---- query -----------------------------------------------------------
 
-    def _sig_glob(self) -> str:
-        return (self.sig_dir / "**" / "*.parquet").as_posix()
+    # Partition values come from a closed vocabulary; anything else is refused
+    # rather than interpolated into a glob path.
+    _PARTITION_VALUE = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+    def _sig_glob(self, species: str | None = None, omic_layer: str | None = None) -> str:
+        """Glob narrowed to the relevant hive partitions.
+
+        The data is partitioned ``species=<s>/omic_layer=<o>``. Naming the
+        partition directories directly means DuckDB opens only those Parquet
+        files. Leaving it as ``**`` and relying on the WHERE clause makes pruning
+        depend on the filter value being visible at plan time, which it is not
+        when the value arrives as a bound ``?`` parameter — so every file gets
+        opened and its footer read on every query.
+        """
+        parts = []
+        for name, value in (("species", species), ("omic_layer", omic_layer)):
+            if value is None:
+                parts.append("*")
+            elif self._PARTITION_VALUE.match(value):
+                parts.append(f"{name}={value}")
+            else:
+                raise GeroQueryError(f"Invalid {name} filter {value!r}.", detail={name: value})
+        return (self.sig_dir.joinpath(*parts) / "*.parquet").as_posix()
 
     def query_signatures(
         self,
@@ -192,11 +318,17 @@ class GeroStore:
         sex: str | None = None,
     ) -> list[AgingSignature]:
         self.ensure_built()
+        glob = self._sig_glob(species=species, omic_layer=omic_layer)
+        if not glob_module.glob(glob):
+            # No partition matches the requested species/omic_layer combination.
+            # read_parquet raises on an empty glob, so answer directly.
+            return []
+
+        # species/omic_layer are already enforced by the partition path above;
+        # repeating them in WHERE would only re-filter rows we know match.
         clauses, params = [], []
         for col, val in [
             ("gene_id", gene_id),
-            ("species", species),
-            ("omic_layer", omic_layer),
             ("tissue", tissue),
             ("sex", sex),
         ]:
@@ -207,14 +339,10 @@ class GeroStore:
         sql = (
             f"SELECT gene_id, study_id, omic_layer, species, tissue, sex, age_range, "
             f"effect_size, direction, p_value, q_value, standard_error, source "
-            f"FROM read_parquet('{self._sig_glob()}', hive_partitioning=true){where} "
+            f"FROM read_parquet('{glob}', hive_partitioning=true){where} "
             f"ORDER BY gene_id, omic_layer, study_id"
         )
-        con = duckdb.connect()
-        try:
-            rows = con.execute(sql, params).fetchall()
-        finally:
-            con.close()
+        rows = self._duck_con().execute(sql, params).fetchall()
         cols = [
             "gene_id",
             "study_id",

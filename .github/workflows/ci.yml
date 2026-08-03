@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  # smoke-live gates on `workflow_dispatch`, so the trigger has to be declared
+  # here or that job can never run. Weekly schedule catches upstream API drift
+  # (NHANES file moves, GTEx v2 changes, mygene.info field renames) before a
+  # user hits it.
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
 
 jobs:
   test:
@@ -33,15 +40,18 @@ jobs:
   # Live upstream smoke tests + full ETL run OFF the PR path (avoids
   # rate-limiting GEO/GTEx/mygene.info). Manual or scheduled only.
   smoke-live:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -e ".[dev]"
-      - name: Live smoke tests
+      # biolearn is installed here, not in the matrix job: it is optional, slow
+      # to build, and unavailable on some Python versions. This is the job where
+      # the real-clock wrappers actually get exercised.
+      - run: pip install -e ".[dev,clocks]"
+      - name: Live smoke tests (real upstreams + real clocks)
         env:
           GEROQUERY_ALLOW_NETWORK: "1"
-        run: pytest -m live -q || echo "no live tests selected"
+        run: pytest -m live -q

@@ -44,12 +44,22 @@ class ClockService:
         clock_id: str,
         matrix: pd.DataFrame,
         chronological_age: Sequence[float] | None = None,
+        sample_metadata: pd.DataFrame | None = None,
     ) -> ClockResult:
+        """Run one clock over a samples-as-rows matrix.
+
+        Args:
+            sample_metadata: per-sample covariates (e.g. ``sex``), indexed like
+                ``matrix``. Some real clocks are trained on covariates as well as
+                the omics matrix — GrimAge needs age and sex and raises without
+                them. ``chronological_age``, when given, is folded in as ``age``.
+        """
         clock = self.registry.get(clock_id)
         if matrix is None or len(matrix) == 0:
             raise ClockInputError("Input matrix is empty.", detail={"clock_id": clock_id})
 
-        predictions = clock.predict(matrix)
+        metadata = self._build_metadata(matrix, chronological_age, sample_metadata)
+        predictions = _predict(clock, matrix, metadata)
         sample_ids = [str(i) for i in matrix.index]
 
         result = ClockResult(
@@ -75,10 +85,47 @@ class ClockService:
                 result.mean_age_acceleration = float(np.mean(accel))
         return result
 
+    @staticmethod
+    def _build_metadata(
+        matrix: pd.DataFrame,
+        chronological_age: Sequence[float] | None,
+        sample_metadata: pd.DataFrame | None,
+    ) -> pd.DataFrame | None:
+        """Assemble the covariate frame a library clock may need, or None."""
+        if chronological_age is None and sample_metadata is None:
+            return None
+        meta = (
+            pd.DataFrame(index=matrix.index)
+            if sample_metadata is None
+            else sample_metadata.reindex(matrix.index).copy()
+        )
+        if chronological_age is not None and "age" not in meta.columns:
+            chrono = np.asarray(chronological_age, dtype=float)
+            if len(chrono) == len(matrix):
+                meta["age"] = chrono
+        return meta
+
     def compare_clocks(
         self,
         clock_ids: Sequence[str],
         matrix: pd.DataFrame,
         chronological_age: Sequence[float] | None = None,
+        sample_metadata: pd.DataFrame | None = None,
     ) -> list[ClockResult]:
-        return [self.apply_clock(cid, matrix, chronological_age) for cid in clock_ids]
+        return [
+            self.apply_clock(cid, matrix, chronological_age, sample_metadata) for cid in clock_ids
+        ]
+
+
+def _predict(clock, matrix: pd.DataFrame, metadata: pd.DataFrame | None):
+    """Call ``clock.predict``, passing metadata only where it is supported.
+
+    Reference clocks take a matrix alone; library clocks accept covariates. This
+    keeps both behind one call site instead of making callers branch on tier.
+    """
+    if metadata is None:
+        return clock.predict(matrix)
+    try:
+        return clock.predict(matrix, metadata=metadata)
+    except TypeError:
+        return clock.predict(matrix)

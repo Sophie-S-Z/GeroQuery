@@ -145,7 +145,8 @@ def create_app(service: GeroService | None = None) -> FastAPI:
 
     @app.get(f"{API_PREFIX}/clocks")
     def clocks():
-        return {"clocks": svc().list_clocks()}
+        service = svc()
+        return {"clocks": service.list_clocks(), "tiers": service.clock_tiers()}
 
     @app.post(f"{API_PREFIX}/clock/apply")
     def clock_apply(req: ClockApplyRequest):

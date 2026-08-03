@@ -31,15 +31,8 @@ CELLXGENE_CENSUS = FederatedStub(
     _note="Single-cell; federated via the cellxgene_census API (stretch layer).",
 )
 
-GTEX_OPEN = FederatedStub(
-    name="gtex-open",
-    _omics=("transcriptome",),
-    _species=("human",),
-    _federated=True,
-    _cacheable=True,
-    _license=License("open-summary", True, "GTEx Portal API v2"),
-    _note="Tissue expression by age bracket; open summaries cacheable, raw is protected.",
-)
+# gtex-open is a real adapter now — see sources/gtex.py. It is registered through
+# all_adapters() directly rather than as a stub here.
 
 # Controlled-access: federate/link only, NEVER cached or re-hosted.
 UK_BIOBANK = FederatedStub(
@@ -61,7 +54,10 @@ GTEX_PROTECTED = FederatedStub(
     _license=License(
         "dbGaP-controlled", redistributable=False, attribution="GTEx protected / dbGaP"
     ),
-    _note="Protected raw GTEx via dbGaP. Federate/link only.",
+    _note=(
+        "Protected raw GTEx via dbGaP. Federate/link only. This is where donor age "
+        "lives — the open API in sources/gtex.py cannot stratify by age."
+    ),
 )
 
-FEDERATED_ADAPTERS = [RECOUNT3, CELLXGENE_CENSUS, GTEX_OPEN, UK_BIOBANK, GTEX_PROTECTED]
+FEDERATED_ADAPTERS = [RECOUNT3, CELLXGENE_CENSUS, UK_BIOBANK, GTEX_PROTECTED]
