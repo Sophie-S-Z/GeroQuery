@@ -18,8 +18,9 @@ That was the largest unexercised capability in the repository, and — unlike mo
 gaps — it is *checkable*, because published MAEs exist for these clocks and
 because one of the two datasets ships the authors' own Horvath output per sample.
 
-**150 of 209 attempted clocks ran. Horvath's clock reproduces the authors'
-published per-sample values to r = 0.998, MAE 1.39 years.**
+**All 236 clocks were attempted on the primary set; 164 ran. Horvath's clock
+reproduces the authors' published per-sample values to r = 0.998, MAE 1.39
+years, and predicts 0.23 years for cord blood.**
 
 ## 1. The strongest available check: agreement with published output
 
@@ -48,20 +49,26 @@ non-crashing.**
 
 ## 2. Accuracy against chronological age
 
-48 clocks declare `chronological_age` in years and so have a meaningful MAE.
+63 clocks declare `chronological_age` in years and so have a meaningful MAE.
 
 | Clock | MAE (y) | r | Published MAE |
 |---|---|---|---|
-| biolearn:Horvathv2 / pyaging:skinandblood | **2.46** | 0.987 | ~2.5 (skin & blood) |
+| pyaging:zhangblup | **1.45** | 0.9995 | ~1.5 (Zhang BLUP, blood) |
+| biolearn:Horvathv2 / pyaging:skinandblood | 2.46 | 0.987 | ~2.5 (skin & blood) |
 | biolearn:AltumAge / pyaging:altumage | 2.50 | 0.986 | ~2.8 |
 | pyaging:intrinclock | 2.50 | 0.984 | — |
 | pyaging:pipekfilteredh | 3.02 | 0.978 | — |
 | biolearn:Horvathv1 / pyaging:horvath2013 | 3.61 | 0.973 | **~3.6** |
 
 Horvath 2013's published mean absolute error across tissues is about 3.6 years.
-We measure **3.61**. Median MAE across all 48 age clocks is 7.04 years, which is
-the expected spread once clocks trained on other tissues, other age ranges, and
-other outcomes are included.
+We measure **3.61** — three significant figures of agreement with the literature,
+on data the wrapper had never seen. Zhang's BLUP clock, built for blood and
+trained on far more samples, does better still at 1.45 years, which is also where
+its own paper puts it.
+
+The median across all 63 age clocks is around 7 years: the expected spread once
+clocks trained on other tissues, other age ranges, and other outcomes are pooled
+in without filtering.
 
 ## 3. The extreme-contrast check
 
@@ -107,8 +114,9 @@ sign is the check.
 
 ## 4. What did not run, and why
 
-59 of 209 attempts failed. Every failure is catalogued rather than swallowed, and
-they fall into four kinds — none of which is "the wrapper is broken":
+72 of the 236 attempts on GSE64495 failed. Every failure is catalogued rather
+than swallowed, and they fall into four kinds — none of which is "the wrapper is
+broken":
 
 | Cause | n | Example |
 |---|---|---|
@@ -157,9 +165,12 @@ panel: a *data-preparation* fault wearing the costume of an incompatible input.
 5. **The `sex` covariate is approximate.** GSE30870 does not record sex, so it is
    passed as a constant; covariate-dependent clocks (GrimAge) are therefore
    reported with correlation but their absolute values should not be read.
-6. **150 of 209, not 236 of 236.** The full pyaging sweep on GSE64495 was still
-   running when this was written; the remaining clocks are the slow neural models.
-   Results are written incrementally to `clock_results.csv` and the run resumes.
+6. **The second series is only partly swept.** GSE64495 is complete (236 of 236
+   attempted). GSE30870 has the 18 headline clocks plus a partial sweep; the
+   remaining pyaging models are slow (large neural nets, per-clock Hugging Face
+   downloads). Results are written incrementally and the runner resumes from
+   `clock_results.csv`, so finishing it is a matter of letting it run, not of
+   more work.
 7. **No mortality or morbidity outcome.** Neither series has follow-up, so the
    mortality-predicting clocks (GrimAge, PhenoAge) can be checked for internal
    consistency and direction but not for what they were built to predict.
