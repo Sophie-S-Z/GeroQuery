@@ -18,22 +18,27 @@ SHA-256 pinned in `geroquery/sources/manifest.py`, and reproducible with
 | # | Source | What it provides | Scale in GeroQuery | Access | Licence | Adapter |
 |---|---|---|---|---|---|---|
 | 1 | **NCBI GEO DataSets** | Gene aging signatures — young-vs-old Hedges' *g* per gene | 31 datasets → 32 contrasts (27 GEO Series) → **485,905 effect sizes over 46,091 genes**, 10 tissues, human + mouse | FTP SOFT, checksum-pinned | US public domain, attribute | `sources/geo.py` |
-| 2 | **CDC NHANES 2017–2018** | Clinical chemistry + CBC for the resilience layer | **4,895 complete adults**, 6 markers (albumin, creatinine, glucose, hs-CRP, lymphocyte %, RDW) | 4 XPORT files, checksum-pinned | US public domain (NCHS) | `sources/nhanes.py` |
-| 3 | **HAGR — GenAge (human)** | Genes with evidence of a role in human ageing | 307 genes, evidence code preserved | ZIP, checksum-pinned | HAGR, non-commercial + attribution | `sources/hagr.py` |
-| 4 | **HAGR — GenAge (models)** | Genes whose manipulation changes lifespan | 2,205 parsed; 132 mammalian loaded | ZIP, pinned | HAGR | `sources/hagr.py` |
-| 5 | **HAGR — CellAge** | Genes that induce / inhibit / regulate senescence | 949 genes, with PubMed links | ZIP, pinned | HAGR | `sources/hagr.py` |
-| 6 | **HAGR — LongevityMap** | Human variants tested for longevity association, **including nulls** | 1,325 assertions | ZIP, pinned | HAGR | `sources/hagr.py` |
-| 7 | **HAGR — DrugAge** | Compounds tested against model-organism lifespan | 3,423 experiments → **1,334 compound × organism records**, 54 flagged NIA ITP | ZIP, pinned | HAGR | `sources/hagr.py` |
-| 8 | **HAGR — GenDR** | Genes required for dietary restriction's lifespan effect | 214 genes → 6 dietary-restriction records with real gene links | ZIP, pinned | HAGR | `sources/hagr.py` |
-| 9 | **mygene.info** | Gene identifier harmonization → canonical Ensembl | ~71k identifiers resolved at build; batched + disk-cached | REST (batch POST) | Public | `idmap/mygene.py`, `idmap/bulk.py` |
-| 10 | **GTEx Portal API v2** | Tissue expression context — median TPM + UBERON | ~54 tissues per gene, queried live | REST | Open summary tier | `sources/gtex.py` |
-| 11 | **biolearn** | Published epigenetic / clinical clocks | **63 clocks** (Horvath, Hannum, PhenoAge, GrimAge, DunedinPACE…) | Python package | Library terms | `clocks/library.py` |
-| 12 | **pyaging** | Published clocks, metadata-registered, artifacts lazy | **173 clocks** | Hugging Face, unauthenticated | Library terms | `clocks/pyaging_clocks.py` |
-| 13 | **UBERON / Cell Ontology** | Tissue label harmonization | 12 coarse terms bundled | OBO extract | Open | `idmap/data/tissues.json` |
-| 14 | **AnAge** | Maximum lifespan → fractional-age normalization | bundled | flat file | HAGR | `idmap/resolver.py` |
+| 2 | **GEO methylation series** | Real 450K beta matrices — the clock validation panel | GSE64495 (n=106 controls, ages 2.3–73.7, ships the authors' Horvath output) + GSE30870 (newborns vs nonagenarians, n=40) | Series matrix, checksum-pinned | US public domain | `sources/methylation.py` |
+| 3 | **CDC NHANES 2017–2018** | Clinical chemistry + CBC; resilience *and* the 9 markers PhenoAge needs | **4,895 adults** (6-marker resilience cohort) / **4,894** (9-marker PhenoAge cohort) | 4 XPORT files, checksum-pinned | US public domain (NCHS) | `sources/nhanes.py` |
+| 4 | **HAGR — GenAge (human)** | Genes with evidence of a role in human ageing | 307 genes, evidence code preserved | ZIP, checksum-pinned | HAGR, non-commercial + attribution | `sources/hagr.py` |
+| 5 | **HAGR — GenAge (models)** | Genes whose manipulation changes lifespan | 2,205 parsed; 132 mammalian loaded | ZIP, pinned | HAGR | `sources/hagr.py` |
+| 6 | **HAGR — CellAge** | Genes that induce / inhibit / regulate senescence | 949 genes, with PubMed links | ZIP, pinned | HAGR | `sources/hagr.py` |
+| 7 | **HAGR — LongevityMap** | Human variants tested for longevity association, **including nulls** | 1,325 assertions | ZIP, pinned | HAGR | `sources/hagr.py` |
+| 8 | **HAGR — DrugAge** | Compounds tested against model-organism lifespan | 3,423 experiments → **1,334 compound × organism records**, 54 flagged NIA ITP | ZIP, pinned | HAGR | `sources/hagr.py` |
+| 9 | **HAGR — GenDR** | Genes required for dietary restriction's lifespan effect | 214 genes → 6 dietary-restriction records with real gene links | ZIP, pinned | HAGR | `sources/hagr.py` |
+| 10 | **mygene.info** | Gene identifier harmonization → canonical Ensembl | ~71k identifiers resolved at build; batched + disk-cached | REST (batch POST) | Public | `idmap/mygene.py`, `idmap/bulk.py` |
+| 11 | **GTEx Portal API v2** | Tissue expression context — median TPM + UBERON | ~54 tissues per gene, queried live | REST | Open summary tier | `sources/gtex.py` |
+| 12 | **biolearn** | Published epigenetic / clinical clocks | **63 clocks** (Horvath, Hannum, PhenoAge, GrimAge, DunedinPACE…) | Python package | Library terms | `clocks/library.py` |
+| 13 | **pyaging** | Published clocks, metadata-registered, artifacts lazy | **173 clocks** | Hugging Face, unauthenticated | Library terms | `clocks/pyaging_clocks.py` |
+| 14 | **UBERON / Cell Ontology** | Tissue label harmonization | 12 coarse terms bundled | OBO extract | Open | `idmap/data/tissues.json` |
+| 15 | **AnAge** | Maximum lifespan → fractional-age normalization | bundled | flat file | HAGR | `idmap/resolver.py` |
 
-**Totals across the ingested layers: 41 checksum-pinned artifacts, ~320 MB,
+**Totals across the ingested layers: 44 checksum-pinned artifacts, ~680 MB,
 from 5 independent upstreams (NCBI, CDC, HAGR, mygene.info, GTEx).**
+
+Two bundled identifier tables — `idmap/data/genes.json` and `anage.json` —
+are *derived* artifacts rather than upstreams: regenerate them with
+`python -m geroquery.etl.build_idmap`. They used to be hand-written.
 
 ### 1.2 The one synthetic table, and why it exists
 
@@ -127,7 +132,8 @@ All support `format=json|csv|parquet`; list endpoints support `limit`/`offset`.
 | Curated assertions | 2,720 mammalian (of 5,029 parsed) across 5 databases, 1,880 genes |
 | Interventions | 1,340 |
 | Clinical subjects | 4,895 real NHANES adults |
-| Clocks | 239 (63 biolearn + 173 pyaging + 3 reference) |
+| Clocks | 240 (63 biolearn + 173 pyaging + real Levine PhenoAge + 3 reference) |
+| Clocks validated on real methylation | **150 ran**; Horvath reproduces the authors' published per-sample ages to r=0.998, MAE 1.39 y |
 | Tests | 295 offline + 12 live, 84% coverage |
 
 ---
@@ -156,7 +162,7 @@ All support `format=json|csv|parquet`; list endpoints support `limit`/`offset`.
 
 | Use case | What is missing |
 |---|---|
-| Run the 236 clocks on real data and report MAE against published values | A methylation matrix — e.g. GSE40279. All the wiring exists |
+| ~~Run the clocks on real data~~ | **Done** — see [`RESULTS_METHYLATION_CLOCKS.md`](RESULTS_METHYLATION_CLOCKS.md) |
 | Correlate epigenetic age acceleration against resilience metrics | Same. This cross-layer claim is the reason the project exists |
 | AR(1) recovery-rate analysis | Longitudinal data. `resilience/recovery.py` is implemented and tested but has never run on a real trajectory |
 | Nationally-representative clinical claims | `WTMEC2YR` is carried but not applied |
@@ -214,10 +220,12 @@ All support `format=json|csv|parquet`; list endpoints support `limit`/`offset`.
 
 ### 4.4 About the clocks
 
-19. **236 clocks are wired but have never run on real data in this repo** — there
-    is no methylation matrix. They are validated against each other
-    (biolearn `Horvathv1` 53.22 vs pyaging `horvath2013` 53.21 on identical input),
-    not against ground truth.
+19. **The clocks are now validated on real methylation, with limits.** Two blood
+    450K series only; nothing is established about other tissues, EPIC arrays, or
+    sequencing-based methylation. 59 of 209 attempts did not run — mostly because
+    the clock is not a methylation clock, needs EPIC probes, or needs CpGs the
+    series lacks. The `GPAge*` family cannot run at all: GPy requires numpy < 2
+    and biolearn's cvxpy requires numpy >= 2.
 20. **pyaging imputes missing features from reference values.** The wrapper
     refuses above 50% imputation rather than return a confident-looking artifact
     of pyaging's reference cohort.

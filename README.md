@@ -53,7 +53,8 @@ This distinction is the first thing you should read, not a footnote.
 | Layer | Status |
 |---|---|
 | **Clinical / resilience** (`clinical_nhanes_slice`) | **Real.** NHANES 2017–2018, 4,895 complete cases aged 20–80, fetched from CDC and verified against pinned SHA-256 checksums. A 600-row real sample is committed so tests run offline. |
-| **Aging clocks** | **Real** — **236 published clocks** wrapped from `biolearn` (63) and `pyaging` (173): Horvath, Hannum, PhenoAge, GrimAge, DunedinPACE. Three transparent `*_demo` reference clocks always ship for testability; they are not clinical instruments. |
+| **Aging clocks** | **Real, and now validated on real data.** 236 published clocks wrapped from `biolearn` (63) and `pyaging` (173), plus the real Levine **PhenoAge** coefficients implemented directly. Run against two checksum-pinned GEO 450K blood series: **150 ran; Horvath reproduces the authors' own published per-sample ages to r=0.998, MAE 1.39 y**, and predicts **0.23 years for cord blood**. See [`docs/RESULTS_METHYLATION_CLOCKS.md`](docs/RESULTS_METHYLATION_CLOCKS.md). |
+| **DNA methylation** | **Real.** GSE64495 (450K, n=106 controls, ages 2.3–73.7) and GSE30870 (newborns vs nonagenarians), checksum-pinned. |
 | **Gene identifier resolution** | **Real.** Bundled canonical table, with live batched mygene.info resolution and an on-disk cache behind it. |
 | **Tissue expression** (`gtex-open`) | **Real.** GTEx Portal API v2, queried live: median TPM per tissue with UBERON ids. |
 | **Gene aging signatures** | **Real.** 31 checksum-pinned [GEO DataSets](docs/RESULTS_GEO_SIGNATURES.md) -> 32 young-vs-old contrasts from 27 independent GEO Series -> **485,905 Hedges' *g* estimates over 46,091 genes**, 10 tissues, human + mouse. A 40,585-row slice (curated aging genes plus their orthologs, both species) is committed so tests run offline. |
