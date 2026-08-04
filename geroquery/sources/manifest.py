@@ -21,10 +21,10 @@ from dataclasses import dataclass
 
 # Bumped whenever any artifact below changes. Recorded alongside derived data so
 # a result can be traced to the exact inputs that produced it.
-MANIFEST_VERSION = "2026.1"
+MANIFEST_VERSION = "2026.2"
 
 # Date the checksums were last confirmed against live upstream bytes.
-VERIFIED_ON = "2026-08-03"
+VERIFIED_ON = "2026-08-04"
 
 
 @dataclass(frozen=True)
