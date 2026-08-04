@@ -51,7 +51,10 @@ MIN_AGE = 20.0
 AGE_TOPCODE = 80.0
 
 # geroquery column -> (manifest key, NHANES variable). These six markers are
-# exactly clocks.registry.CLINICAL_FEATURES, so the clock path needs no change.
+# exactly clocks.registry.CLINICAL_FEATURES, and they define the health state the
+# resilience module measures. **Do not add to this set**: the published CSD
+# result is computed over exactly these six, and changing the set silently
+# changes that result. Extra markers go in PHENOAGE_ONLY_MARKER_MAP below.
 MARKER_MAP: dict[str, tuple[str, str]] = {
     "albumin": ("BIOPRO_J", "LBXSAL"),  # g/dL
     "creatinine": ("BIOPRO_J", "LBXSCR"),  # mg/dL
@@ -62,6 +65,25 @@ MARKER_MAP: dict[str, tuple[str, str]] = {
 }
 
 MARKERS: tuple[str, ...] = tuple(MARKER_MAP)
+
+# The three further markers the published Levine PhenoAge model needs, over and
+# above the six above. They come out of the *same* two pinned XPORT files, so
+# carrying them costs no extra download and no manifest change.
+#
+# They are kept separate rather than merged into MARKER_MAP because the
+# resilience service infers its biomarker list by excluding known non-biomarker
+# columns: widening the clinical frame in place would silently pull three more
+# markers into the health state and move the published CSD numbers.
+PHENOAGE_ONLY_MARKER_MAP: dict[str, tuple[str, str]] = {
+    "mcv": ("CBC_J", "LBXMCVSI"),  # mean corpuscular volume, fL
+    "wbc": ("CBC_J", "LBXWBCSI"),  # white blood cells, 10^3/uL
+    "alp": ("BIOPRO_J", "LBXSAPSI"),  # alkaline phosphatase, IU/L
+}
+
+PHENOAGE_ONLY_MARKERS: tuple[str, ...] = tuple(PHENOAGE_ONLY_MARKER_MAP)
+
+# Everything PhenoAge consumes, in GeroQuery's column names.
+PHENOAGE_MARKERS: tuple[str, ...] = MARKERS + PHENOAGE_ONLY_MARKERS
 
 DEMOGRAPHICS: dict[str, tuple[str, str]] = {
     "age": ("DEMO_J", "RIDAGEYR"),
@@ -88,6 +110,9 @@ CAVEATS: tuple[str, ...] = (
     "Survey weights (WTMEC2YR) are carried but NOT applied; estimates are unweighted "
     "and not nationally representative.",
     "No fasting-status, medication, or comorbidity adjustment.",
+    "The nine-marker PhenoAge cohort is a subset of the six-marker resilience "
+    "cohort: alkaline phosphatase and the CBC indices are not measured on every "
+    "participant who has the core six.",
 )
 
 
@@ -113,7 +138,11 @@ def _read_xpt(path: Path, columns: list[str]) -> pd.DataFrame:
 def _columns_by_file() -> dict[str, list[str]]:
     """Invert the variable maps into {manifest key: [NHANES vars]}."""
     wanted: dict[str, list[str]] = {}
-    for _, (file_key, var) in {**DEMOGRAPHICS, **MARKER_MAP}.items():
+    for _, (file_key, var) in {
+        **DEMOGRAPHICS,
+        **MARKER_MAP,
+        **PHENOAGE_ONLY_MARKER_MAP,
+    }.items():
         wanted.setdefault(file_key, []).append(var)
     return wanted
 
@@ -144,17 +173,49 @@ def load_full(
         if file_key != "DEMO_J":
             merged = merged.merge(frame, on="SEQN", how="inner")
 
-    rename = {var: col for col, (_, var) in {**DEMOGRAPHICS, **MARKER_MAP}.items()}
+    rename = {
+        var: col
+        for col, (_, var) in {
+            **DEMOGRAPHICS,
+            **MARKER_MAP,
+            **PHENOAGE_ONLY_MARKER_MAP,
+        }.items()
+    }
     out = merged.rename(columns=rename)
 
     out["subject_id"] = "NHANES:" + out["SEQN"].astype("int64").astype(str)
     out["sex"] = out["_sex_code"].map(SEX_LABELS)
 
-    columns = ["subject_id", "age", "sex", *MARKERS, "survey_weight"]
+    columns = ["subject_id", "age", "sex", *PHENOAGE_MARKERS, "survey_weight"]
     out = out[columns]
     out = out[out["age"] >= min_age]
+    # Complete cases on the six resilience markers only. Requiring the three
+    # PhenoAge-only markers here as well would shrink the resilience cohort to
+    # suit a different analysis; they are dropped per-analysis instead, by
+    # `phenoage_frame`.
     out = out.dropna(subset=["age", "sex", *MARKERS])
     return out.sort_values("subject_id").reset_index(drop=True)
+
+
+def resilience_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """The six-marker health state the resilience module measures.
+
+    Narrowing here rather than at load time is what keeps the published CSD
+    result stable: `ResilienceService` infers its biomarker list by excluding
+    known non-biomarker columns, so any extra marker column left in the frame
+    would join the health state without anyone choosing it.
+    """
+    return frame[["subject_id", "age", "sex", *MARKERS, "survey_weight"]].copy()
+
+
+def phenoage_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Complete cases across all nine markers PhenoAge needs, plus age and sex.
+
+    Smaller than the resilience cohort: alkaline phosphatase and the CBC indices
+    are not measured on every NHANES participant who has the core six.
+    """
+    columns = ["subject_id", "age", "sex", *PHENOAGE_MARKERS, "survey_weight"]
+    return frame[columns].dropna(subset=list(PHENOAGE_MARKERS)).reset_index(drop=True)
 
 
 def full_path(data_dir: Path | None = None) -> Path:
@@ -242,3 +303,10 @@ class NhanesClinicalSource(SourceAdapter):
             except SourceError:
                 pass
         return load_sample(self.data_dir), "sample"
+
+    def phenoage_frame(
+        self, *, prefer_full: bool = True, allow_network: bool | None = None
+    ) -> tuple[pd.DataFrame, str]:
+        """Return ``(frame, mode)`` for the nine-marker PhenoAge cohort."""
+        frame, mode = self.clinical_frame(prefer_full=prefer_full, allow_network=allow_network)
+        return phenoage_frame(frame), mode

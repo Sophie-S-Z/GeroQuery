@@ -153,6 +153,8 @@ class CuratedKnowledgeSource(SourceAdapter):
                 database=r["database"],
                 assertion=r["assertion"],
                 url=r.get("url"),
+                symbol=r.get("symbol") or None,
+                species=r.get("species") or None,
             )
             for r in _read_csv(self.data_dir / "curated_knowledge.csv")
         ]

@@ -1,6 +1,16 @@
 """M5 clocks — aging clock & biological-age service (public surface)."""
 
-from .registry import ClockRegistry, LinearClock, get_registry
+from . import phenoage
+from .registry import PHENOAGE_INFO, ClockRegistry, LinearClock, PhenoAgeClock, get_registry
 from .service import ClockResult, ClockService
 
-__all__ = ["ClockRegistry", "LinearClock", "get_registry", "ClockService", "ClockResult"]
+__all__ = [
+    "phenoage",
+    "PhenoAgeClock",
+    "PHENOAGE_INFO",
+    "ClockRegistry",
+    "LinearClock",
+    "get_registry",
+    "ClockService",
+    "ClockResult",
+]

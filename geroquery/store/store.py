@@ -33,6 +33,15 @@ from ..sources import (
 )
 
 
+def _frame_digest(frame: pd.DataFrame) -> str:
+    """Order-independent SHA-256 of a DataFrame's contents."""
+    if frame.empty:
+        return hashlib.sha256(b"").hexdigest()
+    ordered = frame.sort_values(list(frame.columns)).reset_index(drop=True)
+    hashed = pd.util.hash_pandas_object(ordered, index=False).to_numpy()
+    return hashlib.sha256(hashed.tobytes()).hexdigest()
+
+
 class DatasetNotFoundError(GeroQueryError):
     code = "dataset_not_found"
     http_status = 404
@@ -50,6 +59,9 @@ class GeroStore:
         # One long-lived DuckDB connection per store. Reconnecting per query
         # re-opened and re-scanned the Parquet footers each time.
         self._duck: duckdb.DuckDBPyConnection | None = None
+        # Content digest of the signature table, set during build(). See
+        # _compute_version for why it is not derived from the Parquet files.
+        self._signature_digest: str | None = None
 
     # ---- build -----------------------------------------------------------
 
@@ -98,6 +110,7 @@ class GeroStore:
 
         signatures = sig_source.signatures()
         sig_df = pd.DataFrame([s.to_dict() for s in signatures])
+        self._signature_digest = _frame_digest(sig_df)
 
         con = duckdb.connect()
         try:
@@ -170,11 +183,29 @@ class GeroStore:
             registry.append(
                 self._write_dataset(
                     "clinical_nhanes_slice",
-                    df,
+                    nhanes.resilience_frame(df),
                     "clinical",
                     f"REAL {nhanes.RELEASE} clinical markers, joined on SEQN "
                     f"({mode} mode, n={len(df)}). {caveat} Age topcoded at 80; "
                     f"survey weights carried but not applied.",
+                )
+            )
+            # The nine-marker PhenoAge cohort is a *separate* dataset id rather
+            # than three more columns on the one above. The resilience service
+            # infers its biomarker list by excluding known non-biomarker columns,
+            # so widening the clinical table in place would pull MCV, WBC, and
+            # ALP into the health state and silently move the published CSD
+            # numbers. Same rows, different analysis, different id.
+            pheno = nhanes.phenoage_frame(df)
+            registry.append(
+                self._write_dataset(
+                    "clinical_nhanes_phenoage",
+                    pheno,
+                    "clinical",
+                    f"REAL {nhanes.RELEASE}, the nine markers the published Levine "
+                    f"PhenoAge clock requires ({mode} mode, n={len(pheno)}). A subset "
+                    f"of clinical_nhanes_slice: ALP and the CBC indices are not "
+                    f"measured on every participant who has the core six.",
                 )
             )
 
@@ -208,7 +239,7 @@ class GeroStore:
                 " species TEXT, tissue TEXT, sample_size INTEGER, processing_method TEXT,"
                 " license TEXT, url TEXT, version TEXT, series_id TEXT);"
                 " CREATE TABLE curated_knowledge (gene_id TEXT, database TEXT, assertion TEXT,"
-                " url TEXT);"
+                " url TEXT, symbol TEXT, species TEXT);"
                 " CREATE TABLE interventions (intervention_id TEXT PRIMARY KEY, name TEXT,"
                 " itype TEXT, source TEXT, organism TEXT, lifespan_effect_pct REAL,"
                 " linked_gene_ids TEXT, url TEXT);"
@@ -237,13 +268,16 @@ class GeroStore:
                 ],
             )
             con.executemany(
-                "INSERT INTO curated_knowledge VALUES (:gene_id,:database,:assertion,:url)",
+                "INSERT INTO curated_knowledge VALUES "
+                "(:gene_id,:database,:assertion,:url,:symbol,:species)",
                 [
                     {
                         "gene_id": c.gene_id,
                         "database": c.database,
                         "assertion": c.assertion,
                         "url": c.url,
+                        "symbol": c.symbol,
+                        "species": c.species,
                     }
                     for c in curated
                 ],
@@ -276,12 +310,21 @@ class GeroStore:
             con.close()
 
     def _compute_version(self) -> str:
-        """DATA_VERSION plus a short content hash of the signature parquet."""
-        h = hashlib.sha256()
-        for p in sorted(self.sig_dir.rglob("*.parquet")):
-            h.update(p.name.encode())
-            h.update(str(p.stat().st_size).encode())
-        return f"{DATA_VERSION}+{h.hexdigest()[:12]}"
+        """DATA_VERSION plus a short digest of the signature *content*.
+
+        This used to hash the Parquet filenames and byte sizes. That is not
+        reproducible: DuckDB writes a partitioned COPY in parallel, so the number
+        of files per partition and their exact sizes depend on thread scheduling.
+        Two builds of identical data could therefore report different data
+        versions — which defeats the entire purpose of a data version, and made
+        ``test_version_is_reproducible`` pass or fail by luck.
+
+        Hashing the frame itself is both deterministic and the thing we actually
+        mean: the version should change when the data changes, not when the
+        writer happens to split a partition differently.
+        """
+        digest = self._signature_digest or _frame_digest(pd.DataFrame())
+        return f"{DATA_VERSION}+{digest[:12]}"
 
     # ---- query -----------------------------------------------------------
 
@@ -388,8 +431,21 @@ class GeroStore:
         con = self._meta_con()
         try:
             rows = con.execute(
-                "SELECT gene_id, database, assertion, url FROM curated_knowledge WHERE gene_id = ?",
+                "SELECT gene_id, database, assertion, url, symbol, species "
+                "FROM curated_knowledge WHERE gene_id = ?",
                 (gene_id,),
+            ).fetchall()
+        finally:
+            con.close()
+        return [CuratedFlag(**dict(r)) for r in rows]
+
+    def all_curated_flags(self) -> list[CuratedFlag]:
+        """Every curated assertion, for browsing the curated gene set."""
+        con = self._meta_con()
+        try:
+            rows = con.execute(
+                "SELECT gene_id, database, assertion, url, symbol, species "
+                "FROM curated_knowledge"
             ).fetchall()
         finally:
             con.close()

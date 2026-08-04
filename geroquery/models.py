@@ -157,9 +157,15 @@ class CuratedFlag:
     """A curated-knowledge assertion that a gene is aging/longevity related."""
 
     gene_id: str
-    database: str  # GenAge | OpenGenes | CellAge | LongevityMap
+    database: str  # GenAge | CellAge | LongevityMap | GenDR
     assertion: str
     url: str | None = None
+    # Carried on the row rather than looked up. The bundled identifier table
+    # names ~22 genes; the curated set names 1,880. Without the symbol here,
+    # browsing the curated genes offline silently returned the 22 that happened
+    # to be resolvable and looked like the whole answer.
+    symbol: str | None = None
+    species: str | None = None
 
     def to_dict(self) -> dict:
         return _clean(asdict(self))

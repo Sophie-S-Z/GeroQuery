@@ -21,6 +21,7 @@ from ..exceptions import (
 )
 from ..harmonize import random_effects
 from ..idmap import get_resolver
+from ..knowledge import HALLMARKS, REFERENCES
 from ..models import GeneCard, MetaSignature
 from ..resilience import ResilienceService
 from ..sources import all_adapters
@@ -154,6 +155,76 @@ class GeroService:
         out = card.to_dict()
         self._cache.set(cache_key, out)
         return out
+
+    def gene_report(self, gene_query: str, species: str | None = None) -> dict:
+        """The assembled aging profile of one gene, for the dashboard.
+
+        A superset of :meth:`gene_card`: same measured evidence, plus the
+        ortholog list, the citation layer, and a ``hallmarks`` slot.
+
+        ``hallmarks`` is currently always empty. The hand-written per-gene
+        hallmark annotation that used to fill it was dropped along with the rest
+        of the curated `KNOWLEDGE` table, because the ingested GEO panel now
+        measures what that table asserted — and disagrees with it for CDKN2A.
+        The key is kept rather than removed so the shape is stable when a
+        sourced gene-to-hallmark mapping replaces it; see
+        ``docs/HANDOFF_2026-08-03.md``.
+        """
+        card = self.gene_card(gene_query, species)
+        gene = self.resolver.resolve_gene(gene_query, species)
+        orthologs = self.resolver.orthologs(gene.canonical_id)
+        return {
+            **card,
+            "group": gene.__dict__.get("ortholog_group") or gene.symbol.upper(),
+            "orthologs": [
+                {"species": o.species, "symbol": o.symbol, "canonical_id": o.canonical_id}
+                for o in orthologs
+            ],
+            "knowledge": None,
+            "hallmarks": [],
+            "hallmark_vocabulary": [
+                {"key": key, "name": key.replace("_", " ").title(), "description": text}
+                for key, text in HALLMARKS.items()
+            ],
+            "references": self.references(),
+            "n_signatures": len(card.get("signatures", [])),
+        }
+
+    def list_curated_genes(self, limit: int | None = None) -> list[dict]:
+        """Genes carrying curated evidence, for browsing and autocomplete.
+
+        Sourced from the ingested HAGR tables rather than a hand-written list,
+        so the set grows when HAGR does. Ordered by how many independent
+        databases assert the gene, which is the closest thing the curated layer
+        has to a confidence ranking.
+        """
+        counts: dict[str, dict] = {}
+        for flag in self.store.all_curated_flags():
+            entry = counts.setdefault(
+                flag.gene_id,
+                {
+                    "gene_id": flag.gene_id,
+                    "symbol": flag.symbol,
+                    "species": flag.species,
+                    "databases": set(),
+                    "n_assertions": 0,
+                },
+            )
+            entry["databases"].add(flag.database)
+            entry["n_assertions"] += 1
+            entry["symbol"] = entry["symbol"] or flag.symbol
+            entry["species"] = entry["species"] or flag.species
+
+        out = [
+            {**entry, "databases": sorted(entry["databases"]), "symbol": entry["symbol"] or "?"}
+            for entry in counts.values()
+        ]
+        out.sort(key=lambda r: (-len(r["databases"]), -r["n_assertions"], r["symbol"]))
+        return out[:limit] if limit else out
+
+    def references(self) -> list[dict]:
+        """The literature citation layer. Real papers; never an invented PMID."""
+        return [r.to_dict() for r in REFERENCES.values()]
 
     def geneset_signature(
         self,

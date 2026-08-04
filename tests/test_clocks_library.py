@@ -293,7 +293,10 @@ def test_registry_loads_without_biolearn(monkeypatch):
     monkeypatch.setattr(pyac_mod, "pyaging_available", lambda: False)
     assert lib.library_clocks() == {}
     ids = {c.clock_id for c in ClockRegistry().list_clocks()}
+    # phenoage ships with the package: real published coefficients, no optional
+    # dependency. It is present whether or not biolearn/pyaging are installed.
     assert ids == {
+        "phenoage",
         "clinical_phenoage_demo",
         "clinical_mortality_demo",
         "transcriptomic_demo",

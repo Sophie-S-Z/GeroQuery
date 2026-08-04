@@ -76,6 +76,13 @@ target-version = "py310"
 select = ["E", "F", "I", "UP", "B"]
 ignore = ["B008"]  # FastAPI uses function-call defaults (Query(...)) by design
 
+[tool.ruff.lint.per-file-ignores]
+# The dashboard is mostly long prose and inline CSS inside string literals.
+# Mechanically wrapping those is how you corrupt an f-string; the rule buys
+# nothing in a presentation module, so it is switched off here rather than
+# worked around line by line.
+"geroquery/ui/streamlit_app.py" = ["E501"]
+
 [tool.black]
 line-length = 100
 target-version = ["py310"]

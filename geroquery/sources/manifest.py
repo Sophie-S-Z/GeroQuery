@@ -534,6 +534,63 @@ GEO_SERIES_BY_ACCESSION: dict[str, str] = {row[0]: row[6] for row in _GEO_PANEL}
 GEO_PUBMED_BY_ACCESSION: dict[str, str | None] = {row[0]: row[7] for row in _GEO_PANEL}
 
 
+# --- GEO DNA-methylation series: the clock validation panel -----------------
+#
+# Two hand-verified 450K blood series. These exist so the 236 wired aging clocks
+# have real data to run on: before them, "236 clocks" meant 236 objects that had
+# been shown not to crash.
+#
+# Unlike the expression panel these are GEO *Series*, not DataSets — no GDS
+# exists for 450K methylation. Free-text age parsing is therefore unavoidable,
+# which is acceptable for two hand-checked series in a way it would not be for
+# thirty; ``sources/methylation.py`` validates each series' characteristic keys
+# at parse time so an upstream format change fails loudly.
+_METHYLATION_RAW: tuple[tuple[str, str, int, str, str], ...] = (
+    (
+        "GSE64495",
+        "30114290d102c8b8f78110f9b5341580614c03b3c933389cbb71d456decb69f9",
+        275855955,
+        "Illumina 450K, whole blood, n=113, ages 0-94",
+        "Primary clock validation set. Ships the authors' own Horvath-clock output "
+        "per sample, so a wrapper can be checked against a published number rather "
+        "than only against chronological age.",
+    ),
+    (
+        "GSE30870",
+        "86f1f7e6144bf398429ad5c528a16ff7bee56a7291893ec7861d243822644e30",
+        82331350,
+        "Illumina 450K, whole blood and cord blood, n=40",
+        "Newborns vs nonagenarians. An extreme-contrast check: a clock that cannot "
+        "separate cord blood from 90-year-old blood is broken in a way no "
+        "correlation coefficient would hide.",
+    ),
+)
+
+
+def _gse_matrix_url(accession: str) -> str:
+    """FTP location of a GEO Series matrix. ``GSE30870`` shards under ``GSE30nnn``."""
+    digits = accession[len("GSE") :]
+    shard = f"GSE{digits[:-3]}nnn" if len(digits) > 3 else "GSEnnn"
+    return (
+        f"https://ftp.ncbi.nlm.nih.gov/geo/series/{shard}/{accession}"
+        f"/matrix/{accession}_series_matrix.txt.gz"
+    )
+
+
+METHYLATION_PANEL: dict[str, RemoteArtifact] = {
+    accession: RemoteArtifact(
+        key=accession,
+        url=_gse_matrix_url(accession),
+        sha256=sha256,
+        n_bytes=n_bytes,
+        release=f"GEO Series matrix ({platform})",
+        license=GEO_LICENSE,
+        attribution=GEO_ATTRIBUTION,
+        description=description,
+    )
+    for accession, sha256, n_bytes, platform, description in _METHYLATION_RAW
+}
+
 # --- HAGR curated aging knowledge ------------------------------------------
 #
 # The Human Ageing Genomic Resources set. These replace what used to be a
@@ -619,8 +676,30 @@ HAGR: dict[str, RemoteArtifact] = {
 HAGR_MEMBERS: dict[str, str] = {key: member for key, _u, member, _s, _n, _d in _HAGR_RAW}
 
 
+# AnAge: maximum-lifespan estimates, used to normalize chronological age to
+# fractional lifespan so an "old mouse" and an "old human" are comparable.
+# Ingested rather than transcribed: the nine numbers that used to live in
+# idmap/data/anage.json were correct, but nothing recorded which AnAge release
+# they came from or when they would go stale.
+ANAGE = RemoteArtifact(
+    key="anage",
+    url="https://genomics.senescence.info/species/dataset.zip",
+    sha256="e3ddb66e32e973a79932859ba53013e8f60d957c6ec01c6eb573e3ea3018d630",
+    n_bytes=169150,
+    release="HAGR AnAge current release",
+    license=_HAGR_LICENSE,
+    attribution=_HAGR_ATTRIBUTION,
+    description="AnAge: maximum longevity and life-history traits across species.",
+)
+
 # Flat lookup across every collection, for the generic fetch CLI.
-MANIFEST: dict[str, RemoteArtifact] = {**NHANES_2017_2018, **GEO_AGING_PANEL, **HAGR}
+MANIFEST: dict[str, RemoteArtifact] = {
+    **NHANES_2017_2018,
+    **GEO_AGING_PANEL,
+    **METHYLATION_PANEL,
+    **HAGR,
+    "anage": ANAGE,
+}
 
 
 def get_artifact(key: str) -> RemoteArtifact:

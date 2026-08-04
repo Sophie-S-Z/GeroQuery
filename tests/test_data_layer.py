@@ -166,7 +166,15 @@ def test_adapter_falls_back_to_sample_and_says_so(tmp_path, monkeypatch):
     monkeypatch.setattr(fetch_mod.config, "CACHE_HOME", tmp_path / "empty")
     monkeypatch.setattr(fetch_mod.config, "ALLOW_NETWORK", False)
 
-    frame, mode = nhanes.NhanesClinicalSource().clinical_frame()
+    # Point at a data dir holding only the committed sample. Without this the
+    # test passes or fails on whether the developer has run `make data`: the
+    # adapter prefers a prebuilt clinical_nhanes_full.csv, which is git-ignored
+    # and therefore present locally but absent in CI.
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    shutil.copy(nhanes.sample_path(), nhanes.sample_path(data_dir))
+
+    frame, mode = nhanes.NhanesClinicalSource(data_dir).clinical_frame()
     assert mode == "sample"
     assert len(frame) == nhanes.SAMPLE_SIZE
 

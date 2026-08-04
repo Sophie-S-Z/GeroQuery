@@ -257,6 +257,8 @@ def build_curated(
                 "database": item.database,
                 "assertion": item.assertion,
                 "url": item.url,
+                "symbol": item.symbol,
+                "species": item.species,
             }
         )
     knowledge = pd.DataFrame(knowledge_rows).drop_duplicates()

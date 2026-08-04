@@ -1,14 +1,91 @@
 {
-  "_provenance": "Maximum longevity (years) from the AnAge database (Human Ageing Genomic Resources, HAGR). Used to normalize chronological age to fractional lifespan so an 'old mouse' and an 'old human' are comparable. Values are the AnAge maximum-lifespan estimates and should be re-verified against the current AnAge release before publication.",
-  "species": [
-    {"key": "human", "latin": "Homo sapiens", "common": ["human", "homo sapiens"], "max_lifespan_years": 122.5},
-    {"key": "mouse", "latin": "Mus musculus", "common": ["mouse", "mus musculus", "house mouse"], "max_lifespan_years": 4.0},
-    {"key": "rat", "latin": "Rattus norvegicus", "common": ["rat", "rattus norvegicus", "norway rat"], "max_lifespan_years": 3.8},
-    {"key": "naked_mole_rat", "latin": "Heterocephalus glaber", "common": ["naked mole-rat", "naked mole rat", "heterocephalus glaber"], "max_lifespan_years": 31.0},
-    {"key": "rhesus_macaque", "latin": "Macaca mulatta", "common": ["rhesus macaque", "rhesus monkey", "macaca mulatta"], "max_lifespan_years": 40.0},
-    {"key": "dog", "latin": "Canis lupus familiaris", "common": ["dog", "canis lupus familiaris", "domestic dog"], "max_lifespan_years": 24.0},
-    {"key": "zebrafish", "latin": "Danio rerio", "common": ["zebrafish", "danio rerio"], "max_lifespan_years": 5.5},
-    {"key": "fruit_fly", "latin": "Drosophila melanogaster", "common": ["fruit fly", "fly", "drosophila", "drosophila melanogaster"], "max_lifespan_years": 0.3},
-    {"key": "c_elegans", "latin": "Caenorhabditis elegans", "common": ["c. elegans", "c elegans", "nematode", "caenorhabditis elegans"], "max_lifespan_years": 0.07}
-  ]
+ "_provenance": "Maximum longevity (years) parsed from the pinned AnAge release (https://genomics.senescence.info/species/dataset.zip, SHA-256 e3ddb66e32e973a7...). Regenerate with `python -m geroquery.etl.build_idmap`. Manifest 2026.1.",
+ "_missing_from_anage": [],
+ "species": [
+  {
+   "key": "human",
+   "latin": "Homo sapiens",
+   "common": [
+    "human",
+    "homo sapiens"
+   ],
+   "max_lifespan_years": 122.5
+  },
+  {
+   "key": "mouse",
+   "latin": "Mus musculus",
+   "common": [
+    "mouse",
+    "mus musculus",
+    "house mouse"
+   ],
+   "max_lifespan_years": 4.0
+  },
+  {
+   "key": "rat",
+   "latin": "Rattus norvegicus",
+   "common": [
+    "rat",
+    "rattus norvegicus",
+    "norway rat"
+   ],
+   "max_lifespan_years": 3.8
+  },
+  {
+   "key": "worm",
+   "latin": "Caenorhabditis elegans",
+   "common": [
+    "worm",
+    "c. elegans",
+    "caenorhabditis elegans"
+   ],
+   "max_lifespan_years": 0.16
+  },
+  {
+   "key": "fly",
+   "latin": "Drosophila melanogaster",
+   "common": [
+    "fly",
+    "drosophila",
+    "drosophila melanogaster"
+   ],
+   "max_lifespan_years": 0.3
+  },
+  {
+   "key": "yeast",
+   "latin": "Saccharomyces cerevisiae",
+   "common": [
+    "yeast",
+    "saccharomyces cerevisiae"
+   ],
+   "max_lifespan_years": 0.04
+  },
+  {
+   "key": "zebrafish",
+   "latin": "Danio rerio",
+   "common": [
+    "zebrafish",
+    "danio rerio"
+   ],
+   "max_lifespan_years": 5.5
+  },
+  {
+   "key": "killifish",
+   "latin": "Nothobranchius furzeri",
+   "common": [
+    "killifish",
+    "nothobranchius furzeri"
+   ],
+   "max_lifespan_years": 1.1
+  },
+  {
+   "key": "naked_mole_rat",
+   "latin": "Heterocephalus glaber",
+   "common": [
+    "naked mole rat",
+    "heterocephalus glaber"
+   ],
+   "max_lifespan_years": 31.0
+  }
+ ]
 }
