@@ -29,6 +29,9 @@ class CanonicalGene:
     ensembl: str | None = None
     uniprot: str | None = None
     name: str | None = None
+    # Upper-cased symbol shared by a gene and its cross-species orthologs. Carried
+    # on the record so callers can group without re-deriving the convention.
+    ortholog_group: str | None = None
     aliases: tuple[str, ...] = ()
     matched_from: str | None = None  # what the caller queried with
     ambiguous_candidates: tuple[str, ...] = ()  # other canonical_ids the query could mean

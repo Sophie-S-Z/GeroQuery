@@ -175,7 +175,7 @@ class GeroService:
         orthologs = self.resolver.orthologs(gene.canonical_id)
         return {
             **card,
-            "group": gene.__dict__.get("ortholog_group") or gene.symbol.upper(),
+            "group": gene.ortholog_group or gene.symbol.upper(),
             "orthologs": [
                 {"species": o.species, "symbol": o.symbol, "canonical_id": o.canonical_id}
                 for o in orthologs

@@ -232,6 +232,7 @@ class GeneResolver:
             ensembl=rec.get("ensembl"),
             uniprot=rec.get("uniprot"),
             name=rec.get("name"),
+            ortholog_group=rec.get("ortholog_group"),
             aliases=tuple(rec.get("aliases", [])),
             matched_from=matched_from,
             ambiguous_candidates=ambiguous,

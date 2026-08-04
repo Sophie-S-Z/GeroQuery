@@ -1,7 +1,8 @@
 """M5 clocks — application service.
 
-Validates input, applies clocks, computes age acceleration, and compares clocks
-on one input. The interface is fixed; new clocks arrive via the registry.
+Validates input, applies a clock, computes age acceleration, and (for clocks
+that expose it, such as PhenoAge) the associated mortality risk. The interface
+is fixed; new clocks arrive via the registry.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ class ClockResult:
     sample_ids: list[str]
     age_acceleration: list[float] | None = None
     mean_age_acceleration: float | None = None
+    mortality_risk_10yr: list[float] | None = None
 
     def to_dict(self) -> dict:
         return {k: v for k, v in asdict(self).items() if v is not None}
@@ -71,18 +73,32 @@ class ClockService:
             sample_ids=sample_ids,
         )
 
-        if chronological_age is not None:
-            chrono = np.asarray(chronological_age, dtype=float)
-            if len(chrono) != len(predictions):
+        # PhenoAge (and any clock exposing it) reports a companion mortality risk.
+        if hasattr(clock, "mortality_risk"):
+            # Narrow on purpose. `predict` has already validated this same input,
+            # so the only expected failure is a clock whose mortality head needs
+            # something extra; anything else is a bug and should surface rather
+            # than become a missing field.
+            try:
+                risk = clock.mortality_risk(matrix)
+                result.mortality_risk_10yr = [float(x) for x in risk]
+            except ClockInputError:
+                result.mortality_risk_10yr = None
+
+        # Chronological age lets us report age acceleration for age-predicting clocks.
+        chrono = chronological_age
+        if chrono is None and "age" in matrix.columns:
+            chrono = matrix["age"].tolist()
+        if chrono is not None and clock.info.predicted_outcome == "chronological_age":
+            chrono_arr = np.asarray(chrono, dtype=float)
+            if len(chrono_arr) != len(predictions):
                 raise ClockInputError(
                     "chronological_age length does not match number of samples.",
-                    detail={"n_ages": len(chrono), "n_samples": len(predictions)},
+                    detail={"n_ages": len(chrono_arr), "n_samples": len(predictions)},
                 )
-            # Age acceleration is only meaningful for age-predicting clocks.
-            if clock.info.predicted_outcome == "chronological_age":
-                accel = predictions - chrono
-                result.age_acceleration = [float(x) for x in accel]
-                result.mean_age_acceleration = float(np.mean(accel))
+            accel = predictions - chrono_arr
+            result.age_acceleration = [float(x) for x in accel]
+            result.mean_age_acceleration = float(np.mean(accel))
         return result
 
     @staticmethod

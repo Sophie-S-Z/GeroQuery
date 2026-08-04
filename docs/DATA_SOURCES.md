@@ -1,5 +1,14 @@
 # Data-source contract
 
+> **What ships in the bundled demo today.** GeroQuery bundles only real, curated,
+> redistributable facts: gene→aging biology curated from the cited literature
+> (see `geroquery/knowledge/`), HAGR/OpenGenes database memberships, and NIA
+> ITP/DrugAge lifespan interventions. The only synthetic artifact is the
+> `example_cohort_simulated` biomarker cohort used to demonstrate the clock and
+> resilience tools, which is labelled `SIMULATED` everywhere it appears. No
+> fabricated GEO accessions, effect sizes, or p-values are shipped. The table
+> below is the **forward-looking federation contract** the ETL grows into.
+
 Cache-vs-federate is decided by **licence and size**, and enforced in code: each
 adapter declares `license()` and `capabilities()`, and the store calls
 `assert_cacheable()` before persisting anything. Controlled sources are
