@@ -133,7 +133,7 @@ All support `format=json|csv|parquet`; list endpoints support `limit`/`offset`.
 | Interventions | 1,340 |
 | Clinical subjects | 4,895 real NHANES adults |
 | Clocks | 240 (63 biolearn + 173 pyaging + real Levine PhenoAge + 3 reference) |
-| Clocks validated on real methylation | **164 of 236 ran on the primary series**; Horvath reproduces the authors' published per-sample ages to r=0.998, MAE 1.39 y |
+| Clocks validated on real methylation | **436 clock-dataset runs; 164/236 ran on GSE64495, 142/200 on GSE30870**; Horvath reproduces the authors' published per-sample ages to r=0.998, MAE 1.39 y |
 | Tests | 295 offline + 12 live, 84% coverage |
 
 ---

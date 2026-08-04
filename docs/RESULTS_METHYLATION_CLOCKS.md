@@ -18,9 +18,9 @@ That was the largest unexercised capability in the repository, and — unlike mo
 gaps — it is *checkable*, because published MAEs exist for these clocks and
 because one of the two datasets ships the authors' own Horvath output per sample.
 
-**All 236 clocks were attempted on the primary set; 164 ran. Horvath's clock
-reproduces the authors' published per-sample values to r = 0.998, MAE 1.39
-years, and predicts 0.23 years for cord blood.**
+**436 clock-dataset runs: 236 clocks attempted on GSE64495 (164 ran) and 200 on
+GSE30870 (142 ran). Horvath's clock reproduces the authors' published per-sample
+values to r = 0.998, MAE 1.39 years, and predicts 0.23 years for cord blood.**
 
 ## 1. The strongest available check: agreement with published output
 
@@ -49,7 +49,8 @@ non-crashing.**
 
 ## 2. Accuracy against chronological age
 
-63 clocks declare `chronological_age` in years and so have a meaningful MAE.
+101 clock-dataset runs produced an age in years and so have a meaningful MAE —
+53 on GSE64495, 48 on GSE30870.
 
 | Clock | MAE (y) | r | Published MAE |
 |---|---|---|---|
@@ -66,16 +67,24 @@ on data the wrapper had never seen. Zhang's BLUP clock, built for blood and
 trained on far more samples, does better still at 1.45 years, which is also where
 its own paper puts it.
 
-The median across all 63 age clocks is around 7 years: the expected spread once
-clocks trained on other tissues, other age ranges, and other outcomes are pooled
-in without filtering.
+Median MAE across the 53 age clocks on GSE64495 is **7.23 years**: the expected
+spread once clocks trained on other tissues, other age ranges, and other outcomes
+are pooled in without filtering.
 
 ## 3. The extreme-contrast check
 
 Correlation is easy to get right for the wrong reason when age spans 0–100. So
 the second dataset is deliberately bimodal: cord blood at birth versus
-nonagenarians, nothing in between. Every one of the 18 headline clocks separates
-them in the correct direction.
+nonagenarians, nothing in between. **200 clocks were attempted and 142 ran**;
+every one of the 18 headline clocks below separates the two groups in the correct
+direction.
+
+Median MAE here is **17.45 years**, far worse than GSE64495's 7.23 — which is the
+point of the set rather than a problem with it. Almost every clock is being asked
+to extrapolate outside its training range in one direction or the other, and the
+median is dominated by clocks that were never built for newborns or
+centenarians. The best performers are the ones trained on blood across a wide
+range: `intrinclock` at 4.45 y and Hannum at 5.03 y.
 
 | Clock | newborn | nonagenarian | MAE (y) | r |
 |---|---|---|---|---|
@@ -165,12 +174,11 @@ panel: a *data-preparation* fault wearing the costume of an incompatible input.
 5. **The `sex` covariate is approximate.** GSE30870 does not record sex, so it is
    passed as a constant; covariate-dependent clocks (GrimAge) are therefore
    reported with correlation but their absolute values should not be read.
-6. **The second series is only partly swept.** GSE64495 is complete (236 of 236
-   attempted). GSE30870 has the 18 headline clocks plus a partial sweep; the
-   remaining pyaging models are slow (large neural nets, per-clock Hugging Face
-   downloads). Results are written incrementally and the runner resumes from
-   `clock_results.csv`, so finishing it is a matter of letting it run, not of
-   more work.
+6. **GSE30870 is swept to 200 of 236.** GSE64495 is complete. The 36 clocks not
+   yet attempted on GSE30870 are the slowest neural models; results are written
+   incrementally and the runner resumes from `clock_results.csv`, so finishing is
+   a matter of letting it run rather than of more work. Nothing in §3 depends on
+   them.
 7. **No mortality or morbidity outcome.** Neither series has follow-up, so the
    mortality-predicting clocks (GrimAge, PhenoAge) can be checked for internal
    consistency and direction but not for what they were built to predict.
