@@ -40,3 +40,6 @@ frontend/dist/
 # offline path (see docs/DATA_SOURCES.md).
 geroquery/sources/data/clinical_nhanes_full.csv
 geroquery/sources/data/signatures_full.csv
+
+# Stray root lockfile: the only npm project is frontend/, which has its own.
+/package-lock.json
