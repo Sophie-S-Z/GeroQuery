@@ -476,3 +476,45 @@ def test_live_geo_datasets_age_query_still_returns_the_panel_population():
     resp.raise_for_status()
     count = int(resp.json()["esearchresult"]["count"])
     assert count >= 180, f"GEO now returns {count} age-subset DataSets; the panel query changed."
+
+
+@pytest.mark.live
+def test_live_every_pmid_resolves_to_the_paper_we_claim():
+    """A wrong PMID is worse than no PMID: it survives the skim it invites.
+
+    Seven of the twenty-eight references in this file once pointed at unrelated
+    papers — a lamin B1 study resolved to macrophages in breast cancer, the
+    PhenoAge derivation to contraceptive implant bleeding — while the module
+    docstring asserted that identifiers were never invented. This compares each
+    recorded title against the one PubMed returns.
+    """
+    import difflib
+
+    import httpx
+
+    from geroquery.knowledge import REFERENCES
+
+    pmids = [r.pmid for r in REFERENCES.values() if r.pmid]
+    assert pmids, "the citation layer should carry PMIDs"
+
+    resp = httpx.post(
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi",
+        data={"db": "pubmed", "id": ",".join(pmids), "retmode": "json"},
+        timeout=90,
+    )
+    resp.raise_for_status()
+    summaries = resp.json()["result"]
+
+    mismatched = []
+    for reference in REFERENCES.values():
+        if not reference.pmid:
+            continue
+        record = summaries.get(reference.pmid) or {}
+        upstream = record.get("title", "")
+        similarity = difflib.SequenceMatcher(
+            None, reference.title.lower()[:70], upstream.lower()[:70]
+        ).ratio()
+        if similarity < 0.6:
+            mismatched.append(f"{reference.key} (PMID {reference.pmid}) -> {upstream[:70]!r}")
+
+    assert not mismatched, "PMIDs pointing at the wrong paper:\n  " + "\n  ".join(mismatched)

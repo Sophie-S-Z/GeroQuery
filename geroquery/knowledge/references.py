@@ -1,10 +1,19 @@
-"""Real, verifiable literature references used across the curated knowledge base.
+"""Real, verifiable literature references.
 
-Every reference is a real publication. Where we are confident of the PubMed ID
-it is recorded and the link points straight at the article; otherwise the link
-is a PubMed title search that resolves to the same paper. We never invent a
-numeric identifier — an unverifiable PMID would itself be a form of false
-evidence, which this project explicitly avoids.
+Every reference is a real publication, and **every PMID here has been checked
+against PubMed** — the title returned by the API is compared with the title
+recorded below.
+
+That check exists because it caught seven wrong ones. This file previously
+asserted that it never invented a numeric identifier while a quarter of its
+PMIDs pointed at unrelated papers: Shimi's lamin B1 paper resolved to a study of
+macrophages in breast cancer, Tanaka's plasma proteome to ophthalmology
+residency training, Liu's PhenoAge derivation to contraceptive implant bleeding.
+A confidently-formatted wrong citation is worse than no citation, because it
+survives exactly the skim it invites.
+
+``test_live_every_pmid_resolves_to_the_paper_we_claim`` re-runs the comparison
+against PubMed, so a future edit cannot reintroduce one silently.
 """
 
 from __future__ import annotations
@@ -93,7 +102,7 @@ _REFS: list[Reference] = [
         2011,
         "Genes Dev",
         "The role of nuclear lamin B1 in cell proliferation and senescence",
-        "22156207",
+        "22155925",
     ),
     Reference(
         "tanaka_2018",
@@ -101,7 +110,7 @@ _REFS: list[Reference] = [
         2018,
         "Aging Cell",
         "Plasma proteomic signature of age in healthy humans",
-        "29785772",
+        "29992704",
     ),
     Reference(
         "lehallier_2019",
@@ -165,7 +174,7 @@ _REFS: list[Reference] = [
         2013,
         "Nat Rev Endocrinol",
         "The GH/IGF-1 axis in ageing and longevity",
-        "23726003",
+        "23591370",
     ),
     Reference(
         "martin_montalvo_2013",
@@ -225,7 +234,7 @@ _REFS: list[Reference] = [
         "PLoS Med",
         "A new aging measure captures morbidity and mortality risk across "
         "diverse subpopulations from NHANES IV",
-        "30130351",
+        "30596641",
     ),
     Reference(
         "scheffer_2009",
@@ -242,7 +251,7 @@ _REFS: list[Reference] = [
         "J Gerontol A Biol Sci Med Sci",
         "Dynamical resilience indicators in time series of self-rated health "
         "correspond to frailty and health in older adults",
-        "28329147",
+        "28475664",
     ),
     Reference(
         "pyrkov_2021",
@@ -251,7 +260,7 @@ _REFS: list[Reference] = [
         "Nat Commun",
         "Longitudinal analysis of blood markers reveals progressive loss of "
         "resilience and predicts human lifespan limit",
-        "34039909",
+        "34035236",
     ),
     Reference(
         "peters_2015",
@@ -268,7 +277,7 @@ _REFS: list[Reference] = [
         "Aging Cell",
         "Meta-analysis of age-related gene expression profiles identifies "
         "common signatures of aging",
-        "19419974",
+        "19189975",
     ),
     Reference(
         "tacutu_2018",
