@@ -1,6 +1,6 @@
 """M2 sources — source adapters (public surface)."""
 
-from . import nhanes
+from . import nhanes, nhanes_dnam
 from .base import Capabilities, FederatedStub, License, SourceAdapter
 from .federated import FEDERATED_ADAPTERS
 from .fetch import fetch_all, fetch_artifact, is_cached
@@ -14,6 +14,7 @@ from .local_fixture import (
 )
 from .manifest import MANIFEST, MANIFEST_VERSION, RemoteArtifact, get_artifact
 from .nhanes import NhanesClinicalSource
+from .nhanes_dnam import NhanesDnamSource
 
 
 def all_adapters() -> list[SourceAdapter]:
@@ -25,6 +26,7 @@ def all_adapters() -> list[SourceAdapter]:
         CuratedKnowledgeSource(),
         InterventionSource(),
         NhanesClinicalSource(),
+        NhanesDnamSource(),
         GtexOpenSource(),
         *FEDERATED_ADAPTERS,
     ]
@@ -41,8 +43,10 @@ __all__ = [
     "CuratedKnowledgeSource",
     "InterventionSource",
     "NhanesClinicalSource",
+    "NhanesDnamSource",
     "GtexOpenSource",
     "nhanes",
+    "nhanes_dnam",
     "FEDERATED_ADAPTERS",
     "all_adapters",
     "MANIFEST",

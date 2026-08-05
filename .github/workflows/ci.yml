@@ -27,7 +27,12 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          # The `ui` extra is not optional for CI. tests/test_dashboard.py opens
+          # with `pytest.importorskip("streamlit")`, so installing only [dev]
+          # silently skips all ten AppTest cases — the ones that would have
+          # caught the three UI bugs in HANDOFF.md §6 (#9, #10, #11). A skipped
+          # guard is a guard that is not there.
+          pip install -e ".[dev,ui]"
       - name: Lint (ruff)
         run: ruff check geroquery tests
       - name: Format check (black)

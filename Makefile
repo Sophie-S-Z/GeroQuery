@@ -1,4 +1,4 @@
-.PHONY: install dev data data-offline fetch idmap signatures api dashboard test lint format typecheck ci clean
+.PHONY: install dev data data-offline crosslayer fetch idmap signatures api dashboard test lint format typecheck ci clean
 
 install:
 	pip install -e .
@@ -16,10 +16,14 @@ idmap:  ## regenerate the bundled gene + AnAge tables from real sources
 signatures:  ## GEO aging panel + HAGR -> signatures, studies, curated knowledge
 	GEROQUERY_ALLOW_NETWORK=1 python -m geroquery.etl.build_signatures
 
+crosslayer:  ## NHANES 1999-2002 DNAm clocks + health state + mortality, joined
+	GEROQUERY_ALLOW_NETWORK=1 python -m geroquery.etl.build_crosslayer
+
 data: fetch  ## fetch every real upstream, rebuild every table, build the store
 	GEROQUERY_ALLOW_NETWORK=1 python -m geroquery.etl.build_data
 	GEROQUERY_ALLOW_NETWORK=1 python -m geroquery.etl.build_signatures
 	GEROQUERY_ALLOW_NETWORK=1 python -m geroquery.etl.build_idmap
+	GEROQUERY_ALLOW_NETWORK=1 python -m geroquery.etl.build_crosslayer
 	python -m geroquery.etl.build_fixtures
 	python -c "from geroquery.store import GeroStore; print('data version', GeroStore().build().version())"
 

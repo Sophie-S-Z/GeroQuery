@@ -21,10 +21,10 @@ from dataclasses import dataclass
 
 # Bumped whenever any artifact below changes. Recorded alongside derived data so
 # a result can be traced to the exact inputs that produced it.
-MANIFEST_VERSION = "2026.2"
+MANIFEST_VERSION = "2026.3"
 
 # Date the checksums were last confirmed against live upstream bytes.
-VERIFIED_ON = "2026-08-04"
+VERIFIED_ON = "2026-08-05"
 
 
 @dataclass(frozen=True)
@@ -102,6 +102,184 @@ NHANES_2017_2018: dict[str, RemoteArtifact] = {
         attribution=_NHANES_ATTRIBUTION,
         description="Complete blood count: lymphocyte percent, red cell distribution width.",
     ),
+}
+
+# --- NHANES 1999-2002: the cross-layer cohort -------------------------------
+#
+# 2017-2018 has the best clinical panel but no methylation. 1999-2002 is the
+# only NHANES with both: NCHS assayed DNA methylation on a subsample of adults
+# aged 50+ and published the derived clocks in July 2024. That makes these two
+# cycles the only place where a clock, a health state, and a death are all
+# observed on the same person, which is the whole reason this block exists.
+#
+# Two cycles, so two of everything. Variable names are NOT stable across them —
+# creatinine is LBXSCR in 1999-2000 and LBDSCR in 2001-2002, alkaline
+# phosphatase LBXSAPSI then LBDSAPSI. The per-cycle map lives in
+# :mod:`geroquery.sources.nhanes_dnam`; getting it wrong yields a silently
+# smaller cohort rather than an error, so it is pinned by a test.
+_NHANES_1999_BASE = "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/1999/DataFiles"
+_NHANES_2001_BASE = "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2001/DataFiles"
+
+_NHANES_1999_2002_ATTRIBUTION = (
+    "Centers for Disease Control and Prevention (CDC), National Center for Health "
+    "Statistics (NCHS). National Health and Nutrition Examination Survey Data, "
+    "1999-2002. Hyattsville, MD: U.S. Department of Health and Human Services."
+)
+
+# key, url base, filename, sha256, bytes, description
+_NHANES_1999_2002_RAW: tuple[tuple[str, str, str, str, int, str], ...] = (
+    (
+        "DEMO_1999",
+        _NHANES_1999_BASE,
+        "DEMO.xpt",
+        "a17bd1ebfd6007b8dc93f16259cb090678eb6c467a39363b7e932bba15febf89",
+        11500560,
+        "Demographics 1999-2000: age (RIDAGEYR, topcoded at 85), sex, 4-year MEC weight.",
+    ),
+    (
+        "LAB18_1999",
+        _NHANES_1999_BASE,
+        "LAB18.xpt",
+        "36dc6f02045ceb61e146885bb04400fd580c9c35cc3bfc4269e314f0e06fe9c0",
+        2223120,
+        "Biochemistry profile 1999-2000: albumin, creatinine (LBXSCR), glucose, ALP.",
+    ),
+    (
+        "LAB25_1999",
+        _NHANES_1999_BASE,
+        "LAB25.xpt",
+        "f69ef53e50fb3eea6a9e03b0e1167f201ecdb6ad485793002f4f7bee100fbd45",
+        1487520,
+        "Complete blood count 1999-2000: lymphocyte percent, RDW, MCV, WBC.",
+    ),
+    (
+        "LAB11_1999",
+        _NHANES_1999_BASE,
+        "LAB11.xpt",
+        "9ed9904dfc804b50c2c08b763b43d7df702913fc010c0f877e10f9f195ee183a",
+        469040,
+        "C-reactive protein 1999-2000 (LBXCRP, mg/dL) - standard assay, not hs-CRP.",
+    ),
+    (
+        "DEMO_2001",
+        _NHANES_2001_BASE,
+        "DEMO_B.xpt",
+        "6458dc2307cee244ab6ba26f70ec78c7b842ffc68e668bc43f0ab6b9737937d9",
+        3273520,
+        "Demographics 2001-2002: age, sex, 4-year MEC weight.",
+    ),
+    (
+        "L40_2001",
+        _NHANES_2001_BASE,
+        "L40_B.xpt",
+        "16f907f3a945cc24d053a9492a3f90edd3e0335f70ba047bbd9952ba6a00e182",
+        2448480,
+        "Biochemistry profile 2001-2002: albumin, creatinine (LBDSCR), glucose, ALP.",
+    ),
+    (
+        "L25_2001",
+        _NHANES_2001_BASE,
+        "L25_B.xpt",
+        "4bce7e5622c4b79b9965d7869875e05dae547c4b222fd89db47b8efb430b85f3",
+        1671760,
+        "Complete blood count 2001-2002: lymphocyte percent, RDW, MCV, WBC.",
+    ),
+    (
+        "L11_2001",
+        _NHANES_2001_BASE,
+        "L11_B.xpt",
+        "1a78e83a59aaa4a04aeb8ed7abeaeb4b87e9950601ac428c52fae9ce53e9bbbc",
+        446240,
+        "C-reactive protein 2001-2002 (LBXCRP, mg/dL) - standard assay, not hs-CRP.",
+    ),
+)
+
+NHANES_1999_2002: dict[str, RemoteArtifact] = {
+    key: RemoteArtifact(
+        key=key,
+        url=f"{base}/{filename}",
+        sha256=sha256,
+        n_bytes=n_bytes,
+        release="NHANES 1999-2002",
+        license=_NHANES_LICENSE,
+        attribution=_NHANES_1999_2002_ATTRIBUTION,
+        description=description,
+    )
+    for key, base, filename, sha256, n_bytes, description in _NHANES_1999_2002_RAW
+}
+
+# --- NHANES DNA methylation epigenetic biomarkers ---------------------------
+#
+# Published 2024-07-31. 4,449 rows, of which 2,532 carry measurements: adults
+# aged 50+ from the 1999-2000 and 2001-2002 cycles, whole blood, EPIC array.
+#
+# What is public is the *derived* layer — NCHS ran the clocks themselves and
+# released the per-participant outputs (12 clocks, 6 cell fractions, the GrimAge
+# component predictors, and a 4-year DNAm survey weight). The CpG-level betas
+# are Research Data Center only.
+#
+# That split is a feature here, not a limitation. It means this path needs no
+# biolearn, no pyaging, no torch, and no second interpreter — and it sidesteps
+# the normalization mismatch documented in docs/RESULTS_METHYLATION_CLOCKS.md,
+# because these are the survey's own batch-corrected values rather than ours.
+NHANES_DNAM = RemoteArtifact(
+    key="nhanes_dnam",
+    url="https://wwwn.cdc.gov/nchs/data/nhanes/dnam/dnmepi.sas7bdat",
+    sha256="583e0660eafac5b4b2600a18bc4ca6e8a342fd1e87a78c1b03063b14223d956f",
+    n_bytes=1245184,
+    release="NHANES 1999-2002 DNAm epigenetic biomarkers (released 2024-07-31)",
+    license=_NHANES_LICENSE,
+    attribution=_NHANES_1999_2002_ATTRIBUTION,
+    description=(
+        "Per-participant DNAm clocks (Horvath, Hannum, SkinBlood, PhenoAge, GrimAge, "
+        "GrimAge2, DunedinPoAm, HorvathTelo, Zhang, Lin, Weidner, VidalBralo), "
+        "cell-type fractions, and the DNAm 4-year survey weight."
+    ),
+)
+
+# --- NCHS public-use linked mortality files ---------------------------------
+#
+# Follow-up through 2019-12-31, linked to the survey by SEQN. This is the hard
+# outcome the repo has never had: every result until now has been a measurement
+# validated against another measurement.
+#
+# Public-use caveat that has to be carried into any result computed from these:
+# NCHS perturbs a subset of records to prevent re-identification, substituting
+# synthetic follow-up time or cause of death. Aggregate estimates are designed
+# to survive that; individual records are not trustworthy on their own.
+_MORTALITY_BASE = "https://ftp.cdc.gov/pub/HEALTH_STATISTICS/NCHS/datalinkage/linked_mortality"
+_MORTALITY_ATTRIBUTION = (
+    "National Center for Health Statistics. NCHS Data Linked to NDI Mortality Files "
+    "(public-use, follow-up through December 31, 2019). Hyattsville, MD."
+)
+
+NHANES_MORTALITY: dict[str, RemoteArtifact] = {
+    key: RemoteArtifact(
+        key=key,
+        url=f"{_MORTALITY_BASE}/{filename}",
+        sha256=sha256,
+        n_bytes=n_bytes,
+        release="NCHS 2019 public-use linked mortality file",
+        license=_NHANES_LICENSE,
+        attribution=_MORTALITY_ATTRIBUTION,
+        description=description,
+    )
+    for key, filename, sha256, n_bytes, description in (
+        (
+            "MORT_1999",
+            "NHANES_1999_2000_MORT_2019_PUBLIC.dat",
+            "562bd367107add0b2b40fed36a062d8b194fca31e11aab897a0efad4bebc8b26",
+            487666,
+            "Mortality follow-up for NHANES 1999-2000 (9,965 records).",
+        ),
+        (
+            "MORT_2001",
+            "NHANES_2001_2002_MORT_2019_PUBLIC.dat",
+            "2788c8c8a02995ea5686882b5fe65b4b9cd415016031525f8a3c1a3646c47f1b",
+            540362,
+            "Mortality follow-up for NHANES 2001-2002 (11,039 records).",
+        ),
+    )
 }
 
 # --- NCBI GEO DataSets: the aging-signature panel ---------------------------
@@ -695,10 +873,13 @@ ANAGE = RemoteArtifact(
 # Flat lookup across every collection, for the generic fetch CLI.
 MANIFEST: dict[str, RemoteArtifact] = {
     **NHANES_2017_2018,
+    **NHANES_1999_2002,
+    **NHANES_MORTALITY,
     **GEO_AGING_PANEL,
     **METHYLATION_PANEL,
     **HAGR,
     "anage": ANAGE,
+    "nhanes_dnam": NHANES_DNAM,
 }
 
 

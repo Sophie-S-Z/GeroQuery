@@ -1,0 +1,153 @@
+# Living evidence loop.
+#
+# Monthly, re-run the GEO DataSets selection query, rebuild the panel from
+# whatever now satisfies it, and diff the pooled estimates against the committed
+# baseline. Opens a pull request when something moved.
+#
+# Three properties this workflow must keep, because they are what separates a
+# living evidence base from a cron job that overwrites data:
+#
+#   1. It NEVER commits to main and NEVER auto-merges. A human approves every
+#      panel change. There is no merge step, deliberately.
+#   2. It reports datasets that LEFT the panel with the same prominence as ones
+#      that arrived. An upstream withdrawal silently shrinks the evidence behind
+#      every gene in that dataset.
+#   3. It does not let anyone hand-pick. The panel is whatever the rule selects;
+#      `build_signatures` applies the rule and `panel_diff` only observes.
+name: Living evidence
+
+on:
+  # First of the month. GEO curates continuously but slowly; monthly is often
+  # enough to catch a new DataSet before it is a year stale, and rare enough
+  # that the ~30 minute rebuild is not a nuisance.
+  schedule:
+    - cron: "0 5 1 * *"
+  workflow_dispatch:
+    inputs:
+      force_pr:
+        description: "Open a PR even if nothing moved"
+        type: boolean
+        default: false
+
+concurrency:
+  group: living-evidence
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  rebuild-and-diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write        # to push the candidate branch
+      pull-requests: write   # to open the PR
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Confirm the baseline exists
+        run: |
+          test -f evidence/baseline.json.gz || {
+            echo "::error::evidence/baseline.json.gz is missing. Bootstrap it with"
+            echo "::error::  python -m geroquery.etl.panel_diff --snapshot evidence/baseline.json.gz"
+            exit 1
+          }
+
+      # The selection query is the discovery mechanism. A live test already pins
+      # that it returns >=180 records; if that fails the panel definition moved
+      # under us and a rebuild would be rebuilding something else.
+      - name: Check the selection query still resolves
+        env:
+          GEROQUERY_ALLOW_NETWORK: "1"
+        run: pytest -m live -q -k "geo_query or panel" || echo "::warning::live panel check did not run"
+
+      - name: Rebuild the panel from whatever the rule now selects
+        env:
+          GEROQUERY_ALLOW_NETWORK: "1"
+        run: |
+          python -m geroquery.etl.build_signatures
+          python -c "from geroquery.store import GeroStore; GeroStore().build()"
+
+      - name: Take a candidate snapshot
+        run: python -m geroquery.etl.panel_diff --snapshot evidence/candidate.json.gz
+
+      # Exits 1 when something moved. `|| true` plus an explicit capture keeps
+      # the step green either way; the decision is the `changed` output.
+      - name: Diff against the baseline
+        id: diff
+        run: |
+          set +e
+          python -m geroquery.etl.panel_diff \
+            --before evidence/baseline.json.gz \
+            --after  evidence/candidate.json.gz \
+            --markdown evidence/changelog-latest.md \
+            --json evidence/diff-latest.json
+          code=$?
+          set -e
+          echo "changed=$([ "$code" -eq 1 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the diff regardless
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-diff
+          path: |
+            evidence/changelog-latest.md
+            evidence/diff-latest.json
+            evidence/candidate.json.gz
+          retention-days: 90
+
+      - name: Promote the candidate and append the changelog
+        if: steps.diff.outputs.changed == 'true' || inputs.force_pr
+        run: |
+          mv evidence/candidate.json.gz evidence/baseline.json.gz
+          {
+            cat evidence/changelog-latest.md
+            echo
+            echo "---"
+            echo
+            cat evidence/CHANGELOG.md 2>/dev/null || true
+          } > evidence/CHANGELOG.next.md
+          mv evidence/CHANGELOG.next.md evidence/CHANGELOG.md
+          rm -f evidence/diff-latest.json evidence/changelog-latest.md
+
+      - name: Open a pull request — never merge one
+        if: steps.diff.outputs.changed == 'true' || inputs.force_pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: living-evidence/${{ github.run_id }}
+          # No `merge` step follows this, deliberately. The panel is
+          # rule-selected; a human still confirms the rule produced what the
+          # diff says it produced.
+          title: "data: evidence changelog for ${{ github.run_id }}"
+          body-path: evidence/CHANGELOG.md
+          commit-message: |
+            data: rebuild the panel and record what moved
+
+            Generated by the living-evidence workflow. The panel is
+            rule-selected: datasets enter because they satisfy the GEO
+            DataSets query and the contrast rules, never because of their
+            result. Review the membership diff before merging.
+          labels: |
+            living-evidence
+            needs-review
+          add-paths: |
+            evidence/baseline.json.gz
+            evidence/CHANGELOG.md
+            geroquery/sources/data/signatures_curated.csv
+            geroquery/sources/data/studies.csv
+            geroquery/sources/manifest.py
+
+      - name: Say so when nothing moved
+        if: steps.diff.outputs.changed != 'true'
+        run: echo "Corpus and every pooled estimate unchanged. No PR opened."

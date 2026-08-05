@@ -43,3 +43,4 @@ geroquery/sources/data/signatures_full.csv
 
 # Stray root lockfile: the only npm project is frontend/, which has its own.
 /package-lock.json
+geroquery/sources/data/crosslayer_nhanes_dnam_full.csv

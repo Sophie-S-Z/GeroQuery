@@ -1,8 +1,24 @@
 # GeroQuery — complete handoff
 
-**Date:** 2026-08-04 · **Branch:** `main` · **Head:** `8194c4a`
-**Manifest:** 2026.2 (checksums verified 2026-08-04)
-**Gate:** ruff · black · mypy clean (54 modules) · **331 tests + 13 live** · 86% coverage
+**Date:** 2026-08-05 · **Branch:** `main`
+**Manifest:** 2026.3 (checksums verified 2026-08-05)
+**Gate:** ruff · black clean · **389 tests + 15 live**
+
+> **2026-08-05 session.** Three things landed, all from
+> [`ROADMAP.md`](ROADMAP.md) §2. §10 below is superseded by that document.
+>
+> 1. **The cross-layer result** — §10.3's "reason this exists" is no longer
+>    blocked and is now answered. NCHS released per-participant DNAm clocks for
+>    NHANES 1999–2002 in July 2024, so clocks, health state, and death now land
+>    on the same 2,517 people. → [`RESULTS_CROSSLAYER.md`](RESULTS_CROSSLAYER.md)
+> 2. **A living evidence loop** — monthly rebuild that publishes *which pooled
+>    estimates moved*, never auto-merges. → [`../evidence/`](../evidence/)
+> 3. **An MCP server** — GeroQuery as a tool an agent can call, with the
+>    interval in every primary payload. → `geroquery/mcp/`
+>
+> Also fixed: CI installed `[dev]` without `ui`, so the ten `AppTest` cases in
+> §8 — the only ones that would have caught bugs #9–#11 — were being skipped in
+> CI and had never actually run there.
 
 This is the authoritative document. §1 explains what GeroQuery is in plain terms;
 §2 recaps this session; everything after is reference.
@@ -123,6 +139,11 @@ only tests here that would have caught any of it.
 | **Gene signatures** | Does this gene change with age, and how sure can we be? | 31 GEO DataSets → 485,905 effect sizes |
 | **Aging clocks** | How old does this sample look biologically? | 240 clocks; validated on 2 real methylation series |
 | **Resilience** | Is this population losing the ability to recover from perturbation? | Real NHANES + a planted-effect control |
+| **Survival** *(new)* | Does any of it predict death? | NHANES 1999–2002 DNAm subsample, n=2,517, 1,350 deaths, 20 y follow-up |
+
+The fourth row is what changed on 2026-08-05. Until then every result here
+validated a measurement against another measurement; this is the first hard
+outcome. → [`RESULTS_CROSSLAYER.md`](RESULTS_CROSSLAYER.md)
 
 ### 3.2 Everything you can do today
 
@@ -176,8 +197,10 @@ Strictly layered; lower never imports higher. 54 modules, 18 test files.
 | `clocks` | 240 clocks; predicted-outcome metadata; age acceleration; mortality risk |
 | `resilience` | Critical slowing down, AR(1) relaxation, control energy |
 | `knowledge` | PubMed-verified citations + hallmark vocabulary |
+| `survival` | Cox PH (Breslow ties), Harrell's C, nested LR tests, Mahalanobis dysregulation |
 | `api` | FastAPI, error envelope, pagination, format switch, versioned LRU |
-| `etl` | Offline batch only — never on the request path |
+| `mcp` | Model Context Protocol tools over the API layer; `tools.py` imports no SDK |
+| `etl` | Offline batch only — never on the request path. Includes the living-evidence `panel_diff` |
 | `ui` | Streamlit dashboard (`theme.py` + `streamlit_app.py`), React showcase |
 
 ---
@@ -266,6 +289,10 @@ Each was exposed by running real data or the real UI. Each would have passed a s
 | 9 | Dashboard branched on `knowledge`, which is now always `None` | **Every gene showed "not in the knowledge base"**; the explorer was unreachable |
 | 10 | Resilience radio options rewritten, branches not | **No cohort could ever load** |
 | 11 | 7 of 28 PMIDs pointed at unrelated papers | A lamin B1 citation resolved to breast-cancer macrophages; PhenoAge to contraceptive implants |
+| 12 | NHANES `XY_Estimation` is 1=female/2=male — the **inverse** of `RIAGENDR` | Both are valid-looking 1/2 integers, so the naive map gave 2.4% agreement instead of 97.6%: **DNAm sex was wrong for every subject**, silently |
+| 13 | NHANES variable names are not stable across cycles (`LBXSCR`→`LBDSCR`, `LBXSAPSI`→`LBDSAPSI`) | Using one cycle's names for both does not raise — it drops 1,306 subjects and yields a half-size cohort that looks fine |
+| 14 | MCP tools read `effect_size`/`intervention_type`; the model exposes `lifespan_effect_pct`/`itype` | Every rapamycin effect came back `None`, reading as "a drug with no measured effect" rather than as a mapping bug |
+| 15 | CI installed `.[dev]`, not `.[dev,ui]` | `importorskip("streamlit")` skipped all ten `AppTest` cases. **The guard against bugs #9–#11 had never run in CI** |
 
 Also fixed earlier: negative AR(1) coefficients reported as *high resilience*;
 CSD accepting a positive slope alone (fires on noise ~half the time);
@@ -470,6 +497,20 @@ age-stratified · React frontend not repointed.
 - **`fetch.cache_path` is prefixed with the manifest key.** Do not "simplify" it.
 - **NHANES URL trap:** `/Nchs/Nhanes/2017-2018/DEMO_J.XPT` returns HTML. Use
   `/Nchs/Data/Nhanes/Public/2017/DataFiles/DEMO_J.xpt`. A test pins it.
+- **`XY_Estimation` is 1=female, 2=male.** The opposite of `RIAGENDR`. Never
+  reuse `SEX_LABELS` for it; use `DNAM_SEX_LABELS`. Bug #12.
+- **NHANES variable names differ between cycles.** Never assume a 2017-2018
+  name works in 1999-2002. Check the file's actual columns first. Bug #13.
+- **The two NHANES cohorts are not interchangeable.** 2017-2018 is age 20-80
+  with hs-CRP; 1999-2002 is age 50-85 with standard CRP, and the age floor
+  removes the CSD variance signal entirely (`RESULTS_CROSSLAYER.md` §5).
+- **`geroquery/mcp/tools.py` must never import the MCP SDK.** That split is what
+  lets the payload logic be tested without the extra installed.
+- **Never let the living-evidence workflow merge itself,** and never hand-edit
+  the GEO panel to accept a diff. A test asserts the first; only discipline
+  enforces the second.
+- **`.[dev]` is not enough to run the suite honestly** — the dashboard tests
+  skip without `ui`. Use `.[dev,ui]`. Bug #15.
 
 ---
 
@@ -500,6 +541,9 @@ pre-merge state.
 | Document | What it is |
 |---|---|
 | **`HANDOFF.md`** | This document. Authoritative |
+| **`ROADMAP.md`** | Where this goes next, and why. Supersedes §10 |
+| `RESULTS_CROSSLAYER.md` | Clocks × health state × mortality in one cohort |
+| `../evidence/README.md` | The living-evidence loop and the three rules it must not break |
 | `OVERVIEW.md` | Source table, architecture, use cases, limitations |
 | `DATA_SOURCES.md` | Cache-vs-federate contract and licences |
 | `RESULTS_NHANES_CSD.md` | Clinical resilience result (partial null) |
