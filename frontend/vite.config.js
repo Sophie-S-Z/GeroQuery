@@ -6,6 +6,11 @@ import react from "@vitejs/plugin-react";
 // CDN and cannot go down or exceed a free tier.
 export default defineConfig({
   plugins: [react()],
+  // GitHub Pages serves project sites from /<repo>/, so the workflow sets
+  // BASE_PATH=/GeroQuery/. Cloudflare Pages serves from the root and needs
+  // nothing. `DATA_BASE` in src/lib/db.js reads import.meta.env.BASE_URL, so
+  // the Parquet files resolve under either.
+  base: process.env.BASE_PATH || "/",
   build: {
     outDir: "dist",
     target: "es2022",

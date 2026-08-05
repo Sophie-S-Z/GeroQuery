@@ -565,6 +565,8 @@ pre-merge state.
 |---|---|
 | **`HANDOFF.md`** | This document. Authoritative |
 | **`ROADMAP.md`** | Where this goes next, and why. Supersedes §10 |
+| **`HANDOFF_2026-08-05.md`** | Full record of the 2026-08-05 session |
+| `DEPLOY.md` | Putting the static site online, free |
 | `RESULTS_CROSSLAYER.md` | Clocks × health state × mortality in one cohort |
 | `../evidence/README.md` | The living-evidence loop and the three rules it must not break |
 | `OVERVIEW.md` | Source table, architecture, use cases, limitations |

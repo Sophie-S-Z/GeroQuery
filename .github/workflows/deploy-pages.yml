@@ -1,0 +1,88 @@
+# Deploy the static front end to GitHub Pages.
+#
+# Builds only. It does NOT regenerate frontend/public/data/ — that needs the
+# built store, the id maps, and ~679 MB of pinned upstreams, none of which
+# belong in a deploy job. The data files are committed as the deployable
+# artifact; `make frontend-data` regenerates them locally.
+#
+# Turn this on at: Settings -> Pages -> Build and deployment -> Source:
+# "GitHub Actions". Until that is set, the workflow runs and the deploy step
+# fails with a clear message rather than doing something surprising.
+name: Deploy front end
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel a running deploy; queue behind it. A cancelled deploy can leave
+# Pages serving a half-published build.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Fail early if the data was not committed
+        run: |
+          for f in pooled.parquet contrasts.parquet meta.json studies.json; do
+            test -f "frontend/public/data/$f" || {
+              echo "::error::frontend/public/data/$f is missing."
+              echo "::error::Run 'make frontend-data' and commit the result."
+              exit 1
+            }
+          done
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        # Project sites live at /<repo>/, so the asset and data URLs have to be
+        # prefixed. Cloudflare Pages serves from the root and sets nothing.
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: npm run build
+
+      - name: Report what is being published
+        working-directory: frontend
+        run: |
+          echo "### Deploying GeroQuery" >> "$GITHUB_STEP_SUMMARY"
+          python3 -c "import json;m=json.load(open('public/data/meta.json'));print('\n'.join(f'- **{k}**: {v}' for k,v in m.items()))" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Largest files:" >> "$GITHUB_STEP_SUMMARY"
+          find dist -type f -size +1M -printf '- %f — %s bytes\n' >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
