@@ -15,10 +15,15 @@
 >    estimates moved*, never auto-merges. → [`../evidence/`](../evidence/)
 > 3. **An MCP server** — GeroQuery as a tool an agent can call, with the
 >    interval in every primary payload. → `geroquery/mcp/`
+> 4. **A static front end** — Vite + React + Observable Plot, no backend,
+>    deployable free on Cloudflare Pages. Replaces the Streamlit ceiling in
+>    §10.1: URL-as-state, real responsive layout, light/dark, and the first view
+>    that shows all 485,905 rows at once. → [`../frontend/`](../frontend/README.md)
 >
 > Also fixed: CI installed `[dev]` without `ui`, so the ten `AppTest` cases in
 > §8 — the only ones that would have caught bugs #9–#11 — were being skipped in
-> CI and had never actually run there.
+> CI and had never actually run there. And `mypy` was aborting on a numpy stub
+> syntax error, which meant it was checking **nothing**; see §12.
 
 This is the authoritative document. §1 explains what GeroQuery is in plain terms;
 §2 recaps this session; everything after is reference.
@@ -293,6 +298,10 @@ Each was exposed by running real data or the real UI. Each would have passed a s
 | 13 | NHANES variable names are not stable across cycles (`LBXSCR`→`LBDSCR`, `LBXSAPSI`→`LBDSAPSI`) | Using one cycle's names for both does not raise — it drops 1,306 subjects and yields a half-size cohort that looks fine |
 | 14 | MCP tools read `effect_size`/`intervention_type`; the model exposes `lifespan_effect_pct`/`itype` | Every rapamycin effect came back `None`, reading as "a drug with no measured effect" rather than as a mapping bug |
 | 15 | CI installed `.[dev]`, not `.[dev,ui]` | `importorskip("streamlit")` skipped all ten `AppTest` cases. **The guard against bugs #9–#11 had never run in CI** |
+| 16 | `mypy` pinned `python_version = "3.10"` while numpy 2.5 (which requires ≥3.12) uses PEP 695 stubs | One *syntax* error in a dependency's stub aborts the whole run, so **mypy was checking nothing** on 3.12. Silent because 3.10/3.11 resolve an older numpy |
+| 17 | Front-end symbols came from `resolver.resolve_gene` over 46,091 ids | `genes.json` is a curated 2,560-record table, not a genome-wide index: **94.4% of genes rendered as raw Ensembl accessions** and the search rail could not find them. Silent — every id got a label, the label was just itself |
+| 18 | Forest-plot y-labels stripped `GEO:GDS…` to the bare accession | One GDS can yield two contrasts, so both rows got the same label and Plot's ordinal scale **silently merged two measurements into one row** |
+| 19 | `clock.replace(/Age$\|Mort$\|AgeMort$/, "")` | Alternation matches leftmost-first, so `GrimAgeMort`→`Grim` but `GrimAge2Mort`→`GrimAge2`. Same clock family, inconsistent labels |
 
 Also fixed earlier: negative AR(1) coefficients reported as *high resilience*;
 CSD accepting a positive slope alone (fires on noise ~half the time);
@@ -511,6 +520,20 @@ age-stratified · React frontend not repointed.
   enforces the second.
 - **`.[dev]` is not enough to run the suite honestly** — the dashboard tests
   skip without `ui`. Use `.[dev,ui]`. Bug #15.
+- **Do not re-pin `python_version` in `[tool.mypy]`.** It is unset on purpose:
+  numpy 2.5 requires Python ≥3.12 and its stubs use PEP 695 syntax, so pinning
+  3.10 makes mypy abort on a dependency stub and check nothing at all. The 3.10
+  matrix job is what proves 3.10 support. Bug #16.
+- **The front end never computes a statistic.** Pooling, intervals, verdicts and
+  hazard ratios are all Python; JavaScript filters and draws. If you find
+  yourself writing DerSimonian–Laird in JS, add it to
+  `etl/build_frontend_data.py` instead.
+- **`make idmap` must have run before `make frontend-data`**, or 94% of genes
+  render as accessions. The exporter raises if no bulk map exists at all, but it
+  cannot tell a stale map from a complete one. Bug #17.
+- **`frontend/public/data/` is committed** even though it is derived. It is the
+  deployable artifact — Cloudflare Pages builds from the repo and cannot run the
+  Python ETL — and `meta.json` carries the data version that identifies it.
 
 ---
 

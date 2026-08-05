@@ -1,101 +1,696 @@
+/* GeroQuery — an instrument, not a landing page.
+ *
+ * The design thesis is that x = 0 is the protagonist. This product's whole
+ * claim is that an interval can say "we cannot tell", and for the most-cited
+ * gene in aging that is the honest answer. So the zero line is a real
+ * structural element: every chart aligns to it, and it is drawn heavier than
+ * any other rule on the page.
+ *
+ * Type encodes epistemics, which is why there are three families and not one:
+ *   Instrument Serif  — assertions only. Three places on the whole site.
+ *   IBM Plex Sans     — the interface.
+ *   IBM Plex Mono     — every measurement. Tabular figures, always.
+ *
+ * Direction colours are equal in weight on purpose. A gene going up with age is
+ * not better or worse than one going down, so neither gets the "good" colour.
+ * The null colour is a neutral warm grey rather than red: "we cannot tell" is
+ * an answer, not an error, and colouring it like a failure would undercut the
+ * one thing this tool is for.
+ */
+
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+
 :root {
-  --bg: #0f1216;
-  --panel: #171b21;
-  --panel-2: #1e242c;
-  --line: #2a323c;
-  --text: #e6eaef;
-  --muted: #8b96a5;
-  --accent: #5eead4;
-  --up: #f0876a;
-  --down: #6aa9f0;
-  --radius: 14px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --paper: #e9e7e2;
+  --paper-raised: #f2f0ec;
+  --paper-sunken: #e0ddd6;
+  --ink: #16171b;
+  --ink-soft: #4a4b52;
+  --ink-faint: #75767e;
+  --rule: #cbc7be;
+  --rule-strong: #a9a49a;
+
+  /* Effect direction. Equal weight; neither is "good". */
+  --up: #a8481a;
+  --down: #2b4585;
+  --null: #7b776f;
+  --up-wash: rgba(168, 72, 26, 0.12);
+  --down-wash: rgba(43, 69, 133, 0.12);
+
+  --focus: #2b4585;
+
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  --serif: "Instrument Serif", ui-serif, Georgia, serif;
+
+  --rail: 300px;
+  --gap: 1.5rem;
 }
 
-* { box-sizing: border-box; }
+/* Dark is applied by the explicit toggle and by the media query. The attribute
+   selector is listed first and the media query guards on :not([data-theme]),
+   so the toggle wins in both directions rather than only when it agrees with
+   the system. */
+:root[data-theme="dark"] {
+  --paper: #101116;
+  --paper-raised: #171920;
+  --paper-sunken: #0a0b0f;
+  --ink: #e8e6e1;
+  --ink-soft: #a8a7a2;
+  --ink-faint: #7b7c85;
+  --rule: #2a2c35;
+  --rule-strong: #454854;
+  --up: #e8834a;
+  --down: #86a8ea;
+  --null: #9a968f;
+  --up-wash: rgba(232, 131, 74, 0.15);
+  --down-wash: rgba(134, 168, 234, 0.15);
+  --focus: #86a8ea;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101116;
+    --paper-raised: #171920;
+    --paper-sunken: #0a0b0f;
+    --ink: #e8e6e1;
+    --ink-soft: #a8a7a2;
+    --ink-faint: #7b7c85;
+    --rule: #2a2c35;
+    --rule-strong: #454854;
+    --up: #e8834a;
+    --down: #86a8ea;
+    --null: #9a968f;
+    --up-wash: rgba(232, 131, 74, 0.15);
+    --down-wash: rgba(134, 168, 234, 0.15);
+    --focus: #86a8ea;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
 
 body {
   margin: 0;
-  background: radial-gradient(1200px 600px at 70% -10%, #1b2530 0%, var(--bg) 55%);
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
 }
 
-.page { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
-
-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-.brand { display: flex; align-items: center; gap: 14px; }
-.logo { font-size: 34px; }
-h1 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
-.sub { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
-.version { color: var(--muted); font-size: 12px; border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px; }
-
-.search { display: flex; gap: 10px; margin-bottom: 12px; }
-.search input, .search select, .search button {
-  height: 46px; border-radius: 12px; border: 1px solid var(--line);
-  background: var(--panel); color: var(--text); font-size: 15px; padding: 0 14px;
+/* Every number on this page is a measurement. */
+.num,
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1;
 }
-.search input { flex: 1; }
-.search button {
-  background: var(--accent); color: #06231f; font-weight: 650; border: none; cursor: pointer; padding: 0 22px;
-  transition: transform 0.08s ease, filter 0.15s ease;
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
-.search button:hover { filter: brightness(1.06); transform: translateY(-1px); }
 
-.examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-.chip {
-  background: var(--panel-2); border: 1px solid var(--line); color: var(--muted);
-  border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-.chip:hover { color: var(--text); border-color: var(--accent); }
 
-.notice { padding: 16px; color: var(--muted); }
-.notice.error { color: var(--up); }
+/* --- shell ---------------------------------------------------------------- */
 
-.card {
-  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 20px 22px; margin-bottom: 16px;
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
-.gene-head h2 { margin: 0 0 8px; font-size: 22px; }
-.gene-head .muted { color: var(--muted); font-weight: 400; font-size: 15px; }
-.ids { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 13px; }
-.ids code { color: var(--accent); }
 
-h3 { margin: 0 0 14px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.masthead {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 1.25rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-raised);
+}
 
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--line); }
-td { padding: 9px 10px; border-bottom: 1px solid var(--panel-2); }
-td.up, .up { color: var(--up); font-variant-numeric: tabular-nums; }
-td.down, .down { color: var(--down); font-variant-numeric: tabular-nums; }
-.barcell { width: 160px; }
+.wordmark {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 
-.effect-track { position: relative; height: 8px; background: var(--panel-2); border-radius: 6px; }
-.effect-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--line); }
-.effect-fill { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
-.effect-fill.up { background: var(--up); }
-.effect-fill.down { background: var(--down); }
+/* The counts are queried, never typed. A stale corpus size on a page whose
+   argument is provenance is a self-inflicted wound. */
+.masthead-stats {
+  display: flex;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
 
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } .search { flex-wrap: wrap; } }
+.masthead-stats b {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
 
-.flags { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
-.flags .db { display: inline-block; background: var(--panel-2); border: 1px solid var(--line); color: var(--accent); font-size: 11px; border-radius: 6px; padding: 1px 7px; margin-right: 6px; }
-.flags .eff { color: var(--accent); font-size: 12px; }
-.muted { color: var(--muted); }
+.masthead-spacer {
+  flex: 1;
+}
 
-footer { margin-top: 32px; color: var(--muted); font-size: 12px; text-align: center; }
-footer code { color: var(--accent); }
+.mode-flag {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--rule-strong);
+  color: var(--ink-faint);
+}
 
-/* Provenance tags. The real/synthetic distinction has to be visible on the
-   panel itself — a caveat further down the page gets read as decoration. */
-.tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; border-radius: 6px; padding: 2px 7px; vertical-align: middle; margin-left: 8px; border: 1px solid var(--line); }
-.tag-real { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line)); }
-.tag-demo { color: var(--muted); }
+.mode-flag[data-mode="curated_slice"] {
+  border-color: var(--up);
+  color: var(--up);
+}
 
-.badge { font-size: 11px; border-radius: 6px; padding: 1px 8px; border: 1px solid var(--line); }
-.badge-yes { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line)); }
-.badge-no { color: var(--muted); }
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-raised);
+  padding: 0 1.25rem;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 19;
+}
 
-.small { font-size: 12px; }
-.conclusion { margin: 10px 0 0; font-size: 13px; }
+.tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.theme-toggle {
+  appearance: none;
+  background: none;
+  border: 1px solid var(--rule-strong);
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+main {
+  flex: 1;
+  padding: var(--gap) 1.25rem 4rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* --- gene view ------------------------------------------------------------ */
+
+.split {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rail {
+  position: sticky;
+  top: 52px;
+}
+
+@media (max-width: 900px) {
+  .rail {
+    position: static;
+  }
+}
+
+.search-field {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 1rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--paper-raised);
+  color: var(--ink);
+  border: 1px solid var(--rule-strong);
+  letter-spacing: 0.04em;
+}
+
+.search-field::placeholder {
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+.rail-hint {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  margin: 0.45rem 0 0.9rem;
+}
+
+.result-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+  max-height: 58vh;
+  overflow-y: auto;
+}
+
+.result {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  padding: 0.4rem 0.3rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.result:hover {
+  background: var(--paper-sunken);
+}
+
+.result[aria-current="true"] {
+  background: var(--paper-sunken);
+  box-shadow: inset 2px 0 0 var(--ink);
+}
+
+.result-symbol {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.result-species {
+  font-size: 0.64rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-left: 0.4rem;
+}
+
+.result-effect {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+/* The verdict dot: filled when the interval excludes zero, hollow when it does
+   not. The hollow ring is the visual grammar for "we cannot tell". */
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 0.45rem;
+}
+
+.dot[data-verdict="increases"] {
+  background: var(--up);
+}
+
+.dot[data-verdict="decreases"] {
+  background: var(--down);
+}
+
+.dot[data-verdict="no_evidence"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--null);
+}
+
+/* --- readout -------------------------------------------------------------- */
+
+.readout-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+
+.gene-symbol {
+  font-family: var(--mono);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin: 0;
+}
+
+.gene-meta {
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  margin: 0.35rem 0 0;
+  font-family: var(--mono);
+}
+
+/* Instrument Serif, used here and almost nowhere else. This is the assertion. */
+.verdict {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+  line-height: 1;
+  text-align: right;
+  margin: 0;
+}
+
+.verdict[data-verdict="increases"] {
+  color: var(--up);
+}
+
+.verdict[data-verdict="decreases"] {
+  color: var(--down);
+}
+
+.verdict[data-verdict="no_evidence"] {
+  color: var(--null);
+  font-style: italic;
+}
+
+.verdict-sub {
+  display: block;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: 0.35rem;
+}
+
+.pooled-line {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  margin: 0 0 1.2rem;
+}
+
+.pooled-line .interval {
+  color: var(--ink-soft);
+}
+
+.species-switch {
+  display: inline-flex;
+  border: 1px solid var(--rule-strong);
+  margin-bottom: 1rem;
+}
+
+.species-switch button {
+  appearance: none;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--rule-strong);
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+.species-switch button:last-child {
+  border-right: none;
+}
+
+.species-switch button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --- panels, tables ------------------------------------------------------- */
+
+.panel {
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.4rem;
+}
+
+.panel-title {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 0.8rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 400;
+  border-bottom: 1px solid var(--rule-strong);
+  padding: 0.35rem 0.6rem 0.35rem 0;
+  white-space: nowrap;
+}
+
+td {
+  padding: 0.32rem 0.6rem 0.32rem 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: baseline;
+}
+
+tbody tr:hover {
+  background: var(--paper-sunken);
+}
+
+td.num,
+th.num {
+  text-align: right;
+  padding-right: 0.9rem;
+}
+
+/* A button that navigates rather than acts. Styled as a link because that is
+   what it does; kept a <button> because it changes app state rather than
+   fetching a document, and a link that does not go anywhere is worse for a
+   screen reader than a button that looks like one. */
+.link-button {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-family: var(--mono);
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 3px;
+}
+
+.link-button:hover {
+  text-decoration-color: var(--ink);
+}
+
+.up {
+  color: var(--up);
+}
+
+.down {
+  color: var(--down);
+}
+
+.null {
+  color: var(--null);
+}
+
+.note {
+  font-size: 0.73rem;
+  color: var(--ink-faint);
+  line-height: 1.55;
+}
+
+.note strong {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.caveats {
+  margin: 0;
+  padding-left: 1.05rem;
+  font-size: 0.73rem;
+  color: var(--ink-faint);
+  line-height: 1.6;
+}
+
+.caveats li {
+  margin-bottom: 0.35rem;
+}
+
+/* --- states --------------------------------------------------------------- */
+
+.state {
+  border: 1px dashed var(--rule-strong);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--ink-faint);
+}
+
+.state-title {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.4rem;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--paper-sunken) 0%,
+    var(--paper-raised) 50%,
+    var(--paper-sunken) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  height: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.error {
+  border-left: 3px solid var(--up);
+  padding: 0.7rem 0.9rem;
+  background: var(--up-wash);
+  font-size: 0.78rem;
+}
+
+/* --- charts --------------------------------------------------------------- */
+
+.chart {
+  overflow-x: auto;
+}
+
+.chart figure {
+  margin: 0;
+}
+
+.chart svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.legend {
+  display: flex;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+  margin-top: 0.6rem;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.swatch {
+  width: 11px;
+  height: 3px;
+  display: inline-block;
+}
+
+/* --- footer --------------------------------------------------------------- */
+
+footer {
+  border-top: 1px solid var(--rule);
+  padding: 1.2rem 1.25rem 2rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+  line-height: 1.7;
+}
+
+footer a {
+  color: var(--ink-soft);
+}

@@ -1,4 +1,4 @@
-.PHONY: install dev data data-offline crosslayer fetch idmap signatures api dashboard test lint format typecheck ci clean
+.PHONY: install dev data data-offline crosslayer fetch idmap signatures api dashboard frontend-data frontend test lint format typecheck ci clean
 
 install:
 	pip install -e .
@@ -30,6 +30,12 @@ data: fetch  ## fetch every real upstream, rebuild every table, build the store
 data-offline:  ## build the store with no network, from the committed real samples
 	python -m geroquery.etl.build_fixtures
 	python -c "from geroquery.store import GeroStore; print('data version', GeroStore().build().version())"
+
+frontend-data:  ## export the static Parquet/JSON the browser app reads
+	python -m geroquery.etl.build_frontend_data
+
+frontend: frontend-data  ## build the static site into frontend/dist
+	cd frontend && npm install && npm run build
 
 api:  ## run the FastAPI service (http://localhost:8000/docs)
 	uvicorn geroquery.api.app:app --reload --port 8000

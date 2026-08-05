@@ -95,7 +95,23 @@ line-length = 100
 target-version = ["py310"]
 
 [tool.mypy]
-python_version = "3.10"
+# `python_version` is deliberately NOT set. Pinning it to "3.10" while running
+# mypy under a 3.12 interpreter is incoherent: numpy 2.5 requires Python >=3.12
+# and its stubs use PEP 695 `type` statements, which mypy refuses to parse when
+# told to assume 3.10 —
+#
+#     numpy/__init__.pyi: error: Type statement is only supported in Python 3.12
+#     and greater  [syntax]
+#
+# and that single syntax error aborts the whole run, so *nothing* got checked.
+# This was silent because 3.10 and 3.11 resolve an older numpy whose stubs parse
+# fine; only the 3.12 matrix job and modern local venvs hit it.
+#
+# Unset, mypy assumes the running interpreter. Each CI matrix job then checks
+# that version's semantics against that version's actual dependency set, which
+# is what we want anyway — the 3.10 job is the thing that proves 3.10 support,
+# not a flag on a 3.12 run. Ruff's `target-version = "py310"` plus the UP rules
+# catch newer syntax at lint time regardless of which interpreter runs mypy.
 ignore_missing_imports = true
 warn_unused_ignores = true
 no_implicit_optional = true

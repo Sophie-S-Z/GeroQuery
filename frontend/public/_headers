@@ -1,0 +1,16 @@
+# Cloudflare Pages headers.
+#
+# Parquet must be range-requestable: the whole no-backend design rests on
+# DuckDB fetching row groups rather than files, and a proxy that strips
+# Accept-Ranges turns every gene lookup into a 4.4 MB download.
+/data/*
+  Accept-Ranges: bytes
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# Hashed filenames, so these are safe to cache forever.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

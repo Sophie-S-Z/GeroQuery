@@ -1,15 +1,21 @@
 {
-  "name": "geroquery-showcase",
+  "name": "geroquery-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "React showcase page for the GeroQuery API",
+  "description": "Static explorer for GeroQuery: measured aging evidence with intervals. No backend.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --port 4173"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
+    "@observablehq/plot": "^0.6.17",
+    "d3-format": "^3.1.2",
+    "hyparquet": "^1.27.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

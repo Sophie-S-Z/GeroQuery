@@ -2,12 +2,21 @@
 
 **Date:** 2026-08-05 · **Base:** `3b8cc47` · Supersedes `HANDOFF.md` §10.
 
-> **Status, 2026-08-05.** Items 1–3 are **built and tested**.
+> **Status, 2026-08-05.** Items 1–4 are **built**.
 > §2.1 → [`RESULTS_CROSSLAYER.md`](RESULTS_CROSSLAYER.md) ·
 > §2.2 → [`../evidence/`](../evidence/) + `.github/workflows/living-evidence.yml` ·
-> §2.3 → `geroquery/mcp/`.
-> §3 (the front end) is next and unstarted; the stack decision is
-> **Vite + React + Observable Plot**, per §3.3's high-design-ambition branch.
+> §2.3 → `geroquery/mcp/` ·
+> §3 → [`../frontend/`](../frontend/README.md), Vite + React + Observable Plot,
+> static on Cloudflare Pages.
+>
+> **One §3 conclusion was wrong and is corrected in place.** §3.1 argues for
+> DuckDB-WASM over Parquet row groups. Cloudflare's 25 MiB per-file limit
+> exposed the flaw: the DuckDB wasm binaries are 34 MB and 39 MB — about seven
+> times the 6.8 MB corpus they would query. Range requests only pay when the
+> data dwarfs the engine, and here it is inverted. The shipped app uses
+> **hyparquet** (~15 kB) and fetches both files whole: 2 requests, 7.06 MB,
+> versus 73 MB of engine that would not have deployed at all. See
+> `frontend/README.md` for the measured comparison.
 
 Two questions drove this: what makes GeroQuery durably useful rather than a
 finished artifact, and what replaces Streamlit. They have one answer in common,
