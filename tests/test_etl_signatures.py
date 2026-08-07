@@ -11,6 +11,7 @@ from __future__ import annotations
 import gzip
 import json
 import math
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -335,3 +336,91 @@ def test_the_exported_verdict_agrees_with_the_exported_interval():
             assert not (
                 value == 0 and math.copysign(1, value) < 0
             ), f"{column} shipped as negative zero for {row['gene_id']}"
+
+
+def test_the_exported_p_value_never_contradicts_the_exported_verdict():
+    """ "Significant" and "no evidence" must not appear on the same row.
+
+    The p-value came from the DerSimonian-Laird pivot while the interval and the
+    verdict came from Hartung-Knapp, so the two tested different hypotheses.
+    1,168 of the 41,983 published rows read `p < 0.05` beside "no evidence —
+    interval crosses zero", printed on the same line of the gene page.
+
+    The fixtures below straddle the threshold: one where HK widens across zero
+    (DL alone would have called it significant) and one where it does not.
+    """
+    import pandas as pd
+
+    from geroquery.etl.build_frontend_data import _pool
+
+    # Dispersed effects — HK widens across zero, so the row must read as null.
+    dispersed = [-0.652, -0.671, 0.086, -1.384, 0.208, -0.368]
+    errors = [0.318, 0.198, 0.366, 0.259, 0.266, 0.233]
+    # Tight, clearly non-null effects — the row must stay a claim.
+    tight = [-0.80, -0.78, -0.82, -0.79, -0.81]
+
+    rows = []
+    for effect, se in zip(dispersed, errors, strict=True):
+        rows.append(
+            {
+                "gene_id": "DISPERSED",
+                "species": "human",
+                "effect_size": effect,
+                "standard_error": se,
+                "tissue": "blood",
+            }
+        )
+    for effect in tight:
+        rows.append(
+            {
+                "gene_id": "TIGHT",
+                "species": "human",
+                "effect_size": effect,
+                "standard_error": 0.12,
+                "tissue": "blood",
+            }
+        )
+
+    pooled = _pool(pd.DataFrame(rows)).set_index("gene_id")
+    assert {"DISPERSED", "TIGHT"} <= set(pooled.index)
+
+    for gene_id, row in pooled.iterrows():
+        significant = row["p_value"] < 0.05
+        claims = row["verdict"] != "no_evidence"
+        assert significant == claims, (
+            f"{gene_id}: p={row['p_value']} verdict={row['verdict']} "
+            f"ci=[{row['ci_low']}, {row['ci_high']}]"
+        )
+
+    assert pooled.loc["DISPERSED", "verdict"] == "no_evidence"
+    assert pooled.loc["TIGHT", "verdict"] == "decreases"
+
+
+def test_the_committed_export_is_internally_consistent():
+    """The data that actually ships, checked as data.
+
+    Every unit test above can pass while the committed Parquet still carries the
+    old numbers, because the export is a build artefact that is committed by
+    hand. This is the assertion that would have caught the 1,168 rows.
+    """
+    import pandas as pd
+
+    path = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data" / "pooled.parquet"
+    if not path.exists():  # pragma: no cover - the export is committed
+        pytest.skip("frontend/public/data/pooled.parquet is not present")
+
+    frame = pd.read_parquet(path)
+    significant = frame["p_value"] < 0.05
+    claims = frame["verdict"] != "no_evidence"
+    disagreeing = frame[significant != claims]
+    assert disagreeing.empty, (
+        f"{len(disagreeing)} shipped rows contradict themselves, e.g.\n"
+        f"{disagreeing.head()[['gene_id', 'ci_low', 'ci_high', 'p_value', 'verdict']]}"
+    )
+
+    readable = (
+        ((frame["ci_low"] > 0) & (frame["verdict"] == "increases"))
+        | ((frame["ci_high"] < 0) & (frame["verdict"] == "decreases"))
+        | ((frame["ci_low"] <= 0) & (frame["ci_high"] >= 0) & (frame["verdict"] == "no_evidence"))
+    )
+    assert readable.all(), f"{(~readable).sum()} verdicts are not readable off their own interval"

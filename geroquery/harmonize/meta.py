@@ -45,6 +45,32 @@ from dataclasses import dataclass
 import numpy as np
 from scipy import stats
 
+# Every interval bound ships at this precision, on every surface.
+BOUND_DECIMALS = 4
+
+
+def report_bound(value: float) -> float:
+    """Round an interval bound to the precision it ships at, and kill -0.0.
+
+    Two hazards, one function, because they have to be applied together to
+    every bound and by every caller:
+
+    1. **Round before judging.** Deriving a verdict at full precision while
+       shipping a rounded interval lets the two disagree — 78 genes carried an
+       interval of ``[-1.195, -0.000]`` labelled "decreases", so a reader
+       recomputing from the printed numbers got a different answer from the one
+       printed beside them.
+    2. **Negative zero is not zero everywhere.** ``round(-1e-9, 4)`` is
+       ``-0.0``, which prints as "-0.000" and compares as *not less than zero*
+       in JavaScript. Adding ``0.0`` collapses it; nothing else does.
+
+    This lives here, beside the verdict that depends on it, because it was
+    previously implemented only in the static exporter — so the API and the MCP
+    tool judged one way and the website another, for the same gene. There must
+    be exactly one of these.
+    """
+    return round(value, BOUND_DECIMALS) + 0.0
+
 
 @dataclass(frozen=True)
 class PooledEffect:
@@ -73,15 +99,29 @@ class PooledEffect:
         return "up" if self.pooled_effect >= 0 else "down"
 
     @property
+    def reported_ci_low(self) -> float:
+        """``ci_low`` at the precision every caller actually ships."""
+        return report_bound(self.ci_low)
+
+    @property
+    def reported_ci_high(self) -> float:
+        """``ci_high`` at the precision every caller actually ships."""
+        return report_bound(self.ci_high)
+
+    @property
     def verdict(self) -> str:
         """increases / decreases / no_evidence, from the reported interval.
 
         Computed here rather than at each call site so the API, the static
         export and the MCP payload cannot disagree about what a gene's answer is.
+
+        Judged on the *rounded* bounds, because those are the numbers a reader
+        sees. Judging at full precision while shipping 4-dp bounds is what let
+        78 genes print ``[-1.195, -0.000]`` under the label "decreases".
         """
-        if self.ci_low > 0:
+        if self.reported_ci_low > 0:
             return "increases"
-        if self.ci_high < 0:
+        if self.reported_ci_high < 0:
             return "decreases"
         return "no_evidence"
 
@@ -151,6 +191,15 @@ def random_effects(
         # interval narrower than the one every other tool reports.
         if (hk_high - hk_low) > (dl_high - dl_low):
             low, high = hk_low, hk_high
+            # The p-value has to move with the interval. Reporting the DL
+            # p-value beside an HK interval tests a different hypothesis from
+            # the one the interval describes, and the two then disagree
+            # whenever HK widened across zero: 1,168 of 41,983 published rows
+            # read "p = 0.009" directly beside "no evidence — interval crosses
+            # zero". Same pivot for both means `p < alpha` and "interval
+            # excludes zero" are guaranteed to be the same statement.
+            t_stat = eff / se_hk if se_hk > 0 else 0.0
+            p = float(2.0 * stats.t.sf(abs(t_stat), k - 1))
 
     pi_low: float | None = None
     pi_high: float | None = None

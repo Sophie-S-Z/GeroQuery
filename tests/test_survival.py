@@ -557,3 +557,47 @@ def test_dysregulation_reference_must_be_large_enough():
             ["albumin", "creatinine", "glucose", "crp", "lymphocyte_pct", "rdw"],
             reference_age_max=50.5,
         )
+
+
+# ---- a failed line search is not convergence (bug #24) ---------------------
+
+
+def test_a_stalled_line_search_is_not_reported_as_convergence(monkeypatch):
+    """Exhausting the backtracking must not be mistaken for reaching the optimum.
+
+    The convergence test measured the *backtracked* step, `factor * step`. When
+    all 20 halvings fail to improve the likelihood, `factor` is 2**-20 ~ 9.5e-7,
+    so `factor * step` clears the 1e-9 tolerance for any step below ~1e-3 — and
+    the fit reported `converged=True` having never moved. The published hazard
+    ratio on the Mortality page then carries no indication the optimiser stalled.
+
+    Simulated rather than fished out of real data: any move away from the
+    starting point lowers the likelihood, so the line search can never succeed.
+    """
+    from geroquery.survival import cox as cox_mod
+
+    def never_improves(xw, time, event, beta, weights):
+        loglik = -1.0 - 1e6 * float(np.sum(np.abs(beta)))
+        return loglik, np.array([1e-4]), np.array([[1.0]])
+
+    monkeypatch.setattr(cox_mod, "_breslow_terms", never_improves)
+
+    fit = cox_mod.cox_regression(
+        np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0]),
+        np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
+        np.array([1, 0, 1, 0, 1, 0]),
+        covariates=["x"],
+    )
+    assert fit.converged is False
+
+
+def test_a_healthy_fit_still_reports_convergence():
+    """The guard must not make convergence unreachable."""
+    rng = np.random.default_rng(7)
+    n = 300
+    x = rng.normal(0.0, 1.0, n)
+    time = rng.exponential(np.exp(-0.7 * x))
+    event = np.ones(n, dtype=int)
+    fit = cox_regression(x, time, event, covariates=["x"])
+    assert fit.converged is True
+    assert fit.coefficients[0] == pytest.approx(0.7, abs=0.25)

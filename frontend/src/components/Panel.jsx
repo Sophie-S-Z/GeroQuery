@@ -32,8 +32,16 @@ export default function Panel() {
     );
   }
 
-  const series = new Set(studies.map((s) => s.series_id).filter(Boolean));
-  const shared = studies.length - series.size;
+  // Count only the contrasts that actually declare a Series. `series_id` is
+  // nullable (it renders as "—" in the table below), and subtracting the
+  // distinct-Series count from *all* contrasts charged every null one as
+  // sharing with another — inventing a non-independence warning on the page
+  // whose whole job is letting a reader audit that assumption. Today's panel
+  // happens to have no nulls, so the old arithmetic was right by luck; the
+  // panel is rebuilt monthly from upstream GEO.
+  const withSeries = studies.filter((s) => s.series_id);
+  const series = new Set(withSeries.map((s) => s.series_id));
+  const shared = withSeries.length - series.size;
 
   return (
     <>

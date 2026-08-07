@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from geroquery.exceptions import SourceError
+from geroquery.exceptions import GeneNotFoundError, SourceError
 from geroquery.idmap.mygene import MyGeneClient, normalize_hit
 from geroquery.idmap.resolver import GeneResolver
 from geroquery.sources.gtex import DEFAULT_DATASET_ID, GtexOpenSource
@@ -518,3 +518,58 @@ def test_live_every_pmid_resolves_to_the_paper_we_claim():
             mismatched.append(f"{reference.key} (PMID {reference.pmid}) -> {upstream[:70]!r}")
 
     assert not mismatched, "PMIDs pointing at the wrong paper:\n  " + "\n  ".join(mismatched)
+
+
+# ---- a remotely-resolved gene has to stay resolved (bug #23) ---------------
+
+
+def _fake_mygene(canonical_id="ENSG00000999999", symbol="FAKEGENE", species="human"):
+    record = {
+        "canonical_id": canonical_id,
+        "symbol": symbol,
+        "species": species,
+        "entrez": "999999",
+        "ensembl": canonical_id,
+        "uniprot": None,
+        "name": "fabricated gene",
+        "ortholog_group": symbol.upper(),
+        "aliases": [],
+    }
+
+    class _Upstream:
+        def resolve(self, queries, species=None):
+            return {q: [dict(record)] for q in queries}
+
+    return _Upstream()
+
+
+def test_orthologs_works_for_a_gene_that_came_from_the_network_fallback():
+    """`resolve_gene` succeeding and the next call 404-ing is not a usable API.
+
+    `orthologs()` consulted only the bundled table, so every gene resolved via
+    mygene.info raised GeneNotFoundError on the very next line of
+    `GeroService._group_canonical_ids` — making the entire fallback path dead
+    for the ~43,000 genes absent from the bundled 2,560-record index.
+    """
+    resolver = GeneResolver(mygene=_fake_mygene())
+    gene = resolver.resolve_gene("FAKEGENE")
+    assert gene.canonical_id == "ENSG00000999999"
+
+    orthologs = resolver.orthologs(gene.canonical_id)
+    assert [g.canonical_id for g in orthologs] == ["ENSG00000999999"]
+
+
+def test_a_genuinely_unknown_canonical_id_still_raises():
+    """The fix must not turn "never heard of it" into a silent empty answer."""
+    resolver = GeneResolver()
+    with pytest.raises(GeneNotFoundError):
+        resolver.orthologs("ENSG00000000000")
+
+
+def test_remembering_a_remote_gene_does_not_shadow_the_bundled_table():
+    """A remote record must never displace a curated one for the same id."""
+    resolver = GeneResolver(mygene=_fake_mygene(symbol="CDKN2A"))
+    before = resolver.resolve_gene("CDKN2A")
+    assert before.canonical_id.startswith("ENSG")
+    # Resolved locally, so nothing was fetched or remembered.
+    assert resolver.resolve_gene("CDKN2A").canonical_id == before.canonical_id

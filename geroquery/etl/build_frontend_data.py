@@ -60,6 +60,7 @@ import pandas as pd
 
 from .. import __version__
 from ..harmonize import random_effects
+from ..harmonize.meta import BOUND_DECIMALS, report_bound
 from ..sources.manifest import MANIFEST, MANIFEST_VERSION, VERIFIED_ON
 from ..store import GeroStore
 
@@ -93,23 +94,17 @@ def _bound(value: None) -> None: ...
 
 
 def _bound(value: float | None) -> float | None:
-    """Round an interval bound to the precision it ships at, and kill -0.0.
+    """None-tolerant wrapper over the shared :func:`report_bound`.
 
-    Two separate hazards, one function, because they have to be applied
-    together to every bound:
-
-    1. **Round before judging.** Deriving a verdict at full precision while
-       shipping a rounded interval lets the two disagree — 78 genes carried an
-       interval of ``[-1.195, -0.000]`` labelled "decreases", so a reader
-       recomputing from the printed numbers got a different answer from the one
-       printed beside them.
-    2. **Negative zero is not zero everywhere.** ``round(-1e-9, 4)`` is
-       ``-0.0``, which prints as "-0.000" and compares as *not less than zero*
-       in JavaScript. Adding ``0.0`` collapses it; nothing else does.
+    The rounding and the -0.0 collapse used to be defined here and *only* here,
+    which is precisely why the API and the MCP tool disagreed with the site
+    about four genes. The rule now lives beside the verdict that depends on it
+    in ``harmonize.meta``; this only adds the ``None`` handling the optional
+    prediction-interval bounds need.
     """
     if value is None:
         return None
-    return round(value, 4) + 0.0
+    return report_bound(value)
 
 
 def _pool(frame: pd.DataFrame) -> pd.DataFrame:
@@ -140,7 +135,12 @@ def _pool(frame: pd.DataFrame) -> pd.DataFrame:
                 "se": round(pooled.standard_error, 4),
                 "ci_low": low,
                 "ci_high": high,
-                "p_value": pooled.p_value,
+                # Rounded like every other shipped number. At full precision a
+                # p of 0.049990 printed beside an interval whose upper bound
+                # rounds to 0.0000 reads as a contradiction; both are simply at
+                # the threshold, and saying so at the same precision is what
+                # makes them agree. The interval remains authoritative.
+                "p_value": round(pooled.p_value, BOUND_DECIMALS),
                 "i2": round(pooled.i2, 1),
                 "tau2": round(pooled.tau2, 4),
                 "k": int(pooled.n_studies),
@@ -151,10 +151,12 @@ def _pool(frame: pd.DataFrame) -> pd.DataFrame:
                 "ci_high_dl": _bound(pooled.ci_high_dl),
                 "pi_low": _bound(pooled.pi_low),
                 "pi_high": _bound(pooled.pi_high),
-                # The verdict is computed here, once, from the interval as it
-                # ships — not in the browser from a threshold someone might
-                # change, and not from a precision the reader never sees.
-                "verdict": ("increases" if low > 0 else "decreases" if high < 0 else "no_evidence"),
+                # The verdict comes from `PooledEffect`, which judges on the
+                # same rounded bounds written above — not in the browser from a
+                # threshold someone might change, and not from a precision the
+                # reader never sees. Re-deriving it inline here is what let this
+                # file and the API disagree.
+                "verdict": pooled.verdict,
                 "n_tissues": int(group["tissue"].nunique()),
             }
         )

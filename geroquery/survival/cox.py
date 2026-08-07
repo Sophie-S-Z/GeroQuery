@@ -496,12 +496,23 @@ def cox_regression(
         # near-separated covariate sends beta to infinity in one jump and the
         # fit reports a hazard ratio of 1e17 rather than failing to converge.
         factor = 1.0
+        improved = False
         for _ in range(20):
             trial = beta + factor * step
             trial_ll, _, _ = _breslow_terms(xw, time, event, trial, weights)
             if trial_ll >= loglik:
+                improved = True
                 break
             factor /= 2.0
+        if not improved:
+            # Twenty halvings and the likelihood never improved: the optimiser
+            # is stuck, not finished. Falling through would be actively wrong,
+            # because `factor` is now 2**-20 and the convergence test below
+            # measures `factor * step` — so a stalled fit clears a 1e-9
+            # tolerance for any step under ~1e-3 and reports converged=True
+            # having gone nowhere. Stop, leave `beta` at the last value that
+            # did improve, and let `converged` stay False.
+            break
         beta = beta + factor * step
         if np.max(np.abs(factor * step)) < CONVERGENCE_TOL:
             converged = True

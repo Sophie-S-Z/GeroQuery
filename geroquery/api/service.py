@@ -20,6 +20,7 @@ from ..exceptions import (
     UnknownSpeciesError,
 )
 from ..harmonize import random_effects
+from ..harmonize.meta import BOUND_DECIMALS, report_bound
 from ..idmap import get_resolver
 from ..knowledge import HALLMARKS, REFERENCES
 from ..models import GeneCard, MetaSignature
@@ -80,17 +81,22 @@ class GeroService:
                     species=species,
                     pooled_effect=round(pooled.pooled_effect, 4),
                     standard_error=round(pooled.standard_error, 4),
-                    ci_low=round(pooled.ci_low, 4),
-                    ci_high=round(pooled.ci_high, 4),
-                    p_value=pooled.p_value,
+                    # `report_bound`, not bare `round`: it also collapses the
+                    # -0.0 that `round` produces from a small negative, which
+                    # prints as "-0.000" and is `not < 0` in JavaScript. Using
+                    # the same function the exporter uses is what keeps this
+                    # payload and the published site from disagreeing.
+                    ci_low=pooled.reported_ci_low,
+                    ci_high=pooled.reported_ci_high,
+                    p_value=round(pooled.p_value, BOUND_DECIMALS),
                     heterogeneity_i2=round(pooled.i2, 2),
                     tau2=round(pooled.tau2, 4),
                     n_studies=pooled.n_studies,
                     direction=pooled.direction,
-                    ci_low_dl=round(pooled.ci_low_dl, 4),
-                    ci_high_dl=round(pooled.ci_high_dl, 4),
-                    pi_low=round(pooled.pi_low, 4) if pooled.pi_low is not None else None,
-                    pi_high=round(pooled.pi_high, 4) if pooled.pi_high is not None else None,
+                    ci_low_dl=report_bound(pooled.ci_low_dl),
+                    ci_high_dl=report_bound(pooled.ci_high_dl),
+                    pi_low=report_bound(pooled.pi_low) if pooled.pi_low is not None else None,
+                    pi_high=report_bound(pooled.pi_high) if pooled.pi_high is not None else None,
                     verdict=pooled.verdict,
                 )
             )
