@@ -9,11 +9,14 @@ publishes.
 
 from __future__ import annotations
 
+import dataclasses
 import json
+import sys
 
 import pytest
 import yaml
 
+from geroquery.etl import panel_diff
 from geroquery.etl.panel_diff import (
     CHANGE_ORDER,
     EFFECT_MOVE_THRESHOLD,
@@ -258,3 +261,59 @@ def test_a_snapshot_records_which_estimator_produced_it():
     legacy = dict(snapshot.to_dict())
     legacy.pop("estimator")
     assert Snapshot.from_dict(legacy).estimator == "dersimonian_laird"
+
+
+# ---- a crash is not a change (bug #26) -------------------------------------
+
+
+def test_an_error_exits_with_its_own_code_not_the_changed_code():
+    """`main` returning 1 for "evidence moved" collides with Python's exit 1.
+
+    The estimator guard exists to stop a method change being published as an
+    evidence change. But any exception out of `main()` also exits 1, and the
+    workflow mapped exit 1 straight to `changed=true` — so the guard's
+    ValueError was converted into a false "the evidence moved", the baseline was
+    overwritten with a candidate that was never diffed, and the run then died on
+    a missing changelog. The maintainer saw an opaque bash failure instead of
+    the guard's message.
+    """
+    assert panel_diff.EXIT_UNCHANGED == 0
+    assert panel_diff.EXIT_CHANGED == 1
+    assert panel_diff.EXIT_ERROR == 2
+
+
+def test_the_estimator_guard_surfaces_as_an_error_exit(tmp_path, monkeypatch):
+    """End to end: a mismatched baseline must exit 2, not 1."""
+    estimates = {"G|human|transcriptome": _estimate("G", 0.4, 0.12, 0.68)}
+    before = _snapshot(estimates, ["GDS1"])
+    after = dataclasses.replace(_snapshot(estimates, ["GDS1"]), estimator="something_else")
+    before_path, after_path = tmp_path / "before.json", tmp_path / "after.json"
+    before.write(before_path)
+    after.write(after_path)
+
+    monkeypatch.setattr(
+        sys, "argv", ["panel_diff", "--before", str(before_path), "--after", str(after_path)]
+    )
+    assert panel_diff.cli() == panel_diff.EXIT_ERROR
+
+
+def test_an_unchanged_rebuild_exits_zero_and_a_moved_one_exits_one(tmp_path, monkeypatch):
+    """The guard must not blunt the signal the workflow actually gates on."""
+    same = _snapshot({"G|human|transcriptome": _estimate("G", 0.4, 0.12, 0.68)}, ["GDS1"])
+    a, b = tmp_path / "a.json", tmp_path / "b.json"
+    same.write(a)
+    same.write(b)
+    monkeypatch.setattr(sys, "argv", ["panel_diff", "--before", str(a), "--after", str(b)])
+    assert panel_diff.cli() == panel_diff.EXIT_UNCHANGED
+
+
+def test_the_workflow_treats_an_error_exit_as_a_failure_not_a_change():
+    """The bash half of the same bug: `code -eq 1` is not `code -ne 0`."""
+    workflow = yaml.safe_load(open(WORKFLOW, encoding="utf-8"))
+    steps = workflow["jobs"]["rebuild-and-diff"]["steps"]
+    diff_step = next(s for s in steps if s.get("id") == "diff")
+    script = diff_step["run"]
+    # Anything at or above the error code has to stop the run outright, before
+    # the promote step can move a candidate that was never diffed.
+    assert "-ge 2" in script or "-eq 2" in script, script
+    assert "changed=true" not in script.replace("echo true", ""), script

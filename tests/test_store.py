@@ -164,3 +164,68 @@ def test_version_is_reproducible(tmp_path):
     q1 = s1.query_signatures(gene_id="ENSG00000113368")
     q2 = s2.query_signatures(gene_id="ENSG00000113368")
     assert [x.to_dict() for x in q1] == [x.to_dict() for x in q2]
+
+
+# ---- the store path is data, not syntax (bug #25) --------------------------
+
+
+@pytest.mark.parametrize(
+    "dirname",
+    [
+        "project [old]",  # glob character class
+        "O'Brien lab",  # terminates a SQL string literal
+    ],
+)
+def test_the_store_works_from_a_path_containing_glob_or_sql_metacharacters(tmp_path, dirname):
+    """A checkout directory is not a pattern and not SQL.
+
+    `_sig_glob` interpolated the raw path into both a `glob.glob()` pattern and
+    a `read_parquet('...')` literal. A `[` or `]` anywhere above the store made
+    the glob match nothing, so `query_signatures` took its empty-glob early exit
+    and every gene answered HTTP 200 with `n_signatures: 0` — the dashboard
+    reporting the whole corpus as never measured, with no error anywhere. An
+    apostrophe instead closed the SQL literal and every query died in the
+    DuckDB parser.
+
+    Both are ordinary things to have in a Windows or macOS home directory.
+    """
+    home = tmp_path / dirname
+    home.mkdir()
+    store = GeroStore(data_home=home).build(
+        prefer_full_clinical=False, prefer_full_signatures=False
+    )
+
+    rows = store.query_signatures(species="human")
+    assert rows, "the store built but answered nothing — the glob silently missed"
+    assert all(r.species == "human" for r in rows)
+
+    # The narrowed path (both partition columns pinned) has to work too.
+    narrowed = store.query_signatures(species="human", omic_layer="transcriptome")
+    assert narrowed
+
+
+def test_concurrent_signature_queries_each_get_their_own_results(store):
+    """FastAPI runs sync endpoints on a threadpool, so this is the real shape.
+
+    One `DuckDBPyConnection` was shared by every request. Two simultaneous
+    `GET /v1/gene/{id}/signature` calls land on different threadpool workers and
+    interleave `execute`/`fetchall` on the same handle, so a request can be
+    handed the other request's result set. Each query here asks for a different
+    species and checks it got its own answer back.
+    """
+    import concurrent.futures
+
+    expected = {sp: store.query_signatures(species=sp) for sp in ("human", "mouse")}
+    assert all(expected.values()), "fixture needs rows for both species"
+
+    def ask(species):
+        rows = store.query_signatures(species=species)
+        return species, [r.species for r in rows]
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [pool.submit(ask, sp) for sp in ("human", "mouse") * 12]
+        for future in concurrent.futures.as_completed(futures):
+            species, got = future.result()
+            assert got, f"{species} query came back empty under concurrency"
+            assert set(got) == {species}, f"{species} query received another query's rows"
+            assert len(got) == len(expected[species])

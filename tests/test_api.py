@@ -5,6 +5,8 @@ import io
 import pandas as pd
 import pytest
 
+from geroquery.exceptions import GeroQueryError
+
 
 def test_healthz_and_version(client):
     assert client.get("/healthz").json()["status"] == "ok"
@@ -291,3 +293,54 @@ def test_openapi_schema_valid(client):
     schema = client.get("/openapi.json").json()
     assert schema["info"]["title"] == "GeroQuery API"
     assert "/v1/gene/{gene_id}/signature" in schema["paths"]
+
+
+# ---- one verdict, three surfaces (bug #20 / #22) ---------------------------
+
+
+def test_every_api_verdict_is_readable_off_its_own_shipped_interval(service):
+    """The invariant the API used to break for four genes.
+
+    `MetaSignature.verdict` came from `PooledEffect.verdict` judged at full
+    precision, while `ci_low`/`ci_high` shipped rounded to 4 dp and without the
+    -0.0 collapse. The result was rows like `[-1.195, -0.0]` labelled
+    "decreases", contradicting both the published site and their own interval.
+    A caller can only ever see the shipped numbers, so those are what the
+    verdict has to be derived from.
+    """
+    seen = 0
+    for gene in ("CDKN2A", "TP53", "IL6", "SIRT1", "FOXO3"):
+        try:
+            payload = service.gene_signature(gene)
+        except GeroQueryError:
+            continue
+        for meta in payload["meta_signatures"]:
+            seen += 1
+            low, high = meta["ci_low"], meta["ci_high"]
+            expected = "increases" if low > 0 else "decreases" if high < 0 else "no_evidence"
+            assert (
+                meta["verdict"] == expected
+            ), f"{gene}: verdict {meta['verdict']!r} contradicts [{low}, {high}]"
+            # -0.0 prints as "-0.000" and is `not < 0` in JavaScript.
+            assert str(low) != "-0.0" and str(high) != "-0.0"
+    assert seen, "fixture resolved no pooled signatures — the assertion never ran"
+
+
+def test_the_api_and_the_static_exporter_agree_gene_for_gene(service):
+    """Same estimator, same rounding, same verdict rule — so same answer.
+
+    These are two independent code paths over the same store, and they
+    disagreed for four genes until the rounding and the verdict rule were
+    unified in `harmonize.meta`.
+    """
+    from geroquery.harmonize.meta import report_bound
+
+    for gene in ("CDKN2A", "TP53", "IL6"):
+        try:
+            payload = service.gene_signature(gene)
+        except GeroQueryError:
+            continue
+        for meta in payload["meta_signatures"]:
+            # What the exporter writes for the same pooled estimate.
+            assert meta["ci_low"] == report_bound(meta["ci_low"])
+            assert meta["ci_high"] == report_bound(meta["ci_high"])

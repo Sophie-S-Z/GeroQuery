@@ -10,6 +10,7 @@ from geroquery.harmonize import (
     random_effects,
     remove_batch_effect,
 )
+from geroquery.harmonize.meta import PooledEffect
 
 
 def test_hedges_g_recovers_planted_effect():
@@ -191,3 +192,106 @@ def test_batch_correction_reduces_batch_signal_and_preserves_biology():
     diff_before = X[:, group == "old"].mean() - X[:, group == "young"].mean()
     diff_after = corrected[:, group == "old"].mean() - corrected[:, group == "young"].mean()
     assert diff_after == pytest.approx(diff_before, abs=0.3)
+
+
+# ---- the reported p-value and the reported interval must agree -------------
+#
+# These are the invariant that bug #21 violated: the p-value came from the
+# DerSimonian-Laird pivot (normal, se_pool) while the shipped interval and the
+# verdict came from the Hartung-Knapp one (t on k-1 df, se_hk). Wherever the
+# modified rule picked HK, the two answered different questions, and 1,168 of
+# the 41,983 published rows printed "p < 0.05" beside "no evidence".
+
+
+def _crosses_zero(pooled) -> bool:
+    return pooled.ci_low <= 0.0 <= pooled.ci_high
+
+
+def test_p_value_agrees_with_the_reported_interval_when_hk_widens():
+    """The exact shape of bug #21: DL excludes zero, HK — which is reported — does not.
+
+    Under the old code this row shipped p = 0.024 (from the DL pivot) beside a
+    verdict of "no evidence" read off the HK interval.
+    """
+    pooled = random_effects(
+        [-0.652, -0.671, 0.086, -1.384, 0.208, -0.368],
+        [0.318, 0.198, 0.366, 0.259, 0.266, 0.233],
+    )
+    assert pooled.ci_low_hk is not None
+    # DL would have called this significant...
+    assert not (pooled.ci_low_dl <= 0.0 <= pooled.ci_high_dl)
+    # ...but HK is wider, so HK is what ships, and it crosses zero.
+    assert (pooled.ci_high_hk - pooled.ci_low_hk) > (pooled.ci_high_dl - pooled.ci_low_dl)
+    assert _crosses_zero(pooled)
+    assert pooled.verdict == "no_evidence"
+    assert pooled.p_value >= 0.05
+
+
+def test_p_value_agrees_with_the_reported_interval_when_dl_is_kept():
+    # Tightly-agreeing estimates: HK is narrower, so the modified rule keeps DL.
+    pooled = random_effects([0.8, 0.8, 0.8, 0.8], [0.2] * 4)
+    assert not _crosses_zero(pooled)
+    assert pooled.p_value < 0.05
+
+
+@pytest.mark.parametrize("seed", range(60))
+def test_significance_and_interval_never_disagree(seed):
+    """p < 0.05 exactly when the 95% interval excludes zero, on random input."""
+    rng = np.random.default_rng(seed)
+    k = int(rng.integers(1, 9))
+    effects = rng.normal(0.3, 0.7, k).tolist()
+    errors = rng.uniform(0.15, 0.9, k).tolist()
+    pooled = random_effects(effects, errors)
+    assert (pooled.p_value < 0.05) == (
+        not _crosses_zero(pooled)
+    ), f"k={k} p={pooled.p_value} ci=[{pooled.ci_low}, {pooled.ci_high}]"
+
+
+def test_single_study_still_uses_the_normal_pivot():
+    pooled = random_effects([1.0], [0.25])
+    assert pooled.n_studies == 1
+    assert pooled.ci_low_hk is None
+    assert pooled.p_value == pytest.approx(2.0 * stats.norm.sf(4.0))
+
+
+# ---- the verdict must be readable off the interval that ships (bug #20) ----
+
+
+def test_verdict_is_judged_on_the_rounded_bounds_not_full_precision():
+    """A bound that rounds to zero is zero, so the verdict must say no_evidence.
+
+    `PooledEffect` judged at full precision while every caller shipped 4-dp
+    bounds, so 78 genes printed an interval of [-1.195, -0.000] labelled
+    "decreases" — a reader recomputing from the printed numbers got the
+    opposite answer.
+    """
+    pooled = PooledEffect(
+        pooled_effect=-0.5,
+        standard_error=0.3,
+        ci_low=-1.195,
+        ci_high=-1e-9,
+        p_value=0.05,
+        tau2=0.0,
+        i2=0.0,
+        q=0.0,
+        n_studies=4,
+    )
+    assert pooled.reported_ci_high == 0.0
+    # Not -0.0: it prints as "-0.000" and is `not < 0` in JavaScript.
+    assert str(pooled.reported_ci_high) == "0.0"
+    assert pooled.verdict == "no_evidence"
+
+
+def test_verdict_still_reads_a_genuinely_negative_interval():
+    pooled = PooledEffect(
+        pooled_effect=-0.8,
+        standard_error=0.2,
+        ci_low=-1.2,
+        ci_high=-0.4,
+        p_value=0.001,
+        tau2=0.0,
+        i2=0.0,
+        q=0.0,
+        n_studies=4,
+    )
+    assert pooled.verdict == "decreases"

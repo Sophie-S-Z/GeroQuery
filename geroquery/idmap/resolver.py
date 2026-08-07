@@ -206,10 +206,11 @@ class GeneResolver:
         rec = self._by_canonical.get(canonical_id.upper())
         if rec is None:
             raise GeneNotFoundError(f"Unknown canonical id {canonical_id!r}.")
-        return [
-            self._to_gene(r, matched_from=canonical_id)
-            for r in self._by_group[rec["ortholog_group"]]
-        ]
+        # `.get`, not `[]`: a record without an ortholog group is its own group
+        # of one. Raising here instead would resurrect the bug this guards —
+        # a gene that resolved fine failing on the next call.
+        group = self._by_group.get(rec.get("ortholog_group") or "", [rec])
+        return [self._to_gene(r, matched_from=canonical_id) for r in group]
 
     def genes_in_group(self, group: str) -> list[CanonicalGene]:
         """All canonical genes in a named ortholog group (empty list if unknown)."""
@@ -238,6 +239,30 @@ class GeneResolver:
             ambiguous_candidates=ambiguous,
         )
 
+    def _remember(self, records: Sequence[dict]) -> None:
+        """Index records fetched from mygene.info alongside the bundled ones.
+
+        Without this, ``resolve_gene`` succeeds for a remotely-resolved gene and
+        the *very next* call — ``orthologs(gene.canonical_id)`` in
+        ``GeroService._group_canonical_ids`` — raises GeneNotFoundError, so the
+        whole fallback path answers HTTP 404 for every one of the ~43,000 genes
+        outside the bundled 2,560-record table.
+
+        The bundled table always wins: a curated record is never displaced by an
+        upstream one for the same id.
+        """
+        for rec in records:
+            key = rec["canonical_id"].upper()
+            if key in self._by_canonical:
+                continue
+            self._by_canonical[key] = rec
+            ensembl = rec.get("ensembl")
+            if ensembl:
+                self._by_canonical.setdefault(ensembl.upper(), rec)
+            group = rec.get("ortholog_group")
+            if group:
+                self._by_group.setdefault(group, []).append(rec)
+
     def _remote_records(self, queries: Sequence[str], species: str | None) -> dict[str, list[dict]]:
         """Batch mygene.info fallback for identifiers not in the bundled table.
 
@@ -249,9 +274,14 @@ class GeneResolver:
         if not queries:
             return {}
         try:
-            return self._mygene.resolve(list(queries), species)
+            found = self._mygene.resolve(list(queries), species)
         except SourceError:
             return {q: [] for q in queries}
+        # Single choke point for every remote fetch, so this is the one place
+        # that has to index them for later lookups.
+        for records in found.values():
+            self._remember(records)
+        return found
 
     def _fetch_remote(self, query: str, species: str | None) -> dict | None:
         """Single-identifier convenience wrapper over the batch path."""

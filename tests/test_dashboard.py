@@ -11,13 +11,28 @@ caught any of the three.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("streamlit", reason="dashboard extra not installed")
 
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
-APP = "geroquery/ui/streamlit_app.py"
+# Absolute, and derived from this file rather than the working directory.
+# `AppTest.from_file` resolves a relative path against the directory of the file
+# that calls it — i.e. `tests/` — not the CWD. Streamlit <= 1.59 quietly fell
+# back to the CWD when that missed, which is why the repo-root-relative string
+# used to work; 1.61 raises FileNotFoundError instead:
+#
+#     AppTest script not found at <repo>/tests/geroquery/ui/streamlit_app.py.
+#     Relative paths are resolved against the file that calls
+#     AppTest.from_file().
+#
+# All ten tests below errored on that, and the pin is `streamlit>=1.30`, so
+# which behaviour you get depends on when the environment was resolved. An
+# absolute path is correct under both and does not depend on where pytest ran.
+APP = str(Path(__file__).resolve().parents[1] / "geroquery" / "ui" / "streamlit_app.py")
 TIMEOUT = 300
 
 

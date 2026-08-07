@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import glob as glob_module
 import json
+import traceback
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -44,6 +45,14 @@ import pandas as pd
 from ..harmonize import random_effects
 from ..sources.manifest import MANIFEST_VERSION, VERIFIED_ON
 from ..store import GeroStore
+
+# Process exit codes. "The evidence moved" and "something broke" must never
+# share one, because the workflow branches on it: exit 1 promotes the candidate
+# over the baseline, and a crash reaching that branch overwrites the baseline
+# with a snapshot that was never diffed.
+EXIT_UNCHANGED = 0
+EXIT_CHANGED = 1
+EXIT_ERROR = 2
 
 # Genes pooled from fewer contrasts than this are omitted from the snapshot.
 # Not a significance filter: with one or two contrasts the random-effects
@@ -446,8 +455,28 @@ def main(argv: list[str] | None = None) -> int:
     print(report)
     # Exit 1 when something moved, so a workflow can gate PR creation on it
     # without parsing the report.
-    return 1 if not diff.is_empty else 0
+    return EXIT_CHANGED if not diff.is_empty else EXIT_UNCHANGED
+
+
+def cli() -> int:
+    """`main` with failures mapped to their own exit code.
+
+    "The evidence moved" is exit 1, and so is any uncaught Python exception —
+    which meant the workflow's `code -eq 1` test read a crash as a change. It
+    then promoted a candidate that had never been diffed, overwriting the
+    baseline, and died on the missing changelog. The estimator guard, whose
+    whole purpose is refusing to publish a method change as an evidence change,
+    was the most likely thing to trip it.
+
+    Errors get their own code so the two can never be confused again. The
+    traceback still goes to stderr; nothing is swallowed.
+    """
+    try:
+        return main()
+    except Exception:
+        traceback.print_exc()
+        return EXIT_ERROR
 
 
 if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(main())
+    raise SystemExit(cli())

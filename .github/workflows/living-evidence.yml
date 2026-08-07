@@ -82,8 +82,14 @@ jobs:
       - name: Take a candidate snapshot
         run: python -m geroquery.etl.panel_diff --snapshot evidence/candidate.json.gz
 
-      # Exits 1 when something moved. `|| true` plus an explicit capture keeps
-      # the step green either way; the decision is the `changed` output.
+      # Exit 0 = nothing moved, 1 = the evidence moved, 2 = the diff failed.
+      # The third code is the point: a crash used to exit 1 as well, so an
+      # exception — most likely the estimator guard, whose entire job is
+      # refusing to publish a method change as an evidence change — was read as
+      # "the evidence moved". The promote step below then overwrote the baseline
+      # with a candidate that had never been diffed, and the run died on the
+      # changelog that the crash never wrote. Anything >= 2 stops the run here,
+      # while the baseline is still intact.
       - name: Diff against the baseline
         id: diff
         run: |
@@ -95,6 +101,10 @@ jobs:
             --json evidence/diff-latest.json
           code=$?
           set -e
+          if [ "$code" -ge 2 ]; then
+            echo "::error::panel_diff failed with exit $code; the baseline was left untouched."
+            exit "$code"
+          fi
           echo "changed=$([ "$code" -eq 1 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - name: Upload the diff regardless

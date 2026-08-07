@@ -116,8 +116,13 @@ class GeroStore:
         try:
             con.register("sig", sig_df)
             # Partitioned Parquet by species + omic_layer (predicate pushdown).
+            # COPY ... TO takes a literal, not a bound parameter, so the quote
+            # has to be escaped by doubling. Same hazard as the read path: an
+            # apostrophe in the store path would otherwise close the literal and
+            # turn the rest of the statement into syntax.
+            destination = self.sig_dir.as_posix().replace("'", "''")
             con.execute(
-                f"COPY (SELECT * FROM sig) TO '{self.sig_dir.as_posix()}' "
+                f"COPY (SELECT * FROM sig) TO '{destination}' "
                 "(FORMAT PARQUET, PARTITION_BY (species, omic_layer), OVERWRITE_OR_IGNORE 1)"
             )
         finally:
@@ -350,7 +355,16 @@ class GeroStore:
                 parts.append(f"{name}={value}")
             else:
                 raise GeroQueryError(f"Invalid {name} filter {value!r}.", detail={name: value})
-        return (self.sig_dir.joinpath(*parts) / "*.parquet").as_posix()
+        # Escape the store path, but not the `*` parts we just built: the
+        # directory is data and the wildcards are syntax. A `[` or `]` anywhere
+        # above the store — `.../Projects [old]/...`, an everyday folder name —
+        # otherwise reads as a character class and matches nothing, and
+        # `query_signatures` answers "no signatures" for the entire corpus
+        # without raising. `glob.escape` writes `[` as `[[]`, which both
+        # Python's glob and DuckDB's own glob engine read as a literal; a
+        # backslash escape satisfies neither.
+        base = glob_module.escape(self.sig_dir.as_posix())
+        return "/".join([base, *parts, "*.parquet"])
 
     def query_signatures(
         self,
@@ -379,13 +393,26 @@ class GeroStore:
                 clauses.append(f"{col} = ?")
                 params.append(val)
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        # The path is bound, not interpolated. An apostrophe in it — `O'Brien`,
+        # an ordinary Windows home directory — otherwise closes the string
+        # literal and every query dies in the DuckDB parser.
         sql = (
             f"SELECT gene_id, study_id, omic_layer, species, tissue, sex, age_range, "
             f"effect_size, direction, p_value, q_value, standard_error, source "
-            f"FROM read_parquet('{glob}', hive_partitioning=true){where} "
+            f"FROM read_parquet(?, hive_partitioning=true){where} "
             f"ORDER BY gene_id, omic_layer, study_id"
         )
-        rows = self._duck_con().execute(sql, params).fetchall()
+        # A cursor per query, not the shared handle. A DuckDB connection carries
+        # one result set, and FastAPI runs sync endpoints on a threadpool, so two
+        # concurrent signature requests interleaving execute/fetchall on the same
+        # connection hand each other's rows back — reproducibly, not in theory.
+        # `cursor()` is DuckDB's documented per-thread pattern and shares the
+        # same underlying database, so nothing is re-opened or re-read.
+        cursor = self._duck_con().cursor()
+        try:
+            rows = cursor.execute(sql, [glob, *params]).fetchall()
+        finally:
+            cursor.close()
         cols = [
             "gene_id",
             "study_id",
