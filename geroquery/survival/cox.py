@@ -40,6 +40,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import numpy as np
+import numpy.typing as npt
 from scipy import stats
 
 from ..exceptions import GeroQueryError
@@ -471,7 +472,14 @@ def cox_regression(
         scale = sd
     xw = (x - x.mean(axis=0)) / scale
 
-    beta = np.zeros(x.shape[1])
+    # Annotated rather than inferred. Since numpy 2.2 the stubs type
+    # `np.zeros(<int>)` as the *exactly* one-dimensional `ndarray[tuple[int]]`,
+    # so the rank-agnostic `ndarray[tuple[int, ...]]` that comes back from the
+    # Newton update below is not assignable to it and mypy rejects the loop.
+    # numpy 2.4 widened the inference again, which is why this only ever failed
+    # in CI (numpy 2.2 on the 3.10-3.12 matrix) and never locally. Pinning the
+    # rank-agnostic type here is correct on both and keeps the two in step.
+    beta: npt.NDArray[np.float64] = np.zeros(x.shape[1])
     converged = False
     iterations = 0
     loglik = float("nan")
@@ -508,7 +516,10 @@ def cox_regression(
     covariance = bread
     variance_kind = "model"
     n_strata = n_psu = lonely = 0
-    deff = np.ones(x.shape[1])
+    # Same rank-agnostic annotation as `beta`: the `np.where` below returns
+    # `ndarray[tuple[int, ...]]`, which numpy 2.2's stubs will not assign to the
+    # `ndarray[tuple[int]]` inferred from `np.ones(<int>)`.
+    deff: npt.NDArray[np.float64] = np.ones(x.shape[1])
 
     if weights is not None:
         # Under a pseudo-likelihood the inverse information is not the variance
