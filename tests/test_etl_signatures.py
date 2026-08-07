@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import math
 
 import pandas as pd
 import pytest
@@ -258,3 +259,79 @@ def test_build_all_refuses_to_write_empty_tables(tmp_path, monkeypatch):
     monkeypatch.setattr(build_signatures, "GEO_AGING_PANEL", {})
     with pytest.raises(RuntimeError, match="refusing to write empty tables"):
         build_signatures.build_all(tmp_path, allow_network=False, quiet=True)
+
+
+def test_the_exported_verdict_agrees_with_the_exported_interval():
+    """A reader recomputing the verdict from the numbers on the page must get
+    the printed one.
+
+    The verdict used to be derived at full precision while the interval shipped
+    rounded to four decimals, so 78 genes carried an interval of
+    ``[-1.195, -0.000]`` labelled "decreases". Nothing errored and nothing looked
+    wrong; the page simply asserted something its own numbers did not support.
+
+    The negative-zero half is asserted over ``BOUND_COLUMNS`` rather than over
+    two hand-named columns. The first version of this test named ``ci_low`` and
+    ``ci_high`` literally and so did not notice that the prediction interval
+    added in the same commit had skipped the fix — two genes shipped
+    ``pi_high = -0.0``. A test that enumerates its own columns only ever covers
+    the bug that was already known.
+    """
+    import pandas as pd
+
+    from geroquery.etl.build_frontend_data import BOUND_COLUMNS, _pool
+
+    # Effects engineered to land an interval bound within rounding distance of
+    # zero, which is the only regime where the two definitions can differ.
+    rows = []
+    for i, offset in enumerate((0.0, 1e-6, -1e-6, 1e-5)):
+        for study in range(4):
+            rows.append(
+                {
+                    "gene_id": f"G{i}",
+                    "species": "human",
+                    "effect_size": -0.6 + offset + 0.0001 * study,
+                    "standard_error": 0.3061,
+                    "tissue": "blood",
+                }
+            )
+    # And one gene whose *prediction* bound lands on zero instead. Four equal
+    # effects give tau2 = 0 and se_pool = se / 2, so pi_high is
+    # eff + t(0.975, k-2) * se / 2 exactly; solving that for a hair below zero
+    # is what puts a -0.0 in pi_high. Derived from the quantile rather than
+    # hard-coded so it stays on target if the interval's dof convention moves.
+    from scipy import stats as _stats
+
+    se_pred = 0.3
+    eff_pred = -float(_stats.t.ppf(0.975, 2)) * (se_pred / 2) - 1e-7
+    for _study in range(4):
+        rows.append(
+            {
+                "gene_id": "PI",
+                "species": "human",
+                "effect_size": eff_pred,
+                "standard_error": se_pred,
+                "tissue": "blood",
+            }
+        )
+
+    pooled = _pool(pd.DataFrame(rows))
+    assert (pooled["gene_id"] == "PI").any(), "the prediction-bound fixture did not pool"
+
+    for _, row in pooled.iterrows():
+        expected = (
+            "increases"
+            if row["ci_low"] > 0
+            else "decreases" if row["ci_high"] < 0 else "no_evidence"
+        )
+        assert row["verdict"] == expected, row.to_dict()
+        # Negative zero compares as "not less than zero" in JavaScript but
+        # prints as "-0.000", so it must not survive the export — on *any*
+        # bound, not just the two the reported verdict is read from.
+        for column in BOUND_COLUMNS:
+            value = row[column]
+            if value is None:
+                continue
+            assert not (
+                value == 0 and math.copysign(1, value) < 0
+            ), f"{column} shipped as negative zero for {row['gene_id']}"

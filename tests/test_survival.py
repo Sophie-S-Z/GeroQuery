@@ -28,8 +28,9 @@ from geroquery.survival import (
     crosslayer_analysis,
     likelihood_ratio_test,
     mahalanobis_dysregulation,
+    wald_test,
 )
-from geroquery.survival.cox import SurvivalInputError, _breslow_terms
+from geroquery.survival.cox import SurvivalInputError, _breslow_terms, _score_residuals
 
 # --- the estimator itself ----------------------------------------------------
 
@@ -168,6 +169,251 @@ def test_likelihood_ratio_refuses_models_fitted_on_different_rows():
         likelihood_ratio_test(full, reduced)
 
 
+# --- survey weights and the design-based variance ----------------------------
+#
+# NHANES is not a simple random sample. WTDN4YR, SDMVSTRA and SDMVPSU were
+# carried into the cross-layer table and never used, which made every hazard
+# ratio a claim about 2,517 volunteers rather than about US adults aged 50+.
+# Applying them changes both the point estimate (unequal selection) and the
+# interval (clustering), and each of those needs its own check.
+
+
+def test_unit_weights_reproduce_the_unweighted_fit_exactly():
+    """Adding a weights argument must not perturb the default path."""
+    rng = np.random.default_rng(13)
+    x = rng.normal(size=(400, 2))
+    time = rng.exponential(size=400)
+    event = (rng.random(400) < 0.7).astype(int)
+
+    plain = cox_regression(x, time, event, standardize=False)
+    unit = cox_regression(x, time, event, weights=np.ones(400), standardize=False)
+    assert unit.coefficients == pytest.approx(plain.coefficients, abs=1e-12)
+    assert unit.log_likelihood == pytest.approx(plain.log_likelihood, abs=1e-9)
+
+
+def test_a_weight_of_two_is_the_same_as_the_row_appearing_twice():
+    """The pseudo-likelihood's defining property, including at tied times.
+
+    A weight enters both the event term and the risk-set sum. Getting it into
+    only one of the two produces a fit that converges and is wrong, and this is
+    the check that separates them: duplicating a row is the one case where the
+    right answer is known without deriving anything.
+    """
+    rng = np.random.default_rng(21)
+    x = rng.normal(size=(150, 2))
+    time = rng.exponential(size=150)
+    event = (rng.random(150) < 0.6).astype(int)
+
+    weights = np.ones(150)
+    weights[:40] = 2.0
+    weighted = cox_regression(x, time, event, weights=weights, standardize=False)
+
+    duplicated = cox_regression(
+        np.vstack([x, x[:40]]),
+        np.concatenate([time, time[:40]]),
+        np.concatenate([event, event[:40]]),
+        standardize=False,
+    )
+    assert weighted.coefficients == pytest.approx(duplicated.coefficients, abs=1e-8)
+    assert weighted.population_size == pytest.approx(190.0)
+
+
+def test_score_residuals_sum_to_the_score_and_so_vanish_at_the_fit():
+    """The sandwich's meat is built from per-subject scores; they must be scores.
+
+    A mis-derived residual still yields a plausible-looking variance and is only
+    caught by the identity it is supposed to satisfy: summed over subjects it is
+    the gradient of the log pseudo-likelihood, which is zero at the MLE. Same
+    argument as the finite-difference check above, one derivative further out.
+    """
+    rng = np.random.default_rng(5)
+    x = rng.normal(size=(300, 2))
+    time = rng.exponential(size=300)
+    event = (rng.random(300) < 0.65).astype(int)
+    weights = rng.uniform(0.5, 4.0, 300)
+
+    fit = cox_regression(x, time, event, weights=weights, standardize=False)
+    beta = np.asarray(fit.coefficients)
+    centred = x - x.mean(axis=0)
+
+    residuals = _score_residuals(centred, time, event, beta, weights)
+    assert residuals.shape == (300, 2)
+
+    # The identity, stated exactly rather than as "close to zero": the residuals
+    # sum to the gradient. Asserting they sum to zero instead would be asserting
+    # the optimizer's tolerance, which is a different claim.
+    _, gradient_at_fit, _ = _breslow_terms(centred, time, event, beta, weights)
+    assert residuals.sum(axis=0) == pytest.approx(gradient_at_fit, abs=1e-9)
+    assert np.abs(gradient_at_fit).max() < 1e-4  # and the fit really is stationary
+
+    # Away from the MLE they must still equal the gradient, where it is large.
+    off = beta + 0.3
+    _, gradient, _ = _breslow_terms(centred, time, event, off, weights)
+    off_residuals = _score_residuals(centred, time, event, off, weights)
+    assert np.abs(gradient).max() > 1.0
+    assert off_residuals.sum(axis=0) == pytest.approx(gradient, abs=1e-8)
+
+
+def test_weights_recover_the_population_effect_from_a_deliberately_biased_sample():
+    """The planted-effect argument, applied to the survey design itself.
+
+    A population made of two strata whose hazard ratios differ, sampled at
+    different rates. The unweighted sample fit answers a question about the
+    sample; the weighted one has to answer the question about the population,
+    and the population answer is known because the whole population is in hand.
+    """
+    rng = np.random.default_rng(2024)
+    n = 24_000
+    stratum = (rng.random(n) < 0.2).astype(int)  # 20% in the oversampled stratum
+    x = rng.normal(size=n)
+    beta_true = np.where(stratum == 1, 1.1, 0.15)
+    latent = rng.exponential(1.0 / np.exp(beta_true * x))
+    censor = rng.exponential(3.0, n)
+    time = np.minimum(latent, censor)
+    event = (latent <= censor).astype(int)
+
+    population = cox_regression(x[:, None], time, event, standardize=False)
+
+    # Sample stratum 1 five times as heavily as stratum 0.
+    probability = np.where(stratum == 1, 0.5, 0.1)
+    picked = rng.random(n) < probability
+    sx, st, se = x[picked, None], time[picked], event[picked]
+    weights = 1.0 / probability[picked]
+
+    naive = cox_regression(sx, st, se, standardize=False)
+    weighted = cox_regression(sx, st, se, weights=weights, standardize=False)
+
+    target = population.coefficients[0]
+    assert weighted.coefficients[0] == pytest.approx(target, abs=0.05)
+    # And the unweighted fit is visibly the wrong answer, or the test proves
+    # nothing about the weighting.
+    assert abs(naive.coefficients[0] - target) > 0.10
+    assert weighted.weighted and weighted.variance == "robust"
+
+
+def test_clustering_widens_the_interval_and_reports_the_design_effect():
+    """A PSU-level effect the model does not carry makes residuals correlate
+    inside a cluster, and that is exactly when the design variance must exceed
+    the independence one.
+
+    Worth stating why the obvious construction does not work: making the
+    *covariate* cluster-level is not enough. If the model is correctly specified
+    the score residuals inside a PSU stay uncorrelated and the design effect
+    comes out below 1 — which is legitimate, and was the first version of this
+    test failing for the right reason. What inflates a clustered variance is
+    shared variation the model has not accounted for, so that is what is planted.
+    """
+    rng = np.random.default_rng(77)
+    n_strata, psus_per_stratum, per_psu = 24, 2, 30
+    strata, psu, x, frailty = [], [], [], []
+    for h in range(n_strata):
+        for a in range(psus_per_stratum):
+            shared, unmodelled = rng.normal(), rng.normal()
+            strata += [h] * per_psu
+            psu += [a] * per_psu
+            x += list(shared + rng.normal(scale=0.3, size=per_psu))
+            frailty += [unmodelled] * per_psu
+    strata, psu, x, frailty = (np.array(v) for v in (strata, psu, x, frailty))
+    n = len(x)
+    latent = rng.exponential(1.0 / np.exp(0.6 * x + 1.2 * frailty))
+    censor = rng.exponential(3.0, n)
+    time = np.minimum(latent, censor)
+    event = (latent <= censor).astype(int)
+    weights = np.full(n, 400.0)
+
+    independent = cox_regression(x[:, None], time, event, weights=weights, standardize=False)
+    design = cox_regression(
+        x[:, None], time, event, weights=weights, strata=strata, psu=psu, standardize=False
+    )
+
+    assert independent.variance == "robust"
+    assert design.variance == "design"
+    assert design.n_psu == n_strata * psus_per_stratum
+    assert design.n_strata == n_strata
+    assert design.lonely_psu_strata == 0
+    # Same point estimate — the design changes the interval, not the answer.
+    assert design.coefficients == pytest.approx(independent.coefficients, abs=1e-12)
+    assert design.standard_errors[0] > independent.standard_errors[0] * 1.5
+    assert design.design_effect[0] > 2.0
+    assert independent.design_effect[0] == 1.0
+    assert design.population_size == pytest.approx(400.0 * n)
+    assert design.population_events == pytest.approx(400.0 * event.sum())
+
+
+def test_a_stratum_with_one_psu_is_reported_rather_than_silently_contributing_zero():
+    rng = np.random.default_rng(4)
+    n = 400
+    x = rng.normal(size=(n, 1))
+    time = rng.exponential(size=n)
+    event = (rng.random(n) < 0.7).astype(int)
+    strata = np.repeat(np.arange(10), 40)
+    psu = np.tile(np.repeat([0, 1], 20), 10)
+    psu[:40] = 0  # stratum 0 now has a single PSU
+
+    fit = cox_regression(
+        x, time, event, weights=np.ones(n), strata=strata, psu=psu, standardize=False
+    )
+    assert fit.lonely_psu_strata == 1
+
+
+def test_a_weighted_fit_refuses_a_likelihood_ratio_test():
+    """2*delta log pseudo-likelihood is not chi-squared under survey weighting.
+
+    Reporting it anyway is the kind of error that produces a confident p-value
+    from an invalid reference distribution, so it is refused and the design-based
+    Wald test is what the cross-layer analysis uses instead.
+    """
+    rng = np.random.default_rng(9)
+    x = rng.normal(size=(300, 2))
+    time = rng.exponential(size=300)
+    event = (rng.random(300) < 0.7).astype(int)
+    weights = rng.uniform(0.5, 3.0, 300)
+
+    full = cox_regression(x, time, event, ["a", "b"], weights=weights)
+    reduced = cox_regression(x[:, :1], time, event, ["a"], weights=weights)
+    with pytest.raises(SurvivalInputError, match="pseudo-likelihood"):
+        likelihood_ratio_test(full, reduced)
+
+    wald = wald_test(full, ["b"])
+    assert wald["df"] == 1
+    assert 0.0 <= wald["p_value"] <= 1.0
+    assert wald["tested"] == ["b"]
+
+
+def test_the_wald_test_agrees_with_the_likelihood_ratio_when_unweighted():
+    """Two asymptotically equivalent tests on the same well-behaved fit.
+
+    Not a tautology: they are computed from different quantities — one from the
+    curvature at the fit, one from the height of the likelihood at two points —
+    so agreement is evidence the covariance being handed to the Wald test is the
+    covariance of the coefficients it is testing.
+    """
+    rng = np.random.default_rng(31)
+    n = 4000
+    x = rng.normal(size=(n, 2))
+    latent = rng.exponential(1.0 / np.exp(x @ np.array([0.5, 0.3])))
+    censor = rng.exponential(2.0, n)
+    time = np.minimum(latent, censor)
+    event = (latent <= censor).astype(int)
+
+    full = cox_regression(x, time, event, ["a", "b"], standardize=False)
+    reduced = cox_regression(x[:, :1], time, event, ["a"], standardize=False)
+    lr = likelihood_ratio_test(full, reduced)
+    wald = wald_test(full, ["b"])
+    assert wald["statistic"] == pytest.approx(lr["statistic"], rel=0.15)
+
+
+def test_weighted_concordance_uses_the_population_not_the_sample():
+    """A C-index over an unequal-probability sample describes the sample."""
+    time = np.array([1.0, 2.0, 3.0, 4.0])
+    event = np.array([1, 1, 1, 0])
+    risk = np.array([4.0, 3.0, 1.0, 2.0])
+    assert concordance_index(time, event, risk) == pytest.approx(5.0 / 6.0)
+    # Weighting the one discordant pair's members up must lower the value.
+    heavy = np.array([1.0, 1.0, 8.0, 8.0])
+    assert concordance_index(time, event, risk, weights=heavy) < 0.7
+
+
 # --- the cross-layer composition --------------------------------------------
 
 
@@ -246,6 +492,61 @@ def test_crosslayer_models_are_fitted_on_identical_rows():
     }
     assert len(counts) == 1
     assert result.n_subjects == len(frame) - 50
+
+
+def test_crosslayer_carries_the_design_through_the_complete_case_filter():
+    """Weights must be filtered with their rows, not aligned afterwards.
+
+    A weight vector one row out of step produces a fit that converges, reports a
+    plausible hazard ratio, and is wrong for every subject — the same failure
+    shape as bug #12 and #13, and equally invisible. So the design columns go
+    through the same ``dropna`` as the covariates and the test punches holes to
+    prove it.
+    """
+    frame, distance = _toy_cohort()
+    rng = np.random.default_rng(17)
+    frame = frame.copy()
+    frame["w"] = rng.uniform(1_000, 40_000, len(frame))
+    frame["stratum"] = np.repeat(np.arange(15), len(frame) // 15)[: len(frame)]
+    frame["unit"] = np.tile([1, 2], len(frame))[: len(frame)]
+    clock = pd.Series(rng.normal(size=len(frame)), index=frame.index)
+    clock.iloc[:25] = np.nan  # holes that shift every later row
+
+    result = crosslayer_analysis(
+        frame,
+        clock,
+        distance,
+        clock_name="c",
+        weight_col="w",
+        strata_col="stratum",
+        psu_col="unit",
+    )
+    assert result.weighted
+    assert result.n_subjects == len(frame) - 25
+    assert result.joint_model.variance == "design"
+    assert result.joint_model.n_strata == 15
+    # The population the weights describe, not the number of people measured.
+    kept = frame["w"].iloc[25:]
+    assert result.joint_model.population_size == pytest.approx(kept.sum())
+
+    # And the nested tests switched to the one that survives pseudo-likelihood.
+    for test in (
+        result.dysregulation_adds_over_clock,
+        result.clock_adds_over_dysregulation,
+        result.clock_adds_over_baseline,
+    ):
+        assert test["test"] == "design_wald"
+        assert test["variance"] == "design"
+
+
+def test_an_unweighted_crosslayer_still_uses_the_likelihood_ratio():
+    """The dispatch must not quietly change the unweighted result."""
+    frame, distance = _toy_cohort()
+    clock = pd.Series(np.linspace(-2, 2, len(frame)), index=frame.index)
+    result = crosslayer_analysis(frame, clock, distance, clock_name="c")
+    assert not result.weighted
+    assert result.dysregulation_adds_over_clock["test"] == "likelihood_ratio"
+    assert result.joint_model.variance == "model"
 
 
 def test_dysregulation_reference_must_be_large_enough():

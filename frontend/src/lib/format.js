@@ -31,6 +31,23 @@ export function fmtP(value) {
   return value.toFixed(3);
 }
 
+/**
+ * The local false sign rate — the probability the *direction* is wrong.
+ *
+ * Formatted differently from a p-value on purpose, because it is not one. A
+ * p-value answers "could this be exactly zero", which nobody believes; this
+ * answers "if I tell you it goes up, how often am I wrong", which is the
+ * question actually being asked. It is also a posterior under a prior fitted to
+ * the whole corpus, so it has no business wearing scientific notation and a
+ * "<1e-300" floor — it is a probability, and two decimals is all of it that
+ * means anything.
+ */
+export function fmtLfsr(value) {
+  if (value == null || Number.isNaN(value)) return "—";
+  if (value < 0.001) return "<0.001";
+  return value.toFixed(3);
+}
+
 /** Hazard ratios are multiplicative, so they are unsigned and never "+1.44". */
 export function fmtHR(value) {
   if (value == null || Number.isNaN(value)) return "—";

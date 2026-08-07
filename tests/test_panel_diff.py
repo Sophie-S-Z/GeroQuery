@@ -17,6 +17,7 @@ import yaml
 from geroquery.etl.panel_diff import (
     CHANGE_ORDER,
     EFFECT_MOVE_THRESHOLD,
+    ESTIMATOR,
     MIN_CONTRASTS,
     Snapshot,
     diff_snapshots,
@@ -230,3 +231,30 @@ def test_diff_json_is_serializable():
     new = _snapshot({"A|human|transcriptome": _estimate("A", 0.5, 0.2, 0.8)}, ["GDS1", "GDS2"])
     payload = json.dumps(diff_snapshots(old, new).to_dict())
     assert "newly_excludes_zero" in payload
+
+
+def test_the_diff_refuses_to_compare_across_estimators():
+    """A method change must never be published as evidence moving.
+
+    Swapping DerSimonian-Laird for the Hartung-Knapp interval retracted 1,164
+    claims across this corpus without a byte of new data. If the loop had run
+    across that change it would have opened a pull request reporting all of them
+    as findings, and every one would have been wrong about why.
+    """
+    before = _snapshot({"A|human|transcriptome": _estimate("A", 0.5, 0.2, 0.8)}, ["GDS1"])
+    after = _snapshot({"A|human|transcriptome": _estimate("A", 0.5, -0.1, 1.1)}, ["GDS1"])
+    object.__setattr__(before, "estimator", "dersimonian_laird")
+    object.__setattr__(after, "estimator", "hartung_knapp_modified")
+
+    with pytest.raises(ValueError, match="not the evidence"):
+        diff_snapshots(before, after)
+
+
+def test_a_snapshot_records_which_estimator_produced_it():
+    snapshot = _snapshot({"A|human|transcriptome": _estimate("A", 0.5, 0.2, 0.8)}, ["GDS1"])
+    assert snapshot.to_dict()["estimator"] == ESTIMATOR
+    # And a snapshot written before the field existed reads back as the
+    # estimator that was in use then, rather than as unknown.
+    legacy = dict(snapshot.to_dict())
+    legacy.pop("estimator")
+    assert Snapshot.from_dict(legacy).estimator == "dersimonian_laird"

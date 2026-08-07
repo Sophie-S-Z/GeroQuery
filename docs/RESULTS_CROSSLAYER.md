@@ -2,7 +2,23 @@
 
 **Cohort:** NHANES 1999–2002 DNA methylation subsample · **n = 2,517** ·
 **1,350 deaths** · median follow-up **17.1 years** (max 20.8)
+**Design:** `WTDN4YR` weights, 28 strata, 57 sampling units →
+**75,754,006 US adults aged 50+**, 35,727,943 deaths
 **Manifest:** 2026.3, checksums verified 2026-08-05 · **Reproduce:** `make crosslayer`
+
+> **Updated 2026-08-06 — the survey design is now applied.** The first version of
+> this document reported unweighted estimates and listed weighting as the highest
+> value follow-up. It has been done, and it moved every number: **every hazard
+> ratio is larger once the design is respected**, because the DNAm subsample
+> under-represents the higher-risk part of the population. The unweighted value
+> is kept beside each weighted one, since the size of that gap is itself the
+> finding. Both conclusions survive: the trained-on hierarchy still reproduces,
+> and the same three clocks still carry no evidence over six blood tests.
+>
+> One consequence had to be handled rather than absorbed: **a likelihood ratio
+> test is not valid against a weighted pseudo-likelihood.** The nested tests are
+> now design-based Wald tests. `likelihood_ratio_test` refuses a weighted fit
+> outright rather than returning a p-value from the wrong distribution.
 
 This is the analysis `HANDOFF.md` §10.3 called "the reason this exists" and
 listed as blocked. It was blocked because clocks and health state lived in
@@ -24,10 +40,19 @@ Every number below is computed through the repo code path
 | 3 | **Does either add anything over the other?** | D vs B, D vs C |
 
 Model A is age + sex. B adds clock age acceleration, C adds dysregulation,
-D adds both. All four are fitted on one design matrix, sliced — so the
-likelihood-ratio tests compare models on identical rows. Hazard ratios are
-**per standard deviation**, which is the only way a clock in years and a
-Mahalanobis distance in arbitrary units can be put side by side.
+D adds both. All four are fitted on one design matrix, sliced — so the nested
+tests compare models on identical rows, and the survey columns go through the
+same complete-case filter as the covariates rather than being aligned afterwards.
+Hazard ratios are **per standard deviation**, which is the only way a clock in
+years and a Mahalanobis distance in arbitrary units can be put side by side.
+
+**How the design enters.** The point estimate maximizes Binder's (1992) weighted
+pseudo-likelihood with `WTDN4YR`; the variance is the Taylor-linearized
+design-based sandwich over `SDMVSTRA` × `SDMVPSU`. The two do different jobs and
+are worth separating: **the weights move the estimate, the clustering moves the
+interval.** Here the weights move it a lot and the clustering almost not at all —
+design effects run 0.88 to 1.71, median ≈ 1.15 — so nearly all of the change
+below is unequal selection rather than correlated sampling units.
 
 **On the resilience measure.** Critical slowing down as implemented in
 `resilience/` is a *population* statistic — variance across age strata. It has
@@ -41,23 +66,40 @@ same quantity** and are not reported as one. The population CSD is in §5.
 
 ## 2. Result
 
-All ten age-like clocks, joint model D. HR per SD, 95% CI.
+All ten age-like clocks, joint model D. HR per SD, 95% CI, survey-weighted.
+`deff` is the design effect: the design-based variance over the variance the same
+weighted fit would have with every subject as their own sampling unit.
 
-| Clock | Trained on | HR alone | **HR adjusted for dysregulation** | 95% CI | C (clock) | C (joint) |
-|---|---|---|---|---|---|---|
-| GrimAge2 | mortality | 1.531 | **1.443** | 1.361–1.531 | 0.7644 | 0.7731 |
-| GrimAge | mortality | 1.502 | **1.427** | 1.346–1.512 | 0.7618 | 0.7720 |
-| PhenoAge | clinical phenotype | 1.236 | **1.163** | 1.099–1.231 | 0.7468 | 0.7603 |
-| Hannum | chronological age | 1.143 | **1.108** | 1.049–1.171 | 0.7426 | 0.7584 |
-| Horvath | chronological age | 1.133 | **1.129** | 1.069–1.192 | 0.7421 | 0.7586 |
-| Vidal-Bralo | chronological age | 1.095 | **1.070** | 1.017–1.126 | 0.7416 | 0.7578 |
-| Zhang | chronological age | 1.076 | **1.079** | 1.019–1.142 | 0.7406 | 0.7574 |
-| Lin | chronological age | 1.071 | 1.052 | **0.998–1.108** | 0.7408 | 0.7573 |
-| SkinBlood | chronological age | 1.056 | 1.049 | **0.992–1.108** | 0.7401 | 0.7571 |
-| Weidner | chronological age | 1.044 | 1.026 | **0.976–1.078** | 0.7400 | 0.7568 |
+| Clock | Trained on | HR alone | **HR adjusted for dysregulation** | 95% CI | unweighted HR | deff | C (clock) | C (joint) |
+|---|---|---|---|---|---|---|---|---|
+| GrimAge2 | mortality | 1.628 | **1.527** | 1.410–1.652 | 1.443 | 1.01 | 0.7872 | 0.7943 |
+| GrimAge | mortality | 1.611 | **1.518** | 1.403–1.642 | 1.427 | 0.99 | 0.7854 | 0.7936 |
+| PhenoAge | phenotypic age | 1.317 | **1.220** | 1.103–1.350 | 1.163 | 1.66 | 0.7703 | 0.7813 |
+| Hannum | chronological age | 1.217 | **1.145** | 1.059–1.237 | 1.108 | 1.16 | 0.7669 | 0.7796 |
+| Horvath | chronological age | 1.139 | **1.116** | 1.034–1.205 | 1.129 | 1.14 | 0.7643 | 0.7788 |
+| Zhang | chronological age | 1.120 | **1.103** | 1.002–1.214 | 1.079 | 1.71 | 0.7636 | 0.7780 |
+| Vidal-Bralo | chronological age | 1.129 | **1.086** | 1.009–1.169 | 1.070 | 1.40 | 0.7638 | 0.7779 |
+| SkinBlood | chronological age | 1.086 | 1.070 | **0.984–1.164** | 1.048 | 1.35 | 0.7630 | 0.7775 |
+| Lin | chronological age | 1.069 | 1.045 | **0.980–1.115** | 1.052 | 0.90 | 0.7624 | 0.7774 |
+| Weidner | chronological age | 1.052 | 1.033 | **0.974–1.095** | 1.026 | 0.88 | 0.7621 | 0.7772 |
 
-Baseline (age + sex) C = **0.7394**. Dysregulation alone C = **0.7567**.
-Dysregulation HR per SD = **1.20–1.29** depending on which clock it sits beside.
+Baseline (age + sex) C = **0.7618**. Dysregulation alone C = **0.7771**.
+Dysregulation HR per SD = **1.28–1.42** depending on which clock it sits beside
+(unweighted: 1.20–1.29).
+
+### 2.0 Every effect is larger in the population than in the sample
+
+The weighted hazard ratio exceeds the unweighted one for **nine of the ten
+clocks** and for dysregulation under every clock. That direction is not a
+detail. It means the DNAm subsample over-represents people whose measured aging
+markers carry *less* mortality information than they do nationally — so the
+unweighted analysis was a conservative one, and correcting it strengthens rather
+than deflates the finding.
+
+It is worth being precise about what weighting does and does not fix. It corrects
+for **who among the eligible was selected**. It cannot correct for who was
+eligible: NHANES's DNAm subsample is adults 50+ who consented and had usable
+stored DNA, and no weight recovers a person who was never in the frame.
 
 ### 2.1 The ordering is the validation
 
@@ -77,46 +119,69 @@ information this study can detect. Published as found.
 
 ### 2.3 Answer to question 3 — both directions
 
+Nested tests are **design-based Wald tests** on the weighted fit, because a
+likelihood ratio is not valid against a pseudo-likelihood (§2.3.1). The
+unweighted likelihood-ratio p-values are carried beside them.
+
 **Dysregulation adds over every clock**, including the mortality-trained ones:
 
-| Clock in the model already | LR p for adding dysregulation |
+| Clock in the model already | Wald p for adding dysregulation |
 |---|---|
-| Weidner / SkinBlood / Zhang / Horvath | 2×10⁻²⁷ – 1×10⁻²⁷ |
-| Hannum / Vidal-Bralo / Lin | 8×10⁻²⁶ – 4×10⁻²⁷ |
-| PhenoAge | 1×10⁻²¹ |
-| GrimAge | 2×10⁻¹⁷ |
-| GrimAge2 | 2×10⁻¹⁴ |
+| Weidner / SkinBlood / Lin / Zhang | 3×10⁻⁴⁰ – 1×10⁻³⁹ |
+| Vidal-Bralo / Horvath / Hannum | 4×10⁻³⁹ – 3×10⁻³¹ |
+| PhenoAge | 2×10⁻²³ |
+| GrimAge | 7×10⁻¹⁹ |
+| GrimAge2 | 6×10⁻¹⁶ |
 
 **The clock adds over dysregulation only sometimes:**
 
-| Clock | LR p for adding the clock to a dysregulation model | Verdict |
-|---|---|---|
-| GrimAge2 | 1×10⁻³² | adds |
-| GrimAge | 1×10⁻³⁰ | adds |
-| PhenoAge | 1×10⁻⁷ | adds |
-| Horvath | 1×10⁻⁵ | adds |
-| Hannum | 2×10⁻⁴ | adds |
-| Zhang | 0.007 | adds |
-| Vidal-Bralo | 0.009 | adds |
-| **Lin** | **0.059** | **no evidence** |
-| **SkinBlood** | **0.087** | **no evidence** |
-| **Weidner** | **0.32** | **no evidence** |
+| Clock | Wald p, weighted | LR p, unweighted | Verdict |
+|---|---|---|---|
+| GrimAge2 | 1×10⁻²⁵ | 1×10⁻³² | adds |
+| GrimAge | 4×10⁻²⁵ | 1×10⁻³⁰ | adds |
+| PhenoAge | 1×10⁻⁴ | 1×10⁻⁷ | adds |
+| Hannum | 6×10⁻⁴ | 2×10⁻⁴ | adds |
+| Horvath | 0.005 | 1×10⁻⁵ | adds |
+| Vidal-Bralo | 0.027 | 0.009 | adds |
+| Zhang | 0.045 | 0.007 | adds |
+| **SkinBlood** | **0.114** | 0.087 | **no evidence** |
+| **Lin** | **0.178** | 0.059 | **no evidence** |
+| **Weidner** | **0.281** | 0.316 | **no evidence** |
 
 So the honest one-line answer to "is an epigenetic clock worth running": for
 GrimAge and PhenoAge, yes, clearly. For three of the seven chronological-age
 clocks, **there is no evidence it tells you anything six routine blood tests do
-not.**
+not** — and that is now a statement about the US population aged 50+, not about
+2,517 people. Zhang and Vidal-Bralo sit close enough to 0.05 that the verdict is
+weak in either direction; they should be read as marginal, not as established.
+
+#### 2.3.1 Why the test changed
+
+Twice the difference in a *weighted* log pseudo-likelihood is not χ² distributed
+— the weights break the information equality the likelihood ratio depends on. A
+p-value computed that way is drawn from the wrong reference distribution, and it
+would look entirely normal. So `likelihood_ratio_test` now raises on a weighted
+fit rather than answering, and `wald_test` — which reads the design-based
+covariance matrix and therefore inherits both the weighting and the clustering —
+is what the analysis uses. On the unweighted fit the two agree to within 15% of
+the statistic, which is what
+`test_the_wald_test_agrees_with_the_likelihood_ratio_when_unweighted` pins.
 
 ### 2.4 The headline, stated plainly
 
 > A Mahalanobis distance over six routine clinical chemistry markers
-> (C = 0.757) predicts 20-year mortality better than nine of the ten DNA
+> (C = 0.777) predicts 20-year mortality better than eight of the ten DNA
 > methylation clocks NCHS published, and adds information to all ten —
 > including GrimAge2.
 
-Only GrimAge (0.762) and GrimAge2 (0.764) beat it, and both are trained on
+Only GrimAge (0.785) and GrimAge2 (0.787) beat it, and both are trained on
 mortality, which is the outcome being predicted. The six markers cost a
 standard blood panel; the clocks cost an EPIC array.
+
+*Correction:* the first version of this section said "nine of the ten" while also
+saying only two clocks beat it. Two of ten beating it means it beats eight. The
+count was wrong then and is right here; the substance is unchanged, and it is
+unchanged by weighting too — the same two clocks lead before and after.
 
 ---
 
@@ -125,17 +190,19 @@ standard blood panel; the clocks cost an EPIC array.
 **Every p-value above is tiny and every effect on discrimination is small.**
 
 ```
-age + sex only                      C = 0.7394
-+ the best clock (GrimAge2)         C = 0.7644   (+0.025)
-+ dysregulation                     C = 0.7567   (+0.017)
-+ both                              C = 0.7731   (+0.034)
+                                    weighted     unweighted
+age + sex only                      C = 0.7618   0.7394
++ the best clock (GrimAge2)         C = 0.7872   0.7644   (+0.025)
++ dysregulation                     C = 0.7771   0.7567   (+0.015)
++ both                              C = 0.7943   0.7731   (+0.033)
 ```
 
-With 1,350 events, a likelihood-ratio test detects effects far below the size
-that would change a decision about a person. **All of this biology adds 0.034 of
-concordance over knowing someone's age and sex.** A reader who takes
-`p = 1×10⁻²⁷` as "this is a large effect" has read it wrong, and the number that
-corrects them is in the same table.
+With 1,350 events, a nested test detects effects far below the size that would
+change a decision about a person. **All of this biology adds 0.033 of concordance
+over knowing someone's age and sex** — and weighting did not rescue that number,
+it moved every row up by about the same 0.02 and left the gap where it was. A
+reader who takes `p = 3×10⁻⁴⁰` as "this is a large effect" has read it wrong, and
+the number that corrects them is in the same table.
 
 This is the same discipline the CDKN2A result applies in the other direction:
 there, a wide interval was reported rather than a verdict; here, a tiny p-value
@@ -187,12 +254,16 @@ rather than an excuse.
 **And yet the individual-level statistic is strongly predictive** in the same
 subjects, with a monotone gradient and almost no age correlation (r = 0.077):
 
-| Dysregulation quartile | Died | n |
-|---|---|---|
-| Q1 (lowest) | 44.9% | 630 |
-| Q2 | 47.5% | 629 |
-| Q3 | 52.6% | 629 |
-| Q4 (highest) | **69.5%** | 629 |
+| Dysregulation quartile | Died (sample) | Died (weighted) | n |
+|---|---|---|---|
+| Q1 (lowest) | 44.9% | 36.6% | 630 |
+| Q2 | 47.5% | 43.4% | 629 |
+| Q3 | 52.6% | 45.7% | 629 |
+| Q4 (highest) | **69.5%** | **67.4%** | 629 |
+
+The weighted column is the population one. The gradient is steeper in the
+population than in the sample — Q1 falls by 8 points and Q4 by only 2 — which is
+the same story the hazard ratios tell: the sample understates the spread.
 
 So the two are measuring different things, and this cohort is the first place
 that could separate them: **the population variance trend is an artefact of age
@@ -221,10 +292,20 @@ normalization was not the authors' — and it also means we cannot audit theirs.
 or cause of death for a subset of public-use records. Aggregate estimates are
 designed to survive this; individual rows are not trustworthy.
 
-**Survey weights are carried, not applied.** `WTDN4YR` (DNAm-specific, 4-year),
-`WTMEC4YR`, `SDMVPSU` and `SDMVSTRA` are all in the frame. Unweighted estimates
-are not nationally representative. Applying them would make this a population
-claim and is the single highest-value follow-up.
+**Survey weighting corrects selection, not eligibility.** `WTDN4YR` with
+`SDMVSTRA`/`SDMVPSU` is applied, so the estimates describe US adults aged 50+ in
+1999–2002. What it cannot do is repair the sampling frame: the DNAm subsample is
+people who consented and had usable stored DNA, and no weight recovers someone
+who was never eligible. The `WTMEC4YR` exam weight is also carried and is *not*
+the right one here — it describes the MEC-examined sample, not the methylation
+subsample.
+
+**Two strata carry an unusual PSU count.** 28 strata, 57 sampling units: 27
+strata with two and one with three. No stratum has a single PSU, so nothing is
+being silently dropped — `lonely_psu_strata` is reported on every fit and is 0.
+With 28 degrees of freedom the design variance is itself estimated with
+noticeable uncertainty, which is why the design effects range from 0.88 to 1.71
+on quantities that should behave similarly.
 
 **Ties are handled by Breslow.** Follow-up is recorded in whole months over ~20
 years, so ties are common. Breslow attenuates hazard ratios toward the null
@@ -265,6 +346,21 @@ Residual bias over 40 replicates is ~2% relative, consistent with the known
 O(1/n) bias of the Cox partial-likelihood MLE rather than with an implementation
 error.
 
+The survey extension is checked three more ways, on the same principle:
+
+4. **A defining property.** A weight of two must give exactly the fit a
+   duplicated row gives. This is the check that separates "the weight reached the
+   risk set" from "the weight reached the event term" — getting only one of the
+   two produces a convergent, wrong fit.
+5. **An identity one derivative out.** The per-subject score residuals that build
+   the sandwich must sum to the gradient of the log pseudo-likelihood, at the fit
+   and away from it. A mis-derived residual still yields a plausible variance and
+   fails only this.
+6. **A planted design.** A population whose two strata have different hazard
+   ratios, sampled at different rates. The weighted fit on the biased sample must
+   land on the answer computed from the whole population; the unweighted one must
+   visibly miss it, or the test proves nothing about the weighting.
+
 ---
 
 ## 8. Reproducing
@@ -282,9 +378,15 @@ dysregulation = mahalanobis_dysregulation(frame, list(nd.MARKERS))
 result = crosslayer_analysis(
     frame, nd.age_acceleration(frame, "GrimAge2Mort"), dysregulation.values,
     clock_name="GrimAge2Mort",
+    # Omit these three and you get the sample estimate, not the population one.
+    weight_col=nd.WEIGHT_COLUMN,
+    strata_col=nd.STRATUM_COLUMN,
+    psu_col=nd.PSU_COLUMN,
 )
 print(result.headline())
 ```
 
 **Sanity numbers:** 2,517 subjects · 1,350 deaths · 60 sex-discordant ·
-age 50–85 · follow-up median 17.08 y · baseline C 0.7394 · GrimAge2 HR/SD 1.443.
+age 50–85 · follow-up median 17.08 y · 28 strata / 57 PSUs / 0 lonely ·
+population 75,754,006 · weighted baseline C 0.7618 · GrimAge2 HR/SD **1.527**
+[1.410, 1.652] weighted, 1.443 unweighted.

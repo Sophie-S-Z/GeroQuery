@@ -157,15 +157,46 @@ export async function effectDistribution(species, binWidth = 0.1) {
   return [...counts.values()].sort((a, b) => a.bin - b.bin);
 }
 
-/** The strongest replicated effects, for the landscape table. */
-export async function topGenes({ species, direction, minK = 3, limit = 60 }) {
+/**
+ * The strongest replicated effects, for the landscape table.
+ *
+ * `rank` picks which estimate orders the table, and the choice is not cosmetic:
+ *
+ * `"shrunk"` (default)
+ *     The corpus posterior mean. Ranking by the raw pooled effect selects on
+ *     significance and then sorts on an extreme of a noisy statistic, which is
+ *     the winner's curse — the top of that table is enriched for exactly the
+ *     genes that will shrink on replication. It is not hypothetical here: the
+ *     mouse table's former top row, `Kif21a`, has an interval excluding zero
+ *     and a **46% posterior probability that its direction is wrong**.
+ * `"raw"`
+ *     The old ordering, kept so the two can be compared rather than asserted.
+ */
+export async function topGenes({ species, direction, minK = 3, limit = 60, rank = "shrunk" }) {
   const rows = await pooledTable();
   const excludesZero =
     direction === "down" ? (row) => row.ci_high < 0 : (row) => row.ci_low > 0;
+  // Fall back to the raw effect for any row with no posterior — a species with
+  // too few genes to fit a corpus prior still has to sort.
+  const key = (row) => (rank === "raw" || row.g_shrunk == null ? row.g : row.g_shrunk);
   return rows
     .filter((row) => row.species === species && row.k >= minK && excludesZero(row))
-    .sort((a, b) => (direction === "down" ? a.g - b.g : b.g - a.g))
+    .sort((a, b) => (direction === "down" ? key(a) - key(b) : key(b) - key(a)))
     .slice(0, limit);
+}
+
+/**
+ * Every pooled estimate that carries a posterior, for the volcano.
+ *
+ * Returns raw rows: the chart bins and draws them, and every value it reads —
+ * `g`, `lfsr`, `verdict` — was computed in Python. No thresholding happens
+ * here, deliberately. Selecting features by effect size *and* significance is
+ * the double filter that breaks the false-discovery-rate guarantee, so this
+ * view offers no "large and significant" selector to break it with.
+ */
+export async function volcanoPoints(species) {
+  const rows = await pooledTable();
+  return rows.filter((row) => row.species === species && row.lfsr != null);
 }
 
 /** Corpus-level counts, computed rather than typed into the masthead. */

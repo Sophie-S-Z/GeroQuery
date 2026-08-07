@@ -53,7 +53,9 @@ import argparse
 import json
 from datetime import date
 from pathlib import Path
+from typing import overload
 
+import numpy as np
 import pandas as pd
 
 from .. import __version__
@@ -74,6 +76,41 @@ CURATED_SLICE_ROWS = 40_585
 # be a shape rather than a summary.
 MIN_CONTRASTS = 3
 
+# Every interval bound the export ships. Named once so the rounding rule below
+# and the test that enforces it read from the same list: the first fix for bug
+# #20 collapsed negative zero on the four confidence bounds and missed the two
+# prediction bounds added in the same commit, and the test missed it too because
+# it named its columns by hand.
+BOUND_COLUMNS = ("ci_low", "ci_high", "ci_low_dl", "ci_high_dl", "pi_low", "pi_high")
+
+
+@overload
+def _bound(value: float) -> float: ...
+
+
+@overload
+def _bound(value: None) -> None: ...
+
+
+def _bound(value: float | None) -> float | None:
+    """Round an interval bound to the precision it ships at, and kill -0.0.
+
+    Two separate hazards, one function, because they have to be applied
+    together to every bound:
+
+    1. **Round before judging.** Deriving a verdict at full precision while
+       shipping a rounded interval lets the two disagree — 78 genes carried an
+       interval of ``[-1.195, -0.000]`` labelled "decreases", so a reader
+       recomputing from the printed numbers got a different answer from the one
+       printed beside them.
+    2. **Negative zero is not zero everywhere.** ``round(-1e-9, 4)`` is
+       ``-0.0``, which prints as "-0.000" and compares as *not less than zero*
+       in JavaScript. Adding ``0.0`` collapses it; nothing else does.
+    """
+    if value is None:
+        return None
+    return round(value, 4) + 0.0
+
 
 def _pool(frame: pd.DataFrame) -> pd.DataFrame:
     """Pool every (gene, species) group with enough contrasts.
@@ -89,29 +126,79 @@ def _pool(frame: pd.DataFrame) -> pd.DataFrame:
         if len(group) < MIN_CONTRASTS:
             continue
         pooled = random_effects(group["effect_size"].tolist(), group["standard_error"].tolist())
+        # Round first, then judge — see _bound. Every interval bound goes
+        # through it, including the prediction interval, which is drawn on the
+        # forest plot and printed in the readout and so has exactly the same
+        # exposure to a "-0.000" that the row's own verdict disagrees with.
+        low = _bound(pooled.ci_low)
+        high = _bound(pooled.ci_high)
         rows.append(
             {
                 "gene_id": gene_id,
                 "species": species,
                 "g": round(pooled.pooled_effect, 4),
                 "se": round(pooled.standard_error, 4),
-                "ci_low": round(pooled.ci_low, 4),
-                "ci_high": round(pooled.ci_high, 4),
+                "ci_low": low,
+                "ci_high": high,
                 "p_value": pooled.p_value,
                 "i2": round(pooled.i2, 1),
                 "tau2": round(pooled.tau2, 4),
                 "k": int(pooled.n_studies),
-                # The verdict is computed here, once, from the interval — not in
-                # the browser from a threshold someone might change.
-                "verdict": (
-                    "increases"
-                    if pooled.ci_low > 0
-                    else "decreases" if pooled.ci_high < 0 else "no_evidence"
-                ),
+                # The DerSimonian-Laird interval, so the page can show what a
+                # conventional tool would have reported, and the prediction
+                # interval, which is where the next study would land.
+                "ci_low_dl": _bound(pooled.ci_low_dl),
+                "ci_high_dl": _bound(pooled.ci_high_dl),
+                "pi_low": _bound(pooled.pi_low),
+                "pi_high": _bound(pooled.pi_high),
+                # The verdict is computed here, once, from the interval as it
+                # ships — not in the browser from a threshold someone might
+                # change, and not from a precision the reader never sees.
+                "verdict": ("increases" if low > 0 else "decreases" if high < 0 else "no_evidence"),
                 "n_tissues": int(group["tissue"].nunique()),
             }
         )
-    return pd.DataFrame(rows)
+    return _add_corpus_posterior(pd.DataFrame(rows))
+
+
+def _add_corpus_posterior(pooled: pd.DataFrame) -> pd.DataFrame:
+    """Attach the shrunken effect and the local false sign rate.
+
+    Fit **per species, never pooled across them.** The prior is "what effects
+    look like in this corpus", and human and mouse are different corpora
+    measured on different panels; one shared prior would let the mouse panel's
+    spread shrink human estimates and vice versa. That is a cross-species claim
+    smuggled in through a nuisance parameter.
+
+    Two columns come out of it, and both fix something:
+
+    ``lfsr``
+        The probability the *direction* is wrong -- an answer for the 38,276
+        genes whose interval crosses zero and which currently carry a verdict of
+        "no_evidence" and nothing else.
+    ``g_shrunk``
+        The posterior mean. The landscape table ranks by ``g`` among genes whose
+        interval excludes zero, which selects on significance and then ranks on
+        an extreme of a noisy statistic -- the winner's curse. Ranking on this
+        instead asks for large *and* well measured.
+    """
+    if pooled.empty:
+        return pooled
+
+    from ..harmonize import adaptive_shrinkage
+
+    pooled = pooled.copy()
+    pooled["g_shrunk"] = np.nan
+    pooled["lfsr"] = np.nan
+    for _species, group in pooled.groupby("species", observed=True):
+        # A handful of estimates cannot inform a corpus-wide prior, and fitting
+        # one anyway would shrink them toward a mode estimated from themselves.
+        if len(group) < 100:
+            continue
+        result = adaptive_shrinkage(group["g"].to_numpy(), group["se"].to_numpy())
+        pooled.loc[group.index, "g_shrunk"] = np.round(result.posterior_mean, 4) + 0.0
+        pooled.loc[group.index, "lfsr"] = np.round(result.lfsr, 5)
+    return pooled
 
 
 def _symbols(gene_ids: list[str]) -> dict[str, str]:
@@ -178,16 +265,33 @@ def _crosslayer_payload() -> dict:
     notes = {c.column: c.note for c in nd.CLOCKS}
 
     clocks = []
+    weighted_joint = None
     for column in nd.AGE_LIKE_CLOCKS:
-        result = crosslayer_analysis(
+        acceleration = nd.age_acceleration(frame, column)
+        common = {
+            "clock_name": column,
+            "predicts": predicts.get(column, ""),
+        }
+        # Both fits, every clock. The weighted one is the reported result — the
+        # sample was drawn to represent a population and a hazard ratio that
+        # ignores that describes 2,517 volunteers. The unweighted one ships
+        # beside it because the difference between them is itself information:
+        # every effect here is *larger* once the design is respected, so the
+        # sample understated the population.
+        sample = crosslayer_analysis(frame, acceleration, dysregulation.values, **common)
+        survey = crosslayer_analysis(
             frame,
-            nd.age_acceleration(frame, column),
+            acceleration,
             dysregulation.values,
-            clock_name=column,
-            predicts=predicts.get(column, ""),
+            **common,
+            weight_col=nd.WEIGHT_COLUMN,
+            strata_col=nd.STRATUM_COLUMN,
+            psu_col=nd.PSU_COLUMN,
         )
-        joint = {row["covariate"]: row for row in result.joint_model.summary_rows()}
-        alone = {row["covariate"]: row for row in result.clock_model.summary_rows()}
+        weighted_joint = survey.joint_model
+        joint = {row["covariate"]: row for row in survey.joint_model.summary_rows()}
+        alone = {row["covariate"]: row for row in survey.clock_model.summary_rows()}
+        sample_joint = {row["covariate"]: row for row in sample.joint_model.summary_rows()}
         clocks.append(
             {
                 "clock": column,
@@ -198,19 +302,26 @@ def _crosslayer_payload() -> dict:
                 "ci_low": joint["clock_acceleration"]["ci_low"],
                 "ci_high": joint["clock_acceleration"]["ci_high"],
                 "excludes_null": joint["clock_acceleration"]["excludes_null"],
+                "design_effect": round(survey.joint_model.design_effect[2], 2),
+                "hr_sample": sample_joint["clock_acceleration"]["hazard_ratio"],
+                "ci_low_sample": sample_joint["clock_acceleration"]["ci_low"],
+                "ci_high_sample": sample_joint["clock_acceleration"]["ci_high"],
                 "dysregulation_hr": joint["dysregulation"]["hazard_ratio"],
                 "dysregulation_ci_low": joint["dysregulation"]["ci_low"],
                 "dysregulation_ci_high": joint["dysregulation"]["ci_high"],
-                "c_baseline": round(result.baseline.concordance, 4),
-                "c_clock": round(result.clock_model.concordance, 4),
-                "c_dysregulation": round(result.dysregulation_model.concordance, 4),
-                "c_joint": round(result.joint_model.concordance, 4),
-                "dysregulation_adds_p": result.dysregulation_adds_over_clock["p_value"],
-                "clock_adds_p": result.clock_adds_over_dysregulation["p_value"],
+                "c_baseline": round(survey.baseline.concordance, 4),
+                "c_clock": round(survey.clock_model.concordance, 4),
+                "c_dysregulation": round(survey.dysregulation_model.concordance, 4),
+                "c_joint": round(survey.joint_model.concordance, 4),
+                "c_joint_sample": round(sample.joint_model.concordance, 4),
+                "dysregulation_adds_p": survey.dysregulation_adds_over_clock["p_value"],
+                "clock_adds_p": survey.clock_adds_over_dysregulation["p_value"],
+                "clock_adds_p_sample": sample.clock_adds_over_dysregulation["p_value"],
             }
         )
 
     clocks.sort(key=lambda row: -row["hr"])
+    assert weighted_joint is not None  # AGE_LIKE_CLOCKS is never empty
     return {
         "available": True,
         "mode": mode,
@@ -223,6 +334,17 @@ def _crosslayer_payload() -> dict:
         "dysregulation": dysregulation.to_dict(),
         "clocks": clocks,
         "caveats": list(nd.CAVEATS),
+        "survey": {
+            "weighted": True,
+            "weight": nd.WEIGHT_COLUMN,
+            "variance": weighted_joint.variance,
+            "n_strata": weighted_joint.n_strata,
+            "n_psu": weighted_joint.n_psu,
+            "lonely_psu_strata": weighted_joint.lonely_psu_strata,
+            "population_size": round(weighted_joint.population_size),
+            "population_deaths": round(weighted_joint.population_events),
+            "nested_test": survey.dysregulation_adds_over_clock["test"],
+        },
     }
 
 

@@ -70,6 +70,7 @@ export default function ForestPlot({ contrasts, pooled, symbol }) {
     const values = [
       ...rows.flatMap((r) => [r.low, r.high]),
       ...(pooled ? [pooled.ci_low, pooled.ci_high] : []),
+      ...(pooled?.pi_low != null ? [pooled.pi_low, pooled.pi_high] : []),
       0,
     ];
     const pad = 0.15;
@@ -110,6 +111,21 @@ export default function ForestPlot({ contrasts, pooled, symbol }) {
 
     if (pooled) {
       const pooledRow = [{ label: "POOLED", ...pooled }];
+      if (pooled.pi_low != null) {
+        marks.push(
+          // The prediction interval, drawn behind and lighter than the
+          // confidence interval it contains. Two different questions on one
+          // row: where the mean effect is, and where the next study would land.
+          Plot.ruleY(pooledRow, {
+            y: "label",
+            x1: "pi_low",
+            x2: "pi_high",
+            stroke: c.inkFaint,
+            strokeWidth: 1,
+            strokeDasharray: "3,3",
+          }),
+        );
+      }
       marks.push(
         Plot.ruleY(pooledRow, {
           y: "label",
@@ -127,8 +143,12 @@ export default function ForestPlot({ contrasts, pooled, symbol }) {
           fill: c.ink,
           r: 6,
           title: (d) =>
-            `Pooled (random effects, DerSimonian-Laird)\n` +
-            `g = ${d.g} [${d.ci_low}, ${d.ci_high}]\nk = ${d.k} contrasts`,
+            `Pooled (random effects, Hartung-Knapp interval)\n` +
+            `g = ${d.g} [${d.ci_low}, ${d.ci_high}]  95% CI\n` +
+            (d.pi_low != null
+              ? `next study [${d.pi_low}, ${d.pi_high}]  95% prediction interval\n`
+              : "") +
+            `k = ${d.k} contrasts`,
         }),
       );
     }
@@ -180,6 +200,10 @@ export default function ForestPlot({ contrasts, pooled, symbol }) {
         </span>
         <span>
           <i className="swatch" style={{ background: "var(--null)" }} /> interval crosses zero
+        </span>
+        <span>
+          <i className="swatch" style={{ background: "var(--ink-faint)", height: "1px" }} /> dashed:
+          95% prediction interval — where the next study would land
         </span>
       </div>
     </>

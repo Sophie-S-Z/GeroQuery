@@ -2,6 +2,16 @@
 
 **Date:** 2026-08-05 · **Base:** `3b8cc47` · Supersedes `HANDOFF.md` §10.
 
+> **Status, 2026-08-06.** §2.4's "survey weights on the CSD result" is done for
+> the *mortality* result — `WTDN4YR` with `SDMVSTRA`/`SDMVPSU`, so it is now a
+> claim about 75,754,006 US adults aged 50+ rather than 2,517 people. The
+> 2017–2018 CSD result is still unweighted and is the last one that is not.
+> §3.4's "the bug class that produced three shipped UI failures gets a real
+> harness" is also done: 26 Playwright tests against the built `dist`, in CI.
+> The research behind what to build next is in
+> [`HANDOFF_2026-08-06.md`](HANDOFF_2026-08-06.md) §6, which supersedes §2.4 and
+> §2.5 here.
+>
 > **Status, 2026-08-05.** Items 1–4 are **built**.
 > §2.1 → [`RESULTS_CROSSLAYER.md`](RESULTS_CROSSLAYER.md) ·
 > §2.2 → [`../evidence/`](../evidence/) + `.github/workflows/living-evidence.yml` ·

@@ -11,12 +11,14 @@ from .cox import (
     concordance_index,
     cox_regression,
     likelihood_ratio_test,
+    wald_test,
 )
 from .crosslayer import (
     CrossLayerResult,
     DysregulationResult,
     crosslayer_analysis,
     mahalanobis_dysregulation,
+    nested_test,
 )
 
 __all__ = [
@@ -29,4 +31,6 @@ __all__ = [
     "crosslayer_analysis",
     "likelihood_ratio_test",
     "mahalanobis_dysregulation",
+    "nested_test",
+    "wald_test",
 ]

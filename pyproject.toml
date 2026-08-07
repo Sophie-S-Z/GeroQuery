@@ -57,7 +57,14 @@ clocks = [
 # Model Context Protocol server, so an agent can call GeroQuery as a tool.
 # Optional: `geroquery.mcp.tools` (the payload shaping, and the part with logic
 # worth testing) imports no SDK, so the suite runs without this extra.
-mcp = ["mcp>=1.2", "anyio>=4.0"]
+# Upper-bounded on purpose. `mcp` 2.x requires starlette >= 1.0, which FastAPI
+# 0.115 cannot use — so an unbounded `pip install -e ".[dev,mcp]"` silently
+# upgrades starlette and every API import then dies on
+# `Router.__init__() got an unexpected keyword argument 'on_startup'`. Nobody hit
+# it because nothing had ever installed this extra beside the API. The `mcp` CI
+# job installs both together so it cannot go unnoticed again. Lifting the cap
+# means moving FastAPI forward in the same change.
+mcp = ["mcp>=1.2,<2", "anyio>=4.0"]
 # R/Bioconductor bridge (recount3/GEOquery/gtexr) is used only by offline ETL.
 rbridge = ["rpy2>=3.5"]
 

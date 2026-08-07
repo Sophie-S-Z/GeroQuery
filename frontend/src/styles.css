@@ -68,7 +68,18 @@
   --rule-strong: #454854;
   --up: #e8834a;
   --down: #86a8ea;
-  --null: #9a968f;
+  /* Not #9a968f. Against --down (#86a8ea) that neutral separates by only
+     ΔE 12.8 in OKLab — below the 15 floor, i.e. hard to tell apart with full
+     colour vision, never mind deutan (12.7). "Interval crosses zero" and
+     "interval below zero" are two of the three verdicts and the fill colours on
+     both the forest plot and the landscape histogram, so that pair reading as
+     one colour collapses the distinction the whole tool exists to draw.
+     #7d7568 measures ΔE 19.1 normal / 11.8 protan / 18.9 tritan and holds 3:1
+     against the dark surface. It is very nearly the light theme's warm gray,
+     which is the tell: the neutral had been lightened along with the rest of
+     the ramp when it needed to stay put. Verified with the palette validator
+     in both themes, not by eye — docs/VISUAL_AND_STATISTICAL_PLAN.md §6. */
+  --null: #7d7568;
   --up-wash: rgba(232, 131, 74, 0.15);
   --down-wash: rgba(134, 168, 234, 0.15);
   --focus: #86a8ea;

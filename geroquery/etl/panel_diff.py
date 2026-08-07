@@ -51,6 +51,11 @@ from ..store import GeroStore
 # anything and comparing it across rebuilds would report noise as news.
 MIN_CONTRASTS = 3
 
+# Identifies the interval a snapshot's estimates were computed with. Bump it
+# whenever the estimator changes, and reset the baseline in the same commit —
+# diffing across estimators reports a change of method as a change of evidence.
+ESTIMATOR = "hartung_knapp_modified"
+
 # A pooled effect must move by at least this much (in Hedges' g) before it is
 # reported as a magnitude change. Below it, the movement is rebuild jitter and
 # reporting it would bury the real changes.
@@ -96,6 +101,11 @@ class Snapshot:
     series: list[str]
     n_contrasts: int
     estimates: dict[str, dict[str, Any]]
+    # Which interval produced these estimates. Without it a change of estimator
+    # is indistinguishable from evidence moving: swapping DerSimonian-Laird for
+    # Hartung-Knapp retracted 1,164 claims across this corpus, and a diff that
+    # did not know would have published every one of them as a finding.
+    estimator: str = ESTIMATOR
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -108,6 +118,7 @@ class Snapshot:
             "n_contrasts": self.n_contrasts,
             "min_contrasts": MIN_CONTRASTS,
             "n_estimates": len(self.estimates),
+            "estimator": self.estimator,
             "estimates": self.estimates,
         }
 
@@ -122,6 +133,9 @@ class Snapshot:
             series=list(raw.get("series", [])),
             n_contrasts=int(raw.get("n_contrasts", 0)),
             estimates=dict(raw.get("estimates", {})),
+            # Snapshots written before the estimator was recorded were all
+            # DerSimonian-Laird; naming that is better than calling it unknown.
+            estimator=raw.get("estimator", "dersimonian_laird"),
         )
 
     def write(self, path: Path) -> Path:
@@ -276,7 +290,20 @@ def _classify(old: dict[str, Any], new: dict[str, Any]) -> str | None:
 
 
 def diff_snapshots(before: Snapshot, after: Snapshot) -> PanelDiff:
-    """Compare two snapshots and classify every gene that moved."""
+    """Compare two snapshots and classify every gene that moved.
+
+    Refuses to compare across estimators. The whole output of this loop is a
+    claim that the *evidence* moved, and a diff between a DerSimonian-Laird
+    baseline and a Hartung-Knapp rebuild would publish 1,164 retracted claims
+    that no new data caused. Changing the estimator means resetting the baseline
+    in the same commit, deliberately, with a changelog entry that says so.
+    """
+    if before.estimator != after.estimator:
+        raise ValueError(
+            f"Refusing to diff a {before.estimator!r} baseline against a "
+            f"{after.estimator!r} rebuild: the difference would be the method, "
+            f"not the evidence. Reset the baseline instead."
+        )
     diff = PanelDiff(before=before, after=after)
 
     old_acc, new_acc = set(before.accessions), set(after.accessions)

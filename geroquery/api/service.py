@@ -87,6 +87,11 @@ class GeroService:
                     tau2=round(pooled.tau2, 4),
                     n_studies=pooled.n_studies,
                     direction=pooled.direction,
+                    ci_low_dl=round(pooled.ci_low_dl, 4),
+                    ci_high_dl=round(pooled.ci_high_dl, 4),
+                    pi_low=round(pooled.pi_low, 4) if pooled.pi_low is not None else None,
+                    pi_high=round(pooled.pi_high, 4) if pooled.pi_high is not None else None,
+                    verdict=pooled.verdict,
                 )
             )
         return metas

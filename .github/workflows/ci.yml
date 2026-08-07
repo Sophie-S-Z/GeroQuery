@@ -42,6 +42,53 @@ jobs:
       - name: Tests
         run: pytest --cov=geroquery --cov-report=term-missing
 
+  # The MCP binding, installed *beside* the API rather than on its own. That is
+  # the point of the job: the `mcp` extra pulls starlette, the API pins FastAPI,
+  # and the two resolved to an incompatible pair for months without anything
+  # noticing, because no environment had ever contained both.
+  mcp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,mcp]"
+      - name: The API still imports with the MCP extra installed
+        run: python -c "import geroquery.api.app, geroquery.mcp.server"
+      - name: Transport round-trip
+        run: pytest tests/test_mcp_transport.py -q
+
+  # The front end has produced four silent failures that a green Python suite
+  # did not catch (HANDOFF.md §6, bugs #9, #10, #17, #18). Playwright runs
+  # against the built `dist` — the same bytes the CDN serves — because two of
+  # those four were defects in the exported data rather than in the components,
+  # and no unit test can see them.
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # `frontend/public/data/` is committed, so this needs no Python ETL.
+      - run: npm run build
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
   # Live upstream smoke tests + full ETL run OFF the PR path (avoids
   # rate-limiting GEO/GTEx/mygene.info). Manual or scheduled only.
   smoke-live:

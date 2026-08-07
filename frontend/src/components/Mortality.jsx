@@ -105,6 +105,16 @@ export default function Mortality() {
           <strong className="mono">{data.followup_years_median}</strong> years. Twelve DNA
           methylation clocks computed by NCHS, joined on <span className="mono">SEQN</span> to the
           six-marker health state and to the 2019 linked mortality file.
+          {data.survey?.weighted ? (
+            <>
+              {" "}
+              Fitted with the survey design — <span className="mono">{data.survey.weight}</span>{" "}
+              weights, {data.survey.n_strata} strata, {data.survey.n_psu} sampling units — so these
+              describe roughly{" "}
+              <strong className="mono">{fmtInt(data.survey.population_size)}</strong> US adults aged
+              50+, not the {fmtInt(data.n_subjects)} who were measured.
+            </>
+          ) : null}
         </p>
         <div className="chart" ref={host} role="img" aria-label="Hazard ratios by clock" />
         <div className="legend">
@@ -127,6 +137,7 @@ export default function Mortality() {
                 <th>Trained on</th>
                 <th className="num">HR / SD</th>
                 <th className="num">95% CI</th>
+                <th className="num">unweighted</th>
                 <th className="num">C clock</th>
                 <th className="num">C joint</th>
                 <th className="num">health state adds</th>
@@ -140,6 +151,7 @@ export default function Mortality() {
                   <td className="note">{row.predicts.replace(/_/g, " ")}</td>
                   <td className={`num ${row.excludes_null ? "up" : "null"}`}>{fmtHR(row.hr)}</td>
                   <td className="num">{fmtHRInterval(row.ci_low, row.ci_high)}</td>
+                  <td className="num null">{fmtHR(row.hr_sample)}</td>
                   <td className="num">{row.c_clock}</td>
                   <td className="num">{row.c_joint}</td>
                   <td className="num">{fmtP(row.dysregulation_adds_p)}</td>
@@ -155,7 +167,14 @@ export default function Mortality() {
           The last column is the one worth reading twice. For{" "}
           <span className="mono">SkinBloodAge</span>, <span className="mono">LinAge</span> and{" "}
           <span className="mono">WeidnerAge</span> it is above 0.05: there is no evidence those
-          clocks tell you anything six routine blood tests do not.
+          clocks tell you anything six routine blood tests do not — and that survives weighting.
+        </p>
+        <p className="note" style={{ marginTop: "0.6rem" }}>
+          The unweighted column is smaller than the weighted one for every clock. The DNAm
+          subsample under-represents the higher-risk part of the population, so the sample estimate
+          understates the effect rather than exaggerating it. Intervals use the Taylor-linearized
+          design variance; the median design effect is close to 1, so clustering costs little here
+          and almost all of the change is the weighting.
         </p>
       </div>
 
@@ -174,8 +193,8 @@ export default function Mortality() {
             {best ? (best.c_joint - best.c_baseline).toFixed(3) : "—"}
           </strong>{" "}
           of concordance over knowing someone&rsquo;s age and sex. With{" "}
-          {fmtInt(data.n_deaths)} deaths a likelihood-ratio test detects effects far below the
-          size that would change a decision about a person. Read the interval, not the exponent.
+          {fmtInt(data.n_deaths)} deaths a nested test detects effects far below the size that
+          would change a decision about a person. Read the interval, not the exponent.
         </p>
       </div>
 

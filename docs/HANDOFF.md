@@ -1,8 +1,55 @@
 # GeroQuery — complete handoff
 
-**Date:** 2026-08-05 · **Branch:** `main`
+**Date:** 2026-08-06 · **Branch:** `main`
 **Manifest:** 2026.3 (checksums verified 2026-08-05)
-**Gate:** ruff · black clean · **389 tests + 15 live**
+**Gate:** ruff · black · mypy clean · **436 Python tests + 15 live + 34 Playwright**
+
+> **2026-08-06 session, second.** → [`HANDOFF_2026-08-06b.md`](HANDOFF_2026-08-06b.md).
+> Bug #20 turned out to be fixed on **four of six** interval columns, and the
+> research produced two results that changed the work rather than only recording
+> it.
+>
+> 1. **Bug #20's residual is closed.** `pi_low`/`pi_high` never got the negative-zero
+>    collapse; two genes shipped `pi_high = -0.0`. Every bound now routes through one
+>    helper and the test asserts over a column tuple — *a test that enumerates its
+>    own columns only ever covers the bug already known.*
+> 2. **Adaptive shrinkage and the local false sign rate**, fit across the corpus per
+>    species. It exposed a live defect: the mouse landscape table led with a gene
+>    whose interval excludes zero and whose direction has a **46% chance of being
+>    wrong**. 3,707 genes have an interval excluding zero; **916 have lfsr ≤ 0.05**.
+> 3. **A Certainty view**, and a dark-mode palette fix — `--null` and `--down` sat at
+>    ΔE 12.8, below the 15 floor, making two of three verdicts hard to distinguish
+>    *with full colour vision* on the two charts where it matters most.
+> 4. **[`VISUAL_AND_STATISTICAL_PLAN.md`](VISUAL_AND_STATISTICAL_PLAN.md)** — the
+>    specification for what to build next, and §7 for what not to. It demotes
+>    Egger's regression: it is **miscalibrated on Hedges' *g***, which is the entire
+>    corpus.
+>
+> Also corrected: the published "3,711 genes exclude zero" was computed from
+> p-values, not intervals. It is **3,707**.
+
+> **2026-08-06 session, first.** → [`HANDOFF_2026-08-06.md`](HANDOFF_2026-08-06.md).
+> Four items, two silent bugs (#20, #21), and one published number that moved
+> because the estimator behind it did.
+>
+> 1. **A front-end regression suite** — 26 Playwright tests against the built
+>    `dist`, in CI. Closes the gap that produced four silent UI failures. Each
+>    bug-class test was verified by reintroducing its bug; two of three were
+>    vacuous as first written and were rebuilt.
+> 2. **The mortality result is a population claim** — `WTDN4YR` with
+>    `SDMVSTRA`/`SDMVPSU`, Binder weighted pseudo-likelihood and a
+>    Taylor-linearized design variance. **2,517 people → 75,754,006 US adults
+>    aged 50+.** Every hazard ratio got larger; both conclusions survive.
+> 3. **The pooled interval is now Hartung-Knapp**, widened to DerSimonian-Laird
+>    where HK is narrower, plus a **95% prediction interval** on every estimate.
+>    **1,164 claims retracted, none created.** The evidence baseline was reset in
+>    the same commit and snapshots now carry the estimator that produced them.
+> 4. **The MCP transport is exercised** — a real client-server session, its own
+>    CI job, and a dependency conflict fixed that had made `.[dev,mcp]`
+>    uninstallable beside the API.
+>
+> §10 below is superseded by [`ROADMAP.md`](ROADMAP.md) and by
+> `HANDOFF_2026-08-06.md` §6.
 
 > **2026-08-05 session.** Three things landed, all from
 > [`ROADMAP.md`](ROADMAP.md) §2. §10 below is superseded by that document.
@@ -144,7 +191,7 @@ only tests here that would have caught any of it.
 | **Gene signatures** | Does this gene change with age, and how sure can we be? | 31 GEO DataSets → 485,905 effect sizes |
 | **Aging clocks** | How old does this sample look biologically? | 240 clocks; validated on 2 real methylation series |
 | **Resilience** | Is this population losing the ability to recover from perturbation? | Real NHANES + a planted-effect control |
-| **Survival** *(new)* | Does any of it predict death? | NHANES 1999–2002 DNAm subsample, n=2,517, 1,350 deaths, 20 y follow-up |
+| **Survival** | Does any of it predict death? | NHANES 1999–2002 DNAm subsample, n=2,517, 1,350 deaths, 20 y follow-up, **survey-weighted to 75.8 M US adults 50+** |
 
 The fourth row is what changed on 2026-08-05. Until then every result here
 validated a measurement against another measurement; this is the first hard
@@ -154,7 +201,8 @@ outcome. → [`RESULTS_CROSSLAYER.md`](RESULTS_CROSSLAYER.md)
 
 | # | Use case | How |
 |---|---|---|
-| 1 | Look up one gene's measured age effect, with CI and heterogeneity | Dashboard *Gene explorer*, or `GET /v1/gene/{id}/signature` |
+| 1 | Look up one gene's measured age effect, with CI and heterogeneity | Static site *Gene*, or `GET /v1/gene/{id}/signature` |
+| 1b | Ask what the **next** study would find, not just where the mean is | The 95% prediction interval, on every pooled estimate and drawn on the forest plot |
 | 2 | See the per-study evidence behind that pooled number | Forest plot in the explorer; `signatures[]` in the API |
 | 3 | Compare human vs mouse for the same ortholog | Both species pooled separately and shown together |
 | 4 | Filter by tissue, sex, or omic layer | Query parameters on the signature endpoint |
@@ -302,6 +350,8 @@ Each was exposed by running real data or the real UI. Each would have passed a s
 | 17 | Front-end symbols came from `resolver.resolve_gene` over 46,091 ids | `genes.json` is a curated 2,560-record table, not a genome-wide index: **94.4% of genes rendered as raw Ensembl accessions** and the search rail could not find them. Silent — every id got a label, the label was just itself |
 | 18 | Forest-plot y-labels stripped `GEO:GDS…` to the bare accession | One GDS can yield two contrasts, so both rows got the same label and Plot's ordinal scale **silently merged two measurements into one row** |
 | 19 | `clock.replace(/Age$\|Mort$\|AgeMort$/, "")` | Alternation matches leftmost-first, so `GrimAgeMort`→`Grim` but `GrimAge2Mort`→`GrimAge2`. Same clock family, inconsistent labels |
+| 20 | The exported verdict was computed at full precision; the interval shipped rounded to 4 dp | **78 genes carried `[-1.195, -0.000]` labelled "decreases"** — a reader recomputing from the printed numbers got a different answer from the one printed beside them. Negative zero also compares as *not less than zero* in JavaScript, so the row disagreed with itself across the language boundary |
+| 21 | `mcp = ["mcp>=1.2"]` was unbounded; `mcp` 2.x needs starlette >= 1.0, FastAPI 0.115 cannot use it | `pip install -e ".[dev,mcp]"` upgrades starlette and **every API import dies**. Invisible for months because no environment had ever held both extras at once |
 
 Also fixed earlier: negative AR(1) coefficients reported as *high resilience*;
 CSD accepting a positive slope alone (fires on noise ~half the time);
@@ -333,9 +383,9 @@ evidence asserts what the panel now measures, and disagrees for CDKN2A. Also
 ## 8. Quality state
 
 ```
-ruff / black / mypy   clean (54 modules)
-pytest                331 passed, 1 skipped (13 live deselected)
-coverage              86%
+ruff / black / mypy   clean (64 modules)
+pytest                436 passed, 1 skipped (15 live deselected)
+playwright            34 passed (desktop + 393px, against the built dist)
 ```
 
 | Well covered | Not covered, and why |
@@ -524,6 +574,53 @@ age-stratified · React frontend not repointed.
   numpy 2.5 requires Python ≥3.12 and its stubs use PEP 695 syntax, so pinning
   3.10 makes mypy abort on a dependency stub and check nothing at all. The 3.10
   matrix job is what proves 3.10 support. Bug #16.
+- **Do not diff a snapshot across estimators.** `panel_diff.ESTIMATOR` is pinned
+  into every snapshot and `diff_snapshots` raises. Changing the estimator means
+  resetting the baseline in the same commit, with a changelog entry saying so —
+  otherwise 1,164 retracted claims get published as evidence moving. Bug #20's
+  neighbour in kind.
+- **Round before judging.** The exported verdict must come from the interval as
+  it ships, not from full precision. Add `0.0` to collapse negative zero.
+  Bug #20.
+- **A likelihood ratio test is invalid on a survey-weighted fit.** Twice the
+  difference in a *pseudo*-likelihood is not chi-squared.
+  `likelihood_ratio_test` raises; `wald_test` is the replacement and inherits
+  the design-based covariance.
+- **Design effects below 1 are legitimate** — stratification can buy
+  information. A test asserting "clustering always widens the interval" asserts
+  a false premise, and one did.
+- **Pick regression-test fixtures by querying the corpus, not from the bug
+  report.** Two of the 2026-08-06 Playwright tests passed against their own
+  reintroduced bug until the fixture came from the data.
+- **Playwright runs against `dist`, never the dev server** — two of the four
+  silent UI failures were defects in the exported Parquet, which no component
+  test can see.
+- **`mcp` is capped below 2.0 on purpose.** Lifting the cap means moving FastAPI
+  forward in the same change. Bug #21.
+- **Route every interval bound through `_bound`, and assert over
+  `BOUND_COLUMNS`.** Bug #20's first fix collapsed negative zero on the four
+  confidence bounds and missed the two prediction bounds added in the same
+  commit; two genes shipped `pi_high = -0.0`. Its test named `ci_low` and
+  `ci_high` literally, so it could only ever catch the bug already known. **A
+  test that enumerates its own columns covers nothing that arrives later.**
+- **`lfsr` is not a p-value and `null_proportion` is not the null fraction.**
+  The point mass at zero is not identified separately from the grid's narrowest
+  components — it reads 0.66 on a corpus planted at 0.90 — so use
+  `prior_mass_below()`, which asks the question the data can answer. A test
+  asserted the wrong one first.
+- **Never rank a corpus-wide selection by a per-gene interval.** That is the
+  winner's curse and it was shipping: the mouse landscape table led with a gene
+  whose interval excludes zero and whose direction has a **46% chance of being
+  wrong**. Rank on `g_shrunk`. 3,707 genes have an interval excluding zero;
+  only 916 have lfsr ≤ 0.05.
+- **Fit the corpus prior per species, never pooled.** One shared prior lets the
+  mouse panel's spread shrink human estimates — a cross-species claim smuggled
+  in through a nuisance parameter.
+- **Validate a palette, do not look at it.** Dark mode shipped `--null` and
+  `--down` at ΔE 12.8, below the 15 floor: two of the three verdicts were hard
+  to tell apart *with full colour vision*, on the two charts where the
+  distinction is the entire point. Light mode was fine, which is why nobody saw
+  it. `scripts/validate_palette.js`, both themes.
 - **The front end never computes a statistic.** Pooling, intervals, verdicts and
   hazard ratios are all Python; JavaScript filters and draws. If you find
   yourself writing DerSimonian–Laird in JS, add it to
@@ -564,6 +661,8 @@ pre-merge state.
 | Document | What it is |
 |---|---|
 | **`HANDOFF.md`** | This document. Authoritative |
+| **`VISUAL_AND_STATISTICAL_PLAN.md`** | The next layer of charts and statistics — what to build, and what not to |
+| **`HANDOFF_2026-08-06b.md`** | Shrinkage, the lfsr, the Certainty view, bug #20's residual |
 | **`ROADMAP.md`** | Where this goes next, and why. Supersedes §10 |
 | **`HANDOFF_2026-08-05.md`** | Full record of the 2026-08-05 session |
 | `DEPLOY.md` | Putting the static site online, free |

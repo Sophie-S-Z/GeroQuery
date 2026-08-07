@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as Plot from "@observablehq/plot";
 import { css } from "../lib/theme.js";
 import { effectDistribution, panelSummary, topGenes } from "../lib/db.js";
-import { fmtEffect, fmtInterval, fmtP } from "../lib/format.js";
+import { fmtEffect, fmtInterval, fmtLfsr } from "../lib/format.js";
 
 /**
  * The whole corpus at once.
@@ -130,11 +130,12 @@ export default function Landscape({ species, direction, onPick, onSpecies, onDir
               <tr>
                 <th>Gene</th>
                 <th className="num">g</th>
+                <th className="num">shrunk</th>
                 <th className="num">95% CI</th>
+                <th className="num">lfsr</th>
                 <th className="num">k</th>
                 <th className="num">I²</th>
                 <th className="num">tissues</th>
-                <th className="num">p</th>
               </tr>
             </thead>
             <tbody>
@@ -152,20 +153,32 @@ export default function Landscape({ species, direction, onPick, onSpecies, onDir
                   <td className={`num ${direction === "up" ? "up" : "down"}`}>
                     {fmtEffect(row.g)}
                   </td>
+                  <td className="num">{fmtEffect(row.g_shrunk)}</td>
                   <td className="num">{fmtInterval(row.ci_low, row.ci_high)}</td>
+                  {/* Faded above 0.2: a gene whose direction is more than
+                      one-in-five likely to be wrong should not read with the
+                      same weight as one that is settled. */}
+                  <td className="num" style={row.lfsr > 0.2 ? { color: "var(--ink-faint)" } : null}>
+                    {fmtLfsr(row.lfsr)}
+                  </td>
                   <td className="num">{row.k}</td>
                   <td className="num">{row.i2}%</td>
                   <td className="num">{row.n_tissues}</td>
-                  <td className="num">{fmtP(row.p_value)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <p className="note" style={{ marginTop: "0.7rem" }}>
-          Ranked by pooled effect among genes whose interval excludes zero. Rank order is not a
-          claim about importance — a large effect measured in one tissue is not stronger evidence
-          than a moderate one measured in six.
+          Ranked by the <strong>shrunken</strong> effect among genes whose interval excludes zero,
+          not by the raw one. Ranking by raw <span className="mono">g</span> selects on
+          significance and then sorts on an extreme of a noisy statistic, which reliably puts the
+          genes most likely to shrink on replication at the top: under the old ordering the mouse
+          table led with <span className="mono">Kif21a</span>, whose interval excludes zero and
+          whose posterior gives its direction a <strong>46% chance of being wrong</strong>. The{" "}
+          <span className="mono">lfsr</span> column is that probability, and it is faded where it
+          exceeds 0.2. Rank order is still not a claim about importance — a large effect measured
+          in one tissue is not stronger evidence than a moderate one measured in six.
         </p>
       </div>
     </>

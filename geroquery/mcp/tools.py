@@ -76,6 +76,17 @@ def _summarize(meta: dict) -> dict:
             "ci_low": meta.get("ci_low"),
             "ci_high": meta.get("ci_high"),
             "level": 0.95,
+            "method": "Hartung-Knapp, widened to DerSimonian-Laird when narrower",
+        },
+        # The prediction interval, unconditionally, because a model asked "does
+        # this gene change with age" will otherwise read the confidence interval
+        # as a claim about what the next study will find. It is not, and under
+        # this corpus's heterogeneity it is roughly half as wide.
+        "prediction_interval": {
+            "pi_low": meta.get("pi_low"),
+            "pi_high": meta.get("pi_high"),
+            "level": 0.95,
+            "means": "where the true effect of the next study is expected to fall",
         },
         "n_studies": meta.get("n_studies"),
         "heterogeneity_i2": meta.get("heterogeneity_i2"),

@@ -3,6 +3,7 @@ import GeneView from "./components/GeneView.jsx";
 import Landscape from "./components/Landscape.jsx";
 import Mortality from "./components/Mortality.jsx";
 import Panel from "./components/Panel.jsx";
+import Volcano from "./components/Volcano.jsx";
 import { json } from "./lib/db.js";
 import { fmtInt } from "./lib/format.js";
 import { useUrlState } from "./lib/state.js";
@@ -11,6 +12,7 @@ import { useTheme } from "./lib/theme.js";
 const VIEWS = [
   ["gene", "Gene"],
   ["landscape", "Landscape"],
+  ["certainty", "Certainty"],
   ["panel", "Panel"],
   ["mortality", "Mortality"],
 ];
@@ -106,6 +108,14 @@ export default function App() {
             onPick={(gene) => update({ view: "gene", gene })}
             onSpecies={(species) => update({ species })}
             onDirection={(dir) => update({ dir })}
+          />
+        ) : null}
+
+        {state.view === "certainty" ? (
+          <Volcano
+            species={state.species}
+            onPick={(gene) => update({ view: "gene", gene })}
+            onSpecies={(species) => update({ species })}
           />
         ) : null}
 

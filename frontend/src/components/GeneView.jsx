@@ -179,13 +179,24 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
             ) : null}
 
             {here ? (
-              <p className="pooled-line">
-                g = {fmtEffect(here.g, 3)}{" "}
-                <span className="interval">{fmtInterval(here.ci_low, here.ci_high)}</span>{" "}
-                <span className="interval">
-                  · k = {here.k} · p = {fmtP(here.p_value)}
-                </span>
-              </p>
+              <>
+                <p className="pooled-line">
+                  g = {fmtEffect(here.g, 3)}{" "}
+                  <span className="interval">{fmtInterval(here.ci_low, here.ci_high)}</span>{" "}
+                  <span className="interval">
+                    · k = {here.k} · p = {fmtP(here.p_value)}
+                  </span>
+                </p>
+                {here.pi_low != null ? (
+                  <p className="note" style={{ marginTop: "-0.4rem" }}>
+                    Next study {fmtInterval(here.pi_low, here.pi_high)} — the 95% prediction
+                    interval. The interval above is where the <em>mean</em> effect is; this is
+                    where the effect of <em>one more study</em> would fall. Under this much
+                    heterogeneity they are not close, and only the second answers &ldquo;what
+                    would I see if I ran this myself?&rdquo;
+                  </p>
+                ) : null}
+              </>
             ) : (
               <p className="note">
                 Fewer than three contrasts in {species}, so no pooled estimate. The per-study

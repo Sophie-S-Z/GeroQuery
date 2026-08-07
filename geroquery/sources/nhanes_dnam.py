@@ -287,6 +287,13 @@ DNAM_SEX_LABELS = {1: "female", 2: "male"}
 # Four-year survey weight specific to the DNAm subsample.
 DNAM_WEIGHT_COLUMN = "WTDN4YR"
 
+# The same three variables as they are named on the joined frame. Everything
+# downstream of the join reads these, so a rename cannot leave an analysis
+# quietly pointing at a column that no longer exists.
+WEIGHT_COLUMN = "survey_weight"
+STRATUM_COLUMN = "sdmvstra"
+PSU_COLUMN = "sdmvpsu"
+
 # --- mortality file layout ---------------------------------------------------
 #
 # Fixed-width, no header, one record per survey participant. Positions are
@@ -345,9 +352,12 @@ CAVEATS: tuple[str, ...] = (
     "Public-use mortality records are perturbed by NCHS: a subset carry synthetic "
     "follow-up time or cause of death. Aggregate estimates are designed to survive "
     "this; individual records are not trustworthy on their own.",
-    "Survey weights (WTMEC4YR, WTDN4YR) and the design variables (SDMVPSU, SDMVSTRA) "
-    "are carried but NOT applied by default; unweighted estimates are not nationally "
-    "representative.",
+    "The reported hazard ratios apply WTDN4YR with SDMVSTRA/SDMVPSU, so they describe "
+    "US adults aged 50+ in 1999-2002 rather than the 2,517 people measured. The "
+    "unweighted estimate is shown beside each one; it is smaller in every case, which "
+    "means the subsample under-represents the higher-risk part of the population. "
+    "Weighting corrects the estimate; it cannot correct who was eligible to be "
+    "sampled in the first place.",
     "Clocks are NCHS's own computed values, not recomputed here. That removes our "
     "normalization from the picture and also means we cannot audit it.",
     "Cross-sectional exposure: markers and methylation are measured once, at baseline. "

@@ -40,7 +40,13 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .cox import CoxResult, SurvivalInputError, cox_regression, likelihood_ratio_test
+from .cox import (
+    CoxResult,
+    SurvivalInputError,
+    cox_regression,
+    likelihood_ratio_test,
+    wald_test,
+)
 
 # Markers whose absolute skew in the reference sample exceeds this are
 # log-transformed before the covariance is estimated. Mahalanobis distance
@@ -162,6 +168,7 @@ class CrossLayerResult:
     predicts: str
     n_subjects: int
     n_events: int
+    weighted: bool
     baseline: CoxResult
     clock_model: CoxResult
     dysregulation_model: CoxResult
@@ -177,6 +184,7 @@ class CrossLayerResult:
             "predicts": self.predicts,
             "n_subjects": self.n_subjects,
             "n_events": self.n_events,
+            "weighted": self.weighted,
             "models": {
                 "A_baseline": self.baseline.to_dict(),
                 "B_clock": self.clock_model.to_dict(),
@@ -206,6 +214,36 @@ class CrossLayerResult:
         )
 
 
+def nested_test(full: CoxResult, reduced: CoxResult) -> dict:
+    """Does the full model explain more than the reduced one?
+
+    Dispatches on how the models were fitted, because the correct test is not
+    the same in both cases. Unweighted: a likelihood ratio. Weighted: a Wald
+    test against the design-based covariance, since twice the difference in a
+    *pseudo*-likelihood is not chi-squared and reporting it as one would be a
+    confident p-value from the wrong reference distribution.
+
+    The concordance gain is carried either way, and for a survey fit it is a
+    weighted C-index — a statement about the population, not the sample.
+    """
+    added = [c for c in full.covariates if c not in reduced.covariates]
+    if not full.weighted:
+        return likelihood_ratio_test(full, reduced)
+    if not added:
+        raise SurvivalInputError(
+            "The full model must have more covariates than the reduced model.",
+            detail={"full": full.covariates, "reduced": reduced.covariates},
+        )
+    result = wald_test(full, added)
+    return {
+        **result,
+        "added": added,
+        "concordance_full": round(full.concordance, 4),
+        "concordance_reduced": round(reduced.concordance, 4),
+        "concordance_gain": round(full.concordance - reduced.concordance, 4),
+    }
+
+
 def crosslayer_analysis(
     frame: pd.DataFrame,
     clock_acceleration: pd.Series,
@@ -217,6 +255,9 @@ def crosslayer_analysis(
     sex_col: str = "sex",
     time_col: str = "followup_years",
     event_col: str = "died",
+    weight_col: str | None = None,
+    strata_col: str | None = None,
+    psu_col: str | None = None,
 ) -> CrossLayerResult:
     """Fit the four nested models for one clock.
 
@@ -224,26 +265,39 @@ def crosslayer_analysis(
     exactly the same rows. Building four matrices independently would let each
     model drop a different set of incomplete cases, and a likelihood ratio
     between models fitted on different subsets is not a test of anything.
+
+    ``weight_col``, ``strata_col`` and ``psu_col`` name the survey design
+    columns (in NHANES: ``WTDN4YR``, ``SDMVSTRA``, ``SDMVPSU``). They are carried
+    through the same complete-case filter as the covariates rather than being
+    aligned afterwards, because a weight vector that has silently drifted out of
+    step with its rows is undetectable downstream.
     """
-    data = pd.DataFrame(
-        {
-            "age": frame[age_col].astype(float),
-            "is_female": (frame[sex_col] == "female").astype(float),
-            "clock_acceleration": pd.to_numeric(clock_acceleration, errors="coerce"),
-            "dysregulation": pd.to_numeric(dysregulation, errors="coerce"),
-            "time": frame[time_col].astype(float),
-            "event": frame[event_col].astype(int),
-        }
-    ).dropna()
+    columns = {
+        "age": frame[age_col].astype(float),
+        "is_female": (frame[sex_col] == "female").astype(float),
+        "clock_acceleration": pd.to_numeric(clock_acceleration, errors="coerce"),
+        "dysregulation": pd.to_numeric(dysregulation, errors="coerce"),
+        "time": frame[time_col].astype(float),
+        "event": frame[event_col].astype(int),
+    }
+    for name, source in (("weight", weight_col), ("stratum", strata_col), ("psu", psu_col)):
+        if source is not None:
+            columns[name] = frame[source]
+    data = pd.DataFrame(columns).dropna()
 
     if data.empty:
         raise SurvivalInputError("No complete cases for the cross-layer analysis.")
 
     time = data["time"].to_numpy()
     event = data["event"].to_numpy()
+    weights = data["weight"].to_numpy() if weight_col else None
+    strata = data["stratum"].to_numpy() if strata_col else None
+    psu = data["psu"].to_numpy() if psu_col else None
 
-    def fit(columns: list[str]) -> CoxResult:
-        return cox_regression(data[columns].to_numpy(), time, event, columns)
+    def fit(cols: list[str]) -> CoxResult:
+        return cox_regression(
+            data[cols].to_numpy(), time, event, cols, weights=weights, strata=strata, psu=psu
+        )
 
     base_cols = ["age", "is_female"]
     baseline = fit(base_cols)
@@ -256,14 +310,15 @@ def crosslayer_analysis(
         predicts=predicts,
         n_subjects=int(len(data)),
         n_events=int(event.sum()),
+        weighted=weights is not None,
         baseline=baseline,
         clock_model=clock_model,
         dysregulation_model=dysregulation_model,
         joint_model=joint,
-        clock_adds_over_baseline=likelihood_ratio_test(clock_model, baseline),
-        dysregulation_adds_over_baseline=likelihood_ratio_test(dysregulation_model, baseline),
+        clock_adds_over_baseline=nested_test(clock_model, baseline),
+        dysregulation_adds_over_baseline=nested_test(dysregulation_model, baseline),
         # The two that matter: each predictor tested against a model that
         # already contains the other.
-        dysregulation_adds_over_clock=likelihood_ratio_test(joint, clock_model),
-        clock_adds_over_dysregulation=likelihood_ratio_test(joint, dysregulation_model),
+        dysregulation_adds_over_clock=nested_test(joint, clock_model),
+        clock_adds_over_dysregulation=nested_test(joint, dysregulation_model),
     )

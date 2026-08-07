@@ -1,4 +1,4 @@
-.PHONY: install dev data data-offline crosslayer fetch idmap signatures api dashboard frontend-data frontend test lint format typecheck ci clean
+.PHONY: install dev data data-offline crosslayer fetch idmap signatures api dashboard frontend-data frontend frontend-test test lint format typecheck ci clean
 
 install:
 	pip install -e .
@@ -36,6 +36,9 @@ frontend-data:  ## export the static Parquet/JSON the browser app reads
 
 frontend: frontend-data  ## build the static site into frontend/dist
 	cd frontend && npm install && npm run build
+
+frontend-test:  ## Playwright regression suite against the built dist
+	cd frontend && npm install && npm run build && npx playwright test
 
 api:  ## run the FastAPI service (http://localhost:8000/docs)
 	uvicorn geroquery.api.app:app --reload --port 8000

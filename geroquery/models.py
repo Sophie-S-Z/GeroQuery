@@ -115,6 +115,15 @@ class MetaSignature:
     tau2: float
     n_studies: int
     direction: str
+    # ``ci_low``/``ci_high`` are the reported (Hartung-Knapp, never narrower than
+    # DerSimonian-Laird) interval. The DL interval ships alongside because it is
+    # what other tools report, and the prediction interval because it answers a
+    # different question: where the *next* study's true effect would fall.
+    ci_low_dl: float = 0.0
+    ci_high_dl: float = 0.0
+    pi_low: float | None = None
+    pi_high: float | None = None
+    verdict: str = "no_evidence"
 
     def to_dict(self) -> dict:
         return _clean(asdict(self))
