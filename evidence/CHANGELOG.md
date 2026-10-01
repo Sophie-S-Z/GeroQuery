@@ -1,5 +1,23 @@
 # Evidence changelog
 
+**2026-08-06 → 2026-10-01** · manifest 2026.3 → 2026.3 · data version `2024.1+6650e` → `2024.1+89539`
+
+Panel: 32 → **32 contrasts** over 32 GEO DataSets / 27 Series. Pooled estimates with k ≥ 3: 41983 → **41984**.
+
+## Newly measurable (reached the contrast minimum) — 1
+
+| gene | species | before | after |
+|---|---|---|---|
+| `ENSG00000277633` | human | — | g -0.05 [-0.42, +0.33] k=11 |
+
+---
+
+**This PR must not be auto-merged.** The panel is rule-selected — datasets enter because they satisfy the GEO DataSets query and the contrast rules, never because of their result. Review that the membership change above is explained by upstream, then merge. Do not hand-edit the panel.
+
+---
+
+# Evidence changelog
+
 Newest first. Each entry is one accepted rebuild of the GEO aging panel, and
 records which pooled estimates moved — not that data was refreshed.
 
