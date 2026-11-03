@@ -501,7 +501,7 @@ geroquery/
                   interval), corpus-wide adaptive shrinkage and the lfsr
   store/          partitioned Parquet (DuckDB) + SQLite metadata + content-hash versioning
   clocks/         240 clocks, predicted-outcome metadata, age acceleration, mortality risk
-  resilience/     critical slowing down, AR(1) relaxation, control energy
+  resilience/     critical slowing down, AR(1) relaxation
   knowledge/      PubMed-verified citations + hallmark vocabulary
   survival/       Cox PH, survey-weighted (Binder) path, Harrell's C, Mahalanobis dysregulation
   api/            FastAPI, error envelope, pagination, format switch

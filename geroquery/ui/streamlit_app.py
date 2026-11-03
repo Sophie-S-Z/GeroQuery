@@ -634,9 +634,9 @@ def render_about() -> None:
 
     sources = svc.sources()
     rows_html = "".join(
-        f"<tr><td>{s.get('source_name', '—')}</td>"
+        f"<tr><td>{s.get('name', '—')}</td>"
         f"<td>{'federated' if s.get('federated') else 'cached'}</td>"
-        f"<td>{s.get('license') or '—'}</td></tr>"
+        f"<td>{(s.get('license') or {}).get('name', '—')}</td></tr>"
         for s in sources
     )
     panel(

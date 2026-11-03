@@ -286,16 +286,24 @@ class GeroService:
     def clock_tiers(self) -> dict:
         """Which clock tiers loaded, and why any of them did not.
 
-        Surfaced on /v1/clocks because "three reference clocks and nothing else"
+        Surfaced on /v1/clocks because "only the built-in clocks and nothing else"
         has two very different causes — the optional libraries are not installed,
         or they are installed and broke on import. Without this the caller cannot
         tell those apart.
+
+        The ``reference`` count is the always-available built-in tier (the
+        transparent ``*_demo`` clocks plus PhenoAge), computed so that
+        ``reference + biolearn + pyaging`` always reconciles with ``list_clocks()``
+        rather than drifting from a hardcoded number.
         """
         registry = self.clocks.registry
+        library = registry.library_status
+        pyaging = registry.pyaging_status
+        n_builtin = len(registry.list_clocks()) - library.n_clocks - pyaging.n_clocks
         return {
-            "reference": {"n_clocks": 3, "always_available": True},
-            "biolearn": registry.library_status.to_dict(),
-            "pyaging": registry.pyaging_status.to_dict(),
+            "reference": {"n_clocks": n_builtin, "always_available": True},
+            "biolearn": library.to_dict(),
+            "pyaging": pyaging.to_dict(),
         }
 
     def apply_clock(

@@ -86,6 +86,22 @@ def test_masthead_counts_are_computed_not_typed(app):
     assert f"{len(signatures):,} effect sizes" in _body(app)
 
 
+def test_about_tab_renders_real_source_names_and_licences(app):
+    """The adapter table read `s['source_name']` and the raw `license` dict, but
+    `sources()` emits `name` and a nested `license`. So every Source cell rendered
+    as '—' and every Licence cell as a stringified Python dict. The tab test only
+    asserted 'no exception', so it shipped green."""
+    from geroquery.api.service import GeroService
+
+    sources = GeroService().sources()
+    body = _body(app)
+    first = sources[0]
+    assert first["name"] in body  # a real source name, not '—'
+    assert first["license"]["name"] in body  # the licence name, not the dict
+    assert "'redistributable'" not in body  # telltale of a stringified license dict
+    assert "<td>—</td>" not in body  # no source/licence cell left as a dash
+
+
 @pytest.mark.parametrize(
     ("cohort", "expected"),
     [

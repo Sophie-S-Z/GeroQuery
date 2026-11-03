@@ -20,6 +20,15 @@ import pytest
 
 anyio = pytest.importorskip("anyio")
 memory = pytest.importorskip("mcp.shared.memory")
+# importorskip only proves the module is present. The in-memory transport helper
+# this module needs was removed in the mcp 2.x SDK (the project pins mcp<2), so a
+# wrong-version SDK would otherwise error at call time instead of skipping.
+if not hasattr(memory, "create_connected_server_and_client_session"):
+    pytest.skip(
+        "installed mcp SDK lacks mcp.shared.memory.create_connected_server_and_client_session "
+        "(needs mcp 1.x; see the mcp<2 pin in pyproject.toml)",
+        allow_module_level=True,
+    )
 
 from geroquery.mcp.server import SERVER_NAME, TOOL_SCHEMAS, build_server  # noqa: E402
 from geroquery.mcp.tools import TOOLS  # noqa: E402

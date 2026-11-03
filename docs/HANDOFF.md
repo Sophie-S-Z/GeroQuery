@@ -248,7 +248,7 @@ Strictly layered; lower never imports higher. 54 modules, 18 test files.
 | `harmonize` | Hedges' *g*, per-gene contrasts + BH FDR, DerSimonian–Laird pooling |
 | `store` | Partitioned Parquet (DuckDB) + SQLite metadata + content-hash versioning |
 | `clocks` | 240 clocks; predicted-outcome metadata; age acceleration; mortality risk |
-| `resilience` | Critical slowing down, AR(1) relaxation, control energy |
+| `resilience` | Critical slowing down, AR(1) relaxation |
 | `knowledge` | PubMed-verified citations + hallmark vocabulary |
 | `survival` | Cox PH (Breslow ties), Harrell's C, nested LR tests, Mahalanobis dysregulation |
 | `api` | FastAPI, error envelope, pagination, format switch, versioned LRU |

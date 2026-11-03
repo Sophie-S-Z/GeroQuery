@@ -1,11 +1,5 @@
 """M6 resilience — dynamical-systems / criticality metrics (public surface)."""
 
-from .control import (
-    ControlEnergyResult,
-    control_energy,
-    control_energy_detailed,
-    controllability_gramian,
-)
 from .csd import CSDResult, TrendEvidence, csd_indicators
 from .recovery import (
     REGIME_DECAYING,
@@ -27,9 +21,5 @@ __all__ = [
     "REGIME_OSCILLATORY",
     "REGIME_NONSTATIONARY",
     "REGIME_DEGENERATE",
-    "control_energy",
-    "control_energy_detailed",
-    "ControlEnergyResult",
-    "controllability_gramian",
     "ResilienceService",
 ]

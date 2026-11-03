@@ -83,7 +83,7 @@ ui  ->  api  ->  ( store, clocks, resilience, harmonize )  ->  ( sources, idmap 
 | **M3 `harmonize`** | The statistics | `effect_size.py` (Hedges' *g*), `differential.py` (vectorized per-gene contrasts, BH), `meta.py` (DerSimonian–Laird), `batch.py` |
 | **M4 `store`** | Partitioned Parquet via DuckDB + SQLite metadata + content-hash versioning | `store.py` |
 | **M5 `clocks`** | 236 published clocks + 3 transparent reference clocks; predicted-outcome metadata; age acceleration | `registry.py`, `library.py`, `pyaging_clocks.py`, `service.py` |
-| **M6 `resilience`** | The differentiator — critical slowing down, recovery rate, control energy | `csd.py`, `recovery.py`, `control.py` |
+| **M6 `resilience`** | The differentiator — critical slowing down, recovery rate | `csd.py`, `recovery.py` |
 | **M7 `api`** | FastAPI `/v1`, error envelope, pagination, `format=json\|csv\|parquet`, versioned LRU | `app.py`, `service.py`, `schemas.py` |
 | **M8 `ui`** | Streamlit dashboard + React showcase | `ui/streamlit_app.py`, `frontend/` |
 

@@ -124,6 +124,21 @@ def test_clocks_list_carry_outcome_metadata(client):
     assert all("predicted_outcome" in c for c in clocks)
 
 
+def test_clock_tiers_reconcile_with_the_clock_list(client):
+    """The tier counts must sum to the number of listed clocks. The reference
+    count used to be hardcoded 3 while the registry also ships PhenoAge, so the
+    tiers silently disagreed with /v1/clocks."""
+    body = client.get("/v1/clocks").json()
+    tiers = body["tiers"]
+    counted = (
+        tiers["reference"]["n_clocks"]
+        + tiers["biolearn"]["n_clocks"]
+        + tiers["pyaging"]["n_clocks"]
+    )
+    assert counted == len(body["clocks"])
+    assert tiers["reference"]["n_clocks"] >= 4  # 3 demos + PhenoAge, always available
+
+
 def test_clock_apply_on_dataset(client):
     r = client.post(
         "/v1/clock/apply",

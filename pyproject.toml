@@ -65,8 +65,6 @@ clocks = [
 # job installs both together so it cannot go unnoticed again. Lifting the cap
 # means moving FastAPI forward in the same change.
 mcp = ["mcp>=1.2,<2", "anyio>=4.0"]
-# R/Bioconductor bridge (recount3/GEOquery/gtexr) is used only by offline ETL.
-rbridge = ["rpy2>=3.5"]
 
 [project.urls]
 Homepage = "https://github.com/praneel/geroquery"
@@ -122,6 +120,17 @@ target-version = ["py310"]
 ignore_missing_imports = true
 warn_unused_ignores = true
 no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+# The mcp SDK is optional and externally versioned. Its public type surface
+# changed between the pinned 1.x (where geroquery/mcp/server.py's Tool(inputSchema=)
+# and Server.call_tool are correct, and CI is green) and 2.x. When a 2.x build
+# happens to be installed, mypy would flag that correct 1.x usage. Skip following
+# the SDK's internals so type-checking is robust to whichever mcp is installed;
+# the shim's own logic is still fully checked. An inline `# type: ignore` is wrong
+# here because `warn_unused_ignores` would then fail under the pinned 1.x.
+module = "mcp.*"
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
