@@ -336,6 +336,9 @@ def test_clustering_widens_the_interval_and_reports_the_design_effect():
     assert design.standard_errors[0] > independent.standard_errors[0] * 1.5
     assert design.design_effect[0] > 2.0
     assert independent.design_effect[0] == 1.0
+    # An unclustered fit has no PSUs: n_psu stays 0 (as in the unweighted path and
+    # the dataclass default), not the subject count.
+    assert independent.n_psu == 0
     assert design.population_size == pytest.approx(400.0 * n)
     assert design.population_events == pytest.approx(400.0 * event.sum())
 

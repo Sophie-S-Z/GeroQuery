@@ -537,7 +537,10 @@ def cox_regression(
         # of anything, so the sandwich is not an option here — it is the only
         # correct estimator.
         scores = _score_residuals(xw, time, event, beta, weights)
-        independent, _, n_psu, _ = _design_meat(scores, None, None)
+        # An unclustered fit has no primary sampling units; leave n_psu at its 0
+        # init (matching the unweighted path and the dataclass default) rather than
+        # reporting the subject count. The clustered branch below sets the real one.
+        independent, _, _, _ = _design_meat(scores, None, None)
         covariance = bread @ independent @ bread
         variance_kind = "robust"
         if strata is not None or psu is not None:

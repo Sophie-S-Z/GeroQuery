@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import ForestPlot from "./ForestPlot.jsx";
+import LeaveOneOut from "./LeaveOneOut.jsx";
+import TissueFacets from "./TissueFacets.jsx";
 import { contrastsForSymbol, pooledForSymbol, searchGenes } from "../lib/db.js";
 import {
   VERDICT_LABEL,
@@ -158,6 +160,20 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                 <p className="gene-meta">
                   {species} · {contrasts?.length ?? 0} contrasts
                   {here ? ` · I² ${here.i2}% · ${here.n_tissues} tissues` : ""}
+                  {here?.uniprot ? (
+                    <>
+                      {" · "}
+                      <a
+                        className="structure-link"
+                        href={`https://alphafold.ebi.ac.uk/entry/${here.uniprot}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`Predicted 3D structure for UniProt ${here.uniprot} at AlphaFold DB`}
+                      >
+                        3D structure ↗
+                      </a>
+                    </>
+                  ) : null}
                 </p>
               </div>
               {here ? (
@@ -207,8 +223,20 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
 
             <div className="panel">
               <h2 className="panel-title">Per-study evidence</h2>
-              <ForestPlot contrasts={contrasts ?? []} pooled={here} symbol={symbol} />
+              <div className="forest-row">
+                <ForestPlot contrasts={contrasts ?? []} pooled={here} symbol={symbol} />
+                {here ? (
+                  <LeaveOneOut contrasts={contrasts ?? []} pooled={here} symbol={symbol} />
+                ) : null}
+              </div>
             </div>
+
+            {here && here.n_tissues > 1 ? (
+              <div className="panel">
+                <h2 className="panel-title">By tissue</h2>
+                <TissueFacets contrasts={contrasts ?? []} pooled={here} symbol={symbol} />
+              </div>
+            ) : null}
 
             {other.length ? (
               <div className="panel">
@@ -268,6 +296,11 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                       <th className="num">g</th>
                       <th className="num">SE</th>
                       <th className="num">q</th>
+                      {here ? (
+                        <th className="num" title="pooled g with this contrast removed (leave-one-out)">
+                          pooled w/o
+                        </th>
+                      ) : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -282,6 +315,11 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                         </td>
                         <td className="num">{row.standard_error?.toFixed(3) ?? "—"}</td>
                         <td className="num">{fmtP(row.q_value)}</td>
+                        {here ? (
+                          <td className="num">
+                            {row.loo_g != null ? fmtEffect(row.loo_g, 3) : "—"}
+                          </td>
+                        ) : null}
                       </tr>
                     ))}
                   </tbody>

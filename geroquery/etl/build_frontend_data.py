@@ -53,7 +53,7 @@ import argparse
 import json
 from datetime import date
 from pathlib import Path
-from typing import overload
+from typing import cast, overload
 
 import numpy as np
 import pandas as pd
@@ -203,6 +203,223 @@ def _add_corpus_posterior(pooled: pd.DataFrame) -> pd.DataFrame:
     return pooled
 
 
+def curated_gene_annotations() -> tuple[dict[str, str], dict[str, str]]:
+    """Map canonical id → ortholog group and → UniProt, from the bundled table.
+
+    Both come from the committed curated gene table (``idmap/data/genes.json``),
+    so this join needs no network and no corpus rebuild. The ortholog group is
+    what the cross-species scatter (§4.2) pairs human and mouse on — symbol-case
+    matching silently mismatches paralogues, which is the trap that section
+    names. UniProt is carried for the structure out-links (§E of the revamp:
+    a gene page can link to its AlphaFold model without GeroQuery asserting any
+    structure of its own).
+    """
+    from ..config import IDMAP_DATA
+
+    with open(IDMAP_DATA / "genes.json", encoding="utf-8") as handle:
+        records = json.load(handle)["genes"]
+
+    ortholog: dict[str, str] = {}
+    uniprot: dict[str, str] = {}
+    for rec in records:
+        canonical = rec.get("canonical_id")
+        if not canonical:
+            continue
+        if rec.get("ortholog_group"):
+            ortholog[canonical] = rec["ortholog_group"]
+        if rec.get("uniprot"):
+            uniprot[canonical] = rec["uniprot"]
+    return ortholog, uniprot
+
+
+def add_influence(contrasts: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
+    """Attach per-contrast leave-one-out to the long table, and rank the panel.
+
+    Two outputs from one pass over the per-(gene, species) groups, because the
+    same leave-one-out fit feeds both charts and recomputing it twice would be
+    the only expensive thing in this module done twice:
+
+    ``loo_g`` / ``loo_shift`` columns (§4.4)
+        For each contrast, the gene's pooled effect with *that* contrast removed,
+        and how far that is from the full pooled effect. The forest plot already
+        reads this table per gene, so the leave-one-out strip shares its rows.
+    the corpus ranking (§4.5)
+        One row per ``study_id``, the aggregate absolute shift it is responsible
+        for across every gene it appears in. Because the panel is near-balanced
+        (every gene is measured in nearly the same contrasts), this answers which
+        of the panel's contrasts is bending the whole corpus — a question about
+        the panel itself.
+
+    Only the leave-one-out *estimate* is a new number; it is
+    :func:`geroquery.harmonize.leave_one_out`, i.e. the same DerSimonian-Laird /
+    Hartung-Knapp estimator the pool already uses, so the strip cannot disagree
+    with the forest plot it annotates.
+    """
+    from collections import defaultdict
+
+    from ..harmonize.influence import MIN_CONTRASTS, leave_one_out
+
+    contrasts = contrasts.copy()
+    contrasts["loo_g"] = np.nan
+    contrasts["loo_shift"] = np.nan
+
+    total_shift: dict[str, float] = defaultdict(float)
+    total_cook: dict[str, float] = defaultdict(float)
+    max_shift: dict[str, float] = defaultdict(float)
+    n_genes: dict[str, int] = defaultdict(int)
+
+    usable = contrasts.dropna(subset=["effect_size", "standard_error"])
+    for _key, group in usable.groupby(["gene_id", "species"], observed=True):
+        if len(group) < MIN_CONTRASTS or (group["standard_error"] <= 0).any():
+            continue
+        loo = leave_one_out(group["effect_size"].tolist(), group["standard_error"].tolist())
+        contrasts.loc[group.index, "loo_g"] = np.round(loo.estimates, 4) + 0.0
+        contrasts.loc[group.index, "loo_shift"] = np.round(loo.shifts, 4) + 0.0
+        for study, shift, cook in zip(group["study_id"], loo.shifts, loo.cooks, strict=True):
+            abs_shift = float(abs(shift))
+            total_shift[study] += abs_shift
+            total_cook[study] += float(cook)
+            max_shift[study] = max(max_shift[study], abs_shift)
+            n_genes[study] += 1
+
+    ranking = sorted(
+        (
+            {
+                "study_id": study,
+                "total_abs_shift": round(total_shift[study], 6),
+                "mean_abs_shift": round(total_shift[study] / n_genes[study], 6),
+                "max_abs_shift": round(max_shift[study], 6),
+                "total_cooks": round(total_cook[study], 6),
+                "n_genes": n_genes[study],
+            }
+            for study in total_shift
+        ),
+        key=lambda row: -cast(float, row["total_abs_shift"]),
+    )
+    return contrasts, ranking
+
+
+def _annotate_pooled(pooled: pd.DataFrame) -> pd.DataFrame:
+    """Add ``ortholog_group`` and ``uniprot`` to the pooled table.
+
+    A pure join on the committed curated gene table — no network, no rebuild —
+    so it applies equally to a fresh full build and to enrichment of the
+    already-shipped artifact. Genes outside the curated set get a null, which the
+    cross-species scatter and the structure out-link both read as "not available
+    for this gene" rather than inventing one.
+    """
+    ortholog, uniprot = curated_gene_annotations()
+    pooled = pooled.copy()
+    pooled["ortholog_group"] = pooled["gene_id"].map(ortholog)
+    pooled["uniprot"] = pooled["gene_id"].map(uniprot)
+    return pooled
+
+
+def cross_species(pooled: pd.DataFrame) -> dict:
+    """Pair human and mouse pooled effects by ortholog group, and fit the line.
+
+    One point per ortholog group present in *both* species (§4.2). Where a group
+    has more than one pooled gene in a species — paralogues collapsed into one
+    orthology group — the best-measured one (largest k) represents it, so the
+    pairing is one-to-one and never silently averages two different genes.
+
+    The fitted line is Deming/orthogonal, computed here and shipped so the
+    browser draws it: an OLS line would be biased flat by the error on the x-axis
+    and would understate conservation. Concordance is read off the *verdicts*
+    (interval excludes zero), not the raw sign of a near-zero effect.
+    """
+    from ..harmonize.deming import deming_regression
+
+    annotated = pooled.dropna(subset=["ortholog_group"]).copy()
+    if annotated.empty:
+        return {"available": False, "reason": "no ortholog_group on the pooled table"}
+
+    # Best-measured gene per (group, species).
+    annotated = (
+        annotated.sort_values("k", ascending=False)
+        .drop_duplicates(["ortholog_group", "species"])
+        .set_index(["ortholog_group", "species"])
+    )
+
+    pairs = []
+    for group in annotated.index.get_level_values(0).unique():
+        try:
+            h = annotated.loc[(group, "human")]
+            m = annotated.loc[(group, "mouse")]
+        except KeyError:
+            continue  # not in both species
+        pairs.append(
+            {
+                "ortholog_group": group,
+                "symbol_human": h["symbol"],
+                "symbol_mouse": m["symbol"],
+                "g_human": float(h["g"]),
+                "g_mouse": float(m["g"]),
+                "verdict_human": h["verdict"],
+                "verdict_mouse": m["verdict"],
+            }
+        )
+
+    if len(pairs) < 3:
+        return {"available": False, "reason": f"only {len(pairs)} orthologous pairs"}
+
+    gx = np.array([p["g_human"] for p in pairs])
+    gy = np.array([p["g_mouse"] for p in pairs])
+    fit = deming_regression(gx, gy)
+
+    def _quadrant(p: dict) -> str:
+        vh, vm = p["verdict_human"], p["verdict_mouse"]
+        if vh == "no_evidence" or vm == "no_evidence":
+            return "unresolved"
+        if vh == vm:
+            return "both_up" if vh == "increases" else "both_down"
+        return "discordant"
+
+    quadrants: dict[str, int] = {"both_up": 0, "both_down": 0, "discordant": 0, "unresolved": 0}
+    for p in pairs:
+        quadrants[_quadrant(p)] += 1
+
+    return {
+        "available": True,
+        "n_pairs": len(pairs),
+        "deming": {
+            "slope": round(fit.slope, 4),
+            "intercept": round(fit.intercept, 4),
+            "slope_ci_low": round(fit.slope_ci_low, 4),
+            "slope_ci_high": round(fit.slope_ci_high, 4),
+        },
+        "quadrants": quadrants,
+        # Rounded for transport; the scatter draws these, it does not refit.
+        "pairs": [
+            {
+                **p,
+                "g_human": round(p["g_human"], 4),
+                "g_mouse": round(p["g_mouse"], 4),
+            }
+            for p in pairs
+        ],
+    }
+
+
+def prediction_interval_headline(pooled: pd.DataFrame) -> dict:
+    """Count the honest headline: genes whose *prediction* interval clears zero.
+
+    §4.7 — the confidence interval asks where the mean effect is; the prediction
+    interval asks where the *next study* would land, and far fewer genes clear
+    it. The stronger, more honest number was computed and never displayed. This
+    returns both so the page can say "1,280 of 41,983, against 3,707 for the
+    confidence interval" instead of leading with the looser count.
+    """
+    has_pi = pooled["pi_low"].notna() & pooled["pi_high"].notna()
+    pi_excludes = has_pi & ((pooled["pi_low"] > 0) | (pooled["pi_high"] < 0))
+    ci_excludes = (pooled["ci_low"] > 0) | (pooled["ci_high"] < 0)
+    return {
+        "n_with_pi": int(has_pi.sum()),
+        "n_pi_excludes_zero": int(pi_excludes.sum()),
+        "n_ci_excludes_zero": int(ci_excludes.sum()),
+    }
+
+
 def _symbols(gene_ids: list[str]) -> dict[str, str]:
     """Map canonical Ensembl ids to display symbols, so search is by name.
 
@@ -244,6 +461,58 @@ def _symbols(gene_ids: list[str]) -> dict[str, str]:
             "unusable."
         )
     return out
+
+
+def _survival_curves(frame: pd.DataFrame, dysregulation: np.ndarray, weight_col: str) -> dict:
+    """Weighted survival curves and RMST by dysregulation quartile (§4.3, §3.4).
+
+    The mortality view reports hazard ratios but no survival curve and no answer
+    in years. This computes, per quartile of physiological dysregulation, the
+    survey-weighted Kaplan-Meier curve on a shared time grid (with the
+    number-at-risk counts the plot needs beneath it) and the restricted mean
+    survival time at 10 and 15 years — the difference between the healthiest and
+    most-dysregulated quartile is a gap in event-free years, which a hazard ratio
+    cannot state.
+
+    All of it is computed here; the browser draws the curves and reads the RMST.
+    """
+    from ..survival import rmst, weighted_kaplan_meier
+
+    time = frame["followup_years"].to_numpy(dtype=float)
+    event = frame["died"].to_numpy(dtype=float)
+    weight = frame[weight_col].to_numpy(dtype=float)
+
+    # Quartiles of dysregulation (1 = healthiest, 4 = most dysregulated).
+    edges = np.quantile(dysregulation, [0.25, 0.5, 0.75])
+    quartile = np.digitize(dysregulation, edges, right=False) + 1
+
+    horizons = [10.0, 15.0]
+    grid = np.linspace(0.0, float(np.ceil(time.max())), 31)
+    quartiles = []
+    for q in (1, 2, 3, 4):
+        mask = quartile == q
+        if mask.sum() < 2:
+            continue
+        curve = weighted_kaplan_meier(time[mask], event[mask], weight=weight[mask], grid=grid)
+        quartiles.append(
+            {
+                "quartile": q,
+                "n": int(mask.sum()),
+                "curve": curve.to_dict(),
+                "rmst": {
+                    str(int(tau)): round(
+                        rmst(time[mask], event[mask], tau=tau, weight=weight[mask]).value, 3
+                    )
+                    for tau in horizons
+                },
+            }
+        )
+
+    return {
+        "grid": [round(float(t), 3) for t in grid],
+        "horizons": [int(h) for h in horizons],
+        "quartiles": quartiles,
+    }
 
 
 def _crosslayer_payload() -> dict:
@@ -324,6 +593,8 @@ def _crosslayer_payload() -> dict:
 
     clocks.sort(key=lambda row: -row["hr"])
     assert weighted_joint is not None  # AGE_LIKE_CLOCKS is never empty
+
+    km = _survival_curves(frame, dysregulation.values, nd.WEIGHT_COLUMN)
     return {
         "available": True,
         "mode": mode,
@@ -335,6 +606,7 @@ def _crosslayer_payload() -> dict:
         "sex_qc": nd.sex_discordance(frame),
         "dysregulation": dysregulation.to_dict(),
         "clocks": clocks,
+        "survival_curves": km,
         "caveats": list(nd.CAVEATS),
         "survey": {
             "weighted": True,
@@ -362,6 +634,7 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     pooled = _pool(contrasts)
     symbols = _symbols(sorted(pooled["gene_id"].unique()))
     pooled["symbol"] = pooled["gene_id"].map(symbols).fillna(pooled["gene_id"])
+    pooled = _annotate_pooled(pooled)
     # Sorted by symbol: the search path scans this file, and a sorted column
     # lets DuckDB's row-group statistics skip almost all of it.
     pooled = pooled.sort_values(["symbol", "species"]).reset_index(drop=True)
@@ -371,10 +644,14 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     # instead of touching every one.
     contrasts = contrasts.sort_values(["gene_id", "study_id"]).reset_index(drop=True)
     contrasts["symbol"] = contrasts["gene_id"].map(symbols).fillna(contrasts["gene_id"])
+    contrasts, influence_ranking = add_influence(contrasts)
     contrasts.to_parquet(out_dir / "contrasts.parquet", index=False, compression="snappy")
+    (out_dir / "influence_corpus.json").write_text(json.dumps(influence_ranking), encoding="utf-8")
 
     studies = [s.to_dict() for s in store.list_studies()]
     (out_dir / "studies.json").write_text(json.dumps(studies), encoding="utf-8")
+
+    (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
 
     crosslayer = _crosslayer_payload()
     (out_dir / "crosslayer.json").write_text(json.dumps(crosslayer), encoding="utf-8")
@@ -401,6 +678,9 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
         "signature_mode": "full" if n_rows > CURATED_SLICE_ROWS else "curated_slice",
         "min_contrasts_for_pooling": MIN_CONTRASTS,
         "crosslayer_available": crosslayer.get("available", False),
+        # The honest headline (§4.7): the prediction interval, not the looser
+        # confidence interval, is where the next study would land.
+        "prediction_interval": prediction_interval_headline(pooled),
     }
     (out_dir / "meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
 
@@ -408,10 +688,59 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     return {**meta, "out_dir": str(out_dir), "bytes": sizes}
 
 
+def enrich(out_dir: Path | None = None) -> dict:
+    """Add the derived fields to the *already-built* artifacts, without a rebuild.
+
+    The committed Parquet is the full-corpus build (485,905 contrasts); this
+    environment can only rebuild the 40,585-row curated slice, so a plain
+    ``build`` here would shrink the shipped data. Every field this adds —
+    ``ortholog_group`` and ``uniprot`` on the pooled table, ``loo_g`` / ``loo_shift``
+    on the contrasts, the corpus-influence ranking, and the prediction-interval
+    headline — is a pure function of the committed inputs, so it can be layered
+    onto the shipped artifact in place. A full ``build`` produces the same fields
+    natively, so the two paths cannot drift.
+    """
+    out_dir = out_dir or DEFAULT_OUT
+    pooled = pd.read_parquet(out_dir / "pooled.parquet")
+    contrasts = pd.read_parquet(out_dir / "contrasts.parquet")
+
+    pooled = _annotate_pooled(pooled)
+    pooled.to_parquet(out_dir / "pooled.parquet", index=False, compression="snappy")
+    (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
+
+    contrasts, influence_ranking = add_influence(contrasts)
+    contrasts.to_parquet(out_dir / "contrasts.parquet", index=False, compression="snappy")
+    (out_dir / "influence_corpus.json").write_text(json.dumps(influence_ranking), encoding="utf-8")
+
+    meta_path = out_dir / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["prediction_interval"] = prediction_interval_headline(pooled)
+    meta_path.write_text(json.dumps(meta, indent=1), encoding="utf-8")
+
+    return {
+        "enriched": str(out_dir),
+        "n_ortholog_groups": int(pooled["ortholog_group"].notna().sum()),
+        "n_influence_contrasts": len(influence_ranking),
+        "prediction_interval": meta["prediction_interval"],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--out", type=Path, default=None, help="output directory")
+    parser.add_argument(
+        "--enrich",
+        action="store_true",
+        help="add derived fields (ortholog group, leave-one-out, PI headline) to "
+        "the already-built artifacts in place, instead of rebuilding from the store",
+    )
     args = parser.parse_args(argv)
+
+    if args.enrich:
+        summary = enrich(args.out)
+        for key, value in summary.items():
+            print(f"{key}: {value}")
+        return 0
 
     summary = build(args.out)
     for key, value in summary.items():

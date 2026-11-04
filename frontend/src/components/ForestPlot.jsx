@@ -23,7 +23,7 @@ import { css } from "../lib/theme.js";
  * one. So the qualifier is kept, abbreviated rather than dropped, and the full
  * id stays in the tooltip.
  */
-function shortLabel(studyId) {
+export function shortLabel(studyId) {
   const [, accession, qualifier] = studyId.split(":");
   if (!qualifier) return accession;
   const compact = qualifier

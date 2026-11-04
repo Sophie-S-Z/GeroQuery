@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import CorpusInfluence from "./CorpusInfluence.jsx";
 import { json } from "../lib/db.js";
 
 /**
@@ -6,10 +7,13 @@ import { json } from "../lib/db.js";
  *
  * The panel is rule-selected rather than curated, and that is the only thing
  * keeping selection bias out — so the rule is printed above the table rather
- * than described in a doc nobody opens.
+ * than described in a doc nobody opens. Above it now sits the corpus-influence
+ * chart (§4.5): the same contrasts, ranked by how much each one moves the whole
+ * published corpus — provenance made measurable.
  */
 export default function Panel() {
   const [studies, setStudies] = useState(null);
+  const [influence, setInfluence] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -17,6 +21,11 @@ export default function Panel() {
     json("studies.json")
       .then((rows) => live && setStudies(rows))
       .catch((e) => live && setError(e.message));
+    // Optional: a clean checkout that has not run the influence enrichment
+    // simply shows the panel without the ranking, rather than failing.
+    json("influence_corpus.json")
+      .then((rows) => live && setInfluence(rows))
+      .catch(() => live && setInfluence([]));
     return () => {
       live = false;
     };
@@ -43,8 +52,26 @@ export default function Panel() {
   const series = new Set(withSeries.map((s) => s.series_id));
   const shared = withSeries.length - series.size;
 
+  const byStudy = Object.fromEntries(studies.map((s) => [s.study_id, s]));
+  const influenceByStudy = Object.fromEntries((influence ?? []).map((r) => [r.study_id, r]));
+  const hasInfluence = influence && influence.length > 0;
+
   return (
     <>
+      {hasInfluence ? (
+        <div className="panel">
+          <h2 className="panel-title">Which contrast bends the corpus</h2>
+          <p className="note" style={{ marginBottom: "0.8rem" }}>
+            Every gene is pooled from very nearly the same contrasts, so a single contrast&rsquo;s
+            leave-one-out shift — summed across all {influence.length === 32 ? "~42,000" : "the"}{" "}
+            pooled genes — measures how much that one contrast moves the <em>whole</em> published
+            corpus. This is not a per-gene question; it is a question about the panel itself, and
+            nothing in a curated database can answer it.
+          </p>
+          <CorpusInfluence ranking={influence} byStudy={byStudy} />
+        </div>
+      ) : null}
+
       <div className="panel">
         <h2 className="panel-title">How this panel was selected</h2>
         <p className="mono" style={{ fontSize: "0.76rem", lineHeight: 1.65, margin: "0 0 0.8rem" }}>
@@ -81,6 +108,7 @@ export default function Panel() {
                 <th>Species</th>
                 <th>Tissue</th>
                 <th className="num">n</th>
+                {hasInfluence ? <th className="num">corpus shift</th> : null}
                 <th>Platform</th>
                 <th>Source</th>
               </tr>
@@ -101,6 +129,13 @@ export default function Panel() {
                   <td>{study.species}</td>
                   <td>{study.tissue ?? "—"}</td>
                   <td className="num">{study.sample_size ?? "—"}</td>
+                  {hasInfluence ? (
+                    <td className="num" title="total leave-one-out shift across every pooled gene">
+                      {influenceByStudy[study.study_id]
+                        ? influenceByStudy[study.study_id].total_abs_shift.toFixed(1)
+                        : "—"}
+                    </td>
+                  ) : null}
                   <td className="mono">{study.processing_method ?? "—"}</td>
                   <td className="note">{study.source}</td>
                 </tr>

@@ -20,11 +20,14 @@ from .crosslayer import (
     mahalanobis_dysregulation,
     nested_test,
 )
+from .km import RMST, KMCurve, rmst, weighted_kaplan_meier
 
 __all__ = [
     "CoxResult",
     "CrossLayerResult",
     "DysregulationResult",
+    "KMCurve",
+    "RMST",
     "SurvivalInputError",
     "concordance_index",
     "cox_regression",
@@ -32,5 +35,7 @@ __all__ = [
     "likelihood_ratio_test",
     "mahalanobis_dysregulation",
     "nested_test",
+    "rmst",
+    "weighted_kaplan_meier",
     "wald_test",
 ]

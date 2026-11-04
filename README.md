@@ -187,15 +187,23 @@ npm install
 npm run dev                         # http://localhost:5173
 ```
 
-**Five views:**
+**Seven views:**
 
 | View | What it shows |
 |---|---|
-| **Gene** | One gene's readout: pooled effect, interval, prediction interval, and a forest plot of every contrast behind it |
-| **Landscape** | The whole corpus binned by effect size, plus the strongest replicated effects |
-| **Certainty** | Every pooled estimate as effect against certainty — where the large effects are also the least trustworthy |
-| **Panel** | All 32 contrasts with full provenance: accession, Series, platform, PMID, restrictions applied |
-| **Mortality** | The survey-weighted survival result, weighted and unweighted side by side |
+| **Overview** | The landing page: the honest headline (only 1,280 of 41,983 genes clear the *prediction* interval, against 3,707 for the confidence interval), a certainty funnel, corpus scope, and the strongest findings |
+| **Gene** | One gene's readout: pooled effect, interval, prediction interval, a forest plot of every contrast, a **leave-one-out audit strip** beside it, **tissue small-multiples**, and an AlphaFold structure out-link |
+| **Landscape** | The whole corpus binned by effect size, plus the strongest replicated effects (ranked by the shrunken estimate, not the raw one) |
+| **Certainty** | Every pooled estimate as effect against the local false sign rate — where the large effects are also the least trustworthy |
+| **Cross-species** | Human vs mouse pooled effect, one point per ortholog group, with a **Deming (orthogonal) fit** and the honest concordance count |
+| **Panel** | The **corpus-influence** chart — which of the 32 contrasts bends the whole answer — above the full provenance table |
+| **Mortality** | The survey-weighted hazard ratios, plus **weighted survival curves + RMST** by dysregulation quartile (populated by a full ETL build) |
+
+Every number is computed in Python by the estimator the API serves and shipped
+in the Parquet/JSON; the browser renders it and never re-derives it. New charts
+add their numbers to `geroquery/etl/build_frontend_data.py` with a failing-if-
+wrong test first. Colour is validated, not chosen — `node frontend/validate_palette.js`
+checks the diverging verdict palette in both themes and runs in CI.
 
 The **URL is the state**, so any result can be linked or cited:
 `?view=gene&gene=CDKN2A&species=human`
@@ -214,9 +222,13 @@ Interactive docs at **http://localhost:8010/docs**.
 python -m streamlit run geroquery/ui/streamlit_app.py --server.port 8502
 ```
 
-> ⚠️ **This surface is stale and slated for retirement.** It is correct but
-> behind: it shows neither the prediction interval, the survey-weighted mortality
-> result, nor the local false sign rate. Prefer the static front end.
+> ⚠️ **Legacy surface — the product is the static React site in `frontend/`.**
+> This dashboard is correct but behind: it has not been repointed at the full
+> signature data and shows none of the current views — the prediction-interval
+> headline, the leave-one-out audit, tissue small-multiples, corpus influence,
+> the cross-species Deming scatter, the weighted survival curves, or the local
+> false sign rate. It is kept for local exploration and its tests; new UI work
+> goes to `frontend/`, never here. Use the static front end.
 
 ### Docker
 
@@ -501,7 +513,7 @@ geroquery/
                   interval), corpus-wide adaptive shrinkage and the lfsr
   store/          partitioned Parquet (DuckDB) + SQLite metadata + content-hash versioning
   clocks/         240 clocks, predicted-outcome metadata, age acceleration, mortality risk
-  resilience/     critical slowing down, AR(1) relaxation, control energy
+  resilience/     critical slowing down, AR(1) relaxation
   knowledge/      PubMed-verified citations + hallmark vocabulary
   survival/       Cox PH, survey-weighted (Binder) path, Harrell's C, Mahalanobis dysregulation
   api/            FastAPI, error envelope, pagination, format switch

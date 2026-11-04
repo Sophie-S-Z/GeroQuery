@@ -1,15 +1,13 @@
-"""M6 resilience — orchestration over CSD, recovery, and control energy."""
+"""M6 resilience — orchestration over CSD and recovery metrics."""
 
 from __future__ import annotations
 
-import math
 from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
 
 from ..exceptions import ResilienceInputError
-from .control import DEFAULT_COND_LIMIT, control_energy_detailed
 from .csd import DEFAULT_N_BOOTSTRAP, CSDResult, csd_indicators
 from .recovery import RecoveryResult, recovery_rate
 
@@ -72,46 +70,3 @@ class ResilienceService:
 
     def recovery(self, series: Sequence[float]) -> RecoveryResult:
         return recovery_rate(np.asarray(series, dtype=float))
-
-    def control_energy(
-        self,
-        A,
-        B,
-        x0,
-        xf,
-        T: float = 1.0,
-        cond_limit: float | None = None,
-        strict: bool = True,
-    ) -> dict:
-        """Minimum control energy to steer x0 -> xf, with conditioning diagnostics.
-
-        Returns the diagnostics rather than a bare float: on a near-uncontrollable
-        system the energy is numerically enormous and meaningless, and a caller
-        that only sees the number has no way to tell that apart from a genuinely
-        expensive but well-posed transition.
-
-        Args:
-            strict: raise when the Gramian is worse conditioned than ``cond_limit``.
-                Set ``False`` to get the estimate anyway, flagged in ``assumptions``
-                — useful for comparing two equally ill-posed systems, where the
-                ranking is still informative even though the magnitudes are not.
-        """
-        limit = DEFAULT_COND_LIMIT if cond_limit is None else cond_limit
-        result = control_energy_detailed(A, B, x0, xf, T, cond_limit=limit, strict=strict)
-        out = result.to_dict()  # already carries `horizon`
-        out["assumptions"] = [
-            "Aging network is approximated as a linear time-invariant system.",
-            "Energy is the minimum-norm control input driving x0 -> xf by time T.",
-            "Interpretation is comparative (relative difficulty of steering), not absolute.",
-            "The Gramian is inverted on its numerically-supported subspace; directions "
-            "below the rank tolerance are reported as unreachable rather than assigned "
-            "an arbitrarily large finite energy.",
-        ]
-        if not result.well_conditioned or (
-            isinstance(result.control_energy, float) and math.isinf(result.control_energy)
-        ):
-            out["assumptions"].append(
-                "WARNING: the Gramian is ill-conditioned at this horizon; treat the "
-                "energy as a lower bound on difficulty, not a calibrated quantity."
-            )
-        return out

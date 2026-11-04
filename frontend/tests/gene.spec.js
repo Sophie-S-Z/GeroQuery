@@ -2,9 +2,9 @@ import { expect, test } from "@playwright/test";
 import { ACCESSION, axisLabels, pooledRows, waitForGene, watchForErrors } from "./helpers.js";
 
 test.describe("gene readout", () => {
-  test("the default view resolves to a real gene with an interval", async ({ page }) => {
+  test("the gene view resolves to a real gene with an interval", async ({ page }) => {
     const problems = watchForErrors(page);
-    await page.goto("/");
+    await page.goto("/?view=gene");
     await waitForGene(page);
 
     await expect(page.locator("h1.gene-symbol")).toHaveText(/^[A-Z0-9-]+$/);
@@ -46,6 +46,20 @@ test.describe("gene readout", () => {
     expect(labels.length).toBe(contrastRows + 1);
   });
 
+  /**
+   * Honest 3D: GeroQuery asserts no structure of its own, it links to the real
+   * predicted one. A curated gene with a UniProt id gets an AlphaFold out-link
+   * built from that id — never a fabricated structure.
+   */
+  test("a gene with a UniProt id links out to its AlphaFold structure", async ({ page }) => {
+    await page.goto("/?view=gene&gene=CDKN2A&species=human");
+    await waitForGene(page);
+    const link = page.locator(".structure-link");
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", /alphafold\.ebi\.ac\.uk\/entry\/[A-Z0-9]+/);
+    await expect(link).toHaveAttribute("target", "_blank");
+  });
+
   test("a gene that was never measured says so, rather than showing an empty chart", async ({
     page,
   }) => {
@@ -59,7 +73,7 @@ test.describe("gene readout", () => {
 
   /** Bug #17: the search rail could not find 94% of the corpus by name. */
   test("search finds genes by symbol and never offers a raw accession", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?view=gene");
     await waitForGene(page);
 
     await page.locator("#gene-search").fill("CDKN");
@@ -73,7 +87,7 @@ test.describe("gene readout", () => {
   });
 
   test("picking a result moves the URL, so a result is linkable", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?view=gene");
     await waitForGene(page);
 
     await page.locator("#gene-search").fill("TP53");
@@ -100,6 +114,57 @@ test.describe("gene readout", () => {
     await expect(page).toHaveURL(/species=mouse/);
     await expect(page.locator(".gene-meta")).toContainText("mouse");
     await expect(page.locator(".pooled-line")).not.toHaveText(before ?? "");
+  });
+});
+
+test.describe("influence and decomposition", () => {
+  /**
+   * §4.4. The leave-one-out strip is the forest plot's audit: it must list the
+   * same contrasts, in the same order, and name the one whose removal moves the
+   * pooled estimate most. A build that shipped the forest without it would be
+   * back to a display that cannot answer "which study is carrying this".
+   */
+  test("the leave-one-out strip shares the forest's contrasts and names the mover", async ({
+    page,
+  }) => {
+    const problems = watchForErrors(page);
+    await page.goto("/?gene=CDKN2A&species=human&view=gene");
+    await waitForGene(page);
+
+    const loo = page.locator(".loo");
+    await expect(loo.locator("svg")).toBeVisible();
+
+    const forestLabels = (await axisLabels(page.locator(".forest-row .chart").first())).filter(
+      (l) => l !== "POOLED",
+    );
+    const looLabels = await axisLabels(loo);
+    // Same contrasts, same order — this is what "shares the y-axis" means.
+    expect(looLabels).toEqual(forestLabels);
+    await expect(loo.locator(".note")).toContainText(/moves it the most/);
+    expect(problems).toEqual([]);
+  });
+
+  /**
+   * §4.6. Small multiples, one per tissue, and the counts must add up to the
+   * contrast total — the whole point is to show that the pooled number hides a
+   * tissue imbalance, so no contrast may be silently dropped from the panels.
+   */
+  test("the tissue panels decompose every contrast, lean panels included", async ({ page }) => {
+    await page.goto("/?gene=CDKN2A&species=human&view=gene");
+    await waitForGene(page);
+
+    const facets = page.locator(".facet");
+    const n = await facets.count();
+    expect(n).toBeGreaterThan(1);
+
+    const titles = await page.locator(".facet-title").allTextContents();
+    const counted = titles.reduce((sum, t) => sum + Number(t.match(/·\s*(\d+)\s*contrast/)[1]), 0);
+    const contrastRows = await page
+      .locator('.panel:has(h2:text-is("Contrast table")) tbody tr')
+      .count();
+    expect(counted).toBe(contrastRows);
+    // A single-contrast tissue is drawn, not dropped (the honest-limit clause).
+    expect(titles.some((t) => /·\s*1\s*contrast\b/.test(t))).toBe(true);
   });
 });
 

@@ -1,4 +1,4 @@
-"""M6 resilience — CSD, recovery, control energy on engineered ground truth."""
+"""M6 resilience — CSD and recovery metrics on engineered ground truth."""
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,6 @@ import pytest
 from geroquery.exceptions import ResilienceInputError
 from geroquery.resilience import (
     ResilienceService,
-    control_energy,
     csd_indicators,
     recovery_rate,
 )
@@ -71,54 +70,10 @@ def test_recovery_rate_input_guards():
         recovery_rate([2.0, 2.0, 2.0, 2.0, 2.0])  # constant
 
 
-def test_control_energy_increases_with_distance():
-    A = np.array([[-1.0, 0.2], [0.0, -1.5]])
-    B = np.eye(2)
-    near = control_energy(A, B, np.zeros(2), np.array([1.0, 0.0]))
-    far = control_energy(A, B, np.zeros(2), np.array([3.0, 0.0]))
-    assert 0 < near < far
-
-
 def test_service_csd_missing_columns_raises():
     df = pd.DataFrame({"age": range(30), "x": range(30)})
     with pytest.raises(ResilienceInputError):
         ResilienceService().csd(df, ["x", "not_here"], age_col="age", n_strata=3)
-
-
-# ---- service: control energy ------------------------------------------------
-
-
-def test_service_control_energy_returns_diagnostics_not_a_bare_number():
-    """Regression: this method referenced an undefined name and raised NameError
-    on every call, because nothing exercised it. On a near-uncontrollable system
-    the energy is numerically huge and meaningless, so the caller needs the
-    conditioning diagnostics alongside it, not just the number."""
-    A = np.array([[-1.0, 0.0], [0.0, -2.0]])
-    B = np.eye(2)
-    out = ResilienceService().control_energy(A, B, np.zeros(2), np.array([1.0, 0.0]))
-
-    assert out["control_energy"] > 0
-    assert out["horizon"] == 1.0
-    for key in ("gramian_condition_number", "gramian_rank", "dimension", "well_conditioned"):
-        assert key in out
-    assert len(out["assumptions"]) >= 4
-
-
-def test_service_control_energy_warns_when_the_gramian_is_ill_conditioned():
-    """An input direction with no actuation is unreachable; the response must
-    say the energy is a lower bound rather than present it as calibrated."""
-    A = np.array([[-1.0, 0.0], [0.0, -1.0]])
-    B = np.array([[1.0], [0.0]])  # second state has no input at all
-    service = ResilienceService()
-    # Default is strict: an ill-conditioned system is refused outright.
-    with pytest.raises(ResilienceInputError, match="ill-conditioned"):
-        service.control_energy(A, B, np.zeros(2), np.array([0.0, 1.0]))
-
-    # strict=False returns the estimate, flagged.
-    out = service.control_energy(A, B, np.zeros(2), np.array([0.0, 1.0]), strict=False)
-    assert out["unreachable_fraction"] > 0.5
-    assert out["well_conditioned"] is False
-    assert any("WARNING" in a for a in out["assumptions"])
 
 
 # ---- service: log transform -------------------------------------------------

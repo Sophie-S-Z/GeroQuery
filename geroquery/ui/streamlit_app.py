@@ -1,4 +1,14 @@
-"""GeroQuery — research dashboard.
+"""GeroQuery — research dashboard (LEGACY; the product is the static React site).
+
+**Deprecated surface, retained deliberately.** The shipped product is the static
+React explorer in ``frontend/`` (built from the same Parquet this repo's ETL
+emits, deployed to a CDN, no backend). It is the one that carries the current
+design system, the five visual-plan views (leave-one-out audit, tissue
+small-multiples, corpus influence, the cross-species Deming scatter, the weighted
+survival curves), the validated palette, and the overview landing. This Streamlit
+dashboard is an older, divergent surface that has not been repointed at the full
+signature data; it is kept for local exploration and for its tests, not shipped,
+and new UI work goes to ``frontend/``, never here. Prefer the React app.
 
 A gene-first reader for the biology of aging, over measured data.
 
@@ -634,9 +644,9 @@ def render_about() -> None:
 
     sources = svc.sources()
     rows_html = "".join(
-        f"<tr><td>{s.get('source_name', '—')}</td>"
+        f"<tr><td>{s.get('name', '—')}</td>"
         f"<td>{'federated' if s.get('federated') else 'cached'}</td>"
-        f"<td>{s.get('license') or '—'}</td></tr>"
+        f"<td>{(s.get('license') or {}).get('name', '—')}</td></tr>"
         for s in sources
     )
     panel(

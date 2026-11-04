@@ -424,3 +424,240 @@ def test_the_committed_export_is_internally_consistent():
         | ((frame["ci_low"] <= 0) & (frame["ci_high"] >= 0) & (frame["verdict"] == "no_evidence"))
     )
     assert readable.all(), f"{(~readable).sum()} verdicts are not readable off their own interval"
+
+
+# --- derived front-end data: ortholog groups, influence, the PI headline ------
+
+
+def test_ortholog_group_map_pairs_human_and_mouse_by_group_not_symbol_case():
+    """The §4.2 cross-species scatter joins on ortholog group, not symbol case.
+
+    The bundled curated table carries the orthology directly; symbol-case
+    matching silently mismatches paralogues (``VISUAL_AND_STATISTICAL_PLAN`` §4.2),
+    so the exporter must read the group, and the group must actually pair the
+    human and mouse canonical ids of a known ortholog.
+    """
+    from geroquery.etl.build_frontend_data import curated_gene_annotations
+
+    ortholog, uniprot = curated_gene_annotations()
+
+    # A2M: human ENSG00000175899, with a mouse ortholog in the same group.
+    assert ortholog["ENSG00000175899"] == "A2M"
+    assert uniprot["ENSG00000175899"] == "P01023"
+    # The group is shared across species — the property the scatter relies on.
+    human = {cid for cid, grp in ortholog.items() if grp == "ABCA1" and cid.startswith("ENSG")}
+    mouse = {cid for cid, grp in ortholog.items() if grp == "ABCA1" and cid.startswith("ENSMUSG")}
+    assert human and mouse, "ABCA1 ortholog group should pair a human and a mouse id"
+
+
+def test_leave_one_out_columns_match_an_independent_pool_and_feed_the_corpus_rank():
+    """``loo_g`` on a contrast equals the pool of that gene's *other* contrasts.
+
+    This is the §4.4 contract at the exporter level: the strip beside the forest
+    plot draws ``loo_g``, and it must be the real leave-one-out pool, not an
+    approximation. One planted discordant contrast, shared across several genes,
+    must also top the §4.5 corpus-influence ranking.
+    """
+    import pandas as pd
+
+    from geroquery.etl.build_frontend_data import add_influence
+    from geroquery.harmonize import random_effects
+
+    rows = []
+    for g in range(6):
+        base = 0.30 + 0.01 * g
+        for study, eff in (
+            ("S_A", base),
+            ("S_B", base + 0.02),
+            ("S_C", base - 0.02),
+            ("S_BAD", base + 0.90),
+        ):
+            rows.append(
+                {
+                    "gene_id": f"G{g}",
+                    "species": "human",
+                    "study_id": study,
+                    "effect_size": eff,
+                    "standard_error": 0.12,
+                    "tissue": "blood",
+                }
+            )
+    contrasts = pd.DataFrame(rows)
+
+    enriched, ranking = add_influence(contrasts)
+
+    # Every contrast of G0 gets a loo_g equal to a from-scratch pool of the rest.
+    g0 = enriched[enriched["gene_id"] == "G0"].reset_index(drop=True)
+    for i in range(len(g0)):
+        others = g0.drop(index=i)
+        expected = random_effects(
+            others["effect_size"].tolist(), others["standard_error"].tolist()
+        ).pooled_effect
+        assert abs(g0.loc[i, "loo_g"] - round(expected, 4)) <= 1e-4
+
+    assert ranking[0]["study_id"] == "S_BAD"
+    assert ranking[0]["n_genes"] == 6
+
+
+def test_prediction_interval_headline_counts_the_honest_number():
+    """The PI headline reports PI-excludes-zero and CI-excludes-zero separately.
+
+    §4.7: only the prediction interval answers "where the next study lands", and
+    far fewer genes clear it than clear the confidence interval. A planted frame
+    with one gene clearing both and one clearing only the CI must be counted that
+    way — the headline is the stronger, more honest number and must not be
+    conflated with the CI count.
+    """
+    import pandas as pd
+
+    from geroquery.etl.build_frontend_data import _pool, prediction_interval_headline
+
+    rows = []
+    # Tight, concordant: clears both CI and PI.
+    for eff in (0.80, 0.82, 0.79, 0.81, 0.80):
+        rows.append(
+            {
+                "gene_id": "BOTH",
+                "species": "human",
+                "effect_size": eff,
+                "standard_error": 0.05,
+                "tissue": "blood",
+            }
+        )
+    # Moderate spread: CI clears zero, PI does not.
+    for eff in (0.45, 0.20, 0.70, 0.30, 0.60):
+        rows.append(
+            {
+                "gene_id": "CIONLY",
+                "species": "human",
+                "effect_size": eff,
+                "standard_error": 0.14,
+                "tissue": "blood",
+            }
+        )
+    pooled = _pool(pd.DataFrame(rows))
+    headline = prediction_interval_headline(pooled)
+
+    assert headline["n_with_pi"] == 2
+    assert headline["n_ci_excludes_zero"] == 2
+    assert headline["n_pi_excludes_zero"] == 1
+
+
+def test_cross_species_pairs_by_ortholog_group_and_counts_concordance():
+    """§4.2: pair human and mouse by ortholog group, fit Deming, count quadrants.
+
+    Planted so the answer is known: three groups in both species, one where both
+    rise, one where both fall, one unresolved in mouse. The pairing must be on
+    the group (not symbol case), the Deming slope must come back finite, and the
+    quadrant tally must match the planted verdicts exactly.
+    """
+    import pandas as pd
+
+    from geroquery.etl.build_frontend_data import cross_species
+
+    def row(group, species, symbol, g, verdict, k=10):
+        return {
+            "gene_id": f"{group}:{species}",
+            "species": species,
+            "symbol": symbol,
+            "g": g,
+            "k": k,
+            "verdict": verdict,
+            "ortholog_group": group,
+        }
+
+    pooled = pd.DataFrame(
+        [
+            row("UP", "human", "UP", 0.8, "increases"),
+            row("UP", "mouse", "Up", 0.9, "increases"),
+            row("DOWN", "human", "DOWN", -0.7, "decreases"),
+            row("DOWN", "mouse", "Down", -0.6, "decreases"),
+            row("MIX", "human", "MIX", 0.5, "increases"),
+            row("MIX", "mouse", "Mix", 0.1, "no_evidence"),
+            # A human-only group — must not produce a pair.
+            row("SOLO", "human", "SOLO", 0.4, "increases"),
+        ]
+    )
+
+    result = cross_species(pooled)
+    assert result["available"]
+    assert result["n_pairs"] == 3  # UP, DOWN, MIX — not SOLO
+    assert result["quadrants"] == {
+        "both_up": 1,
+        "both_down": 1,
+        "discordant": 0,
+        "unresolved": 1,
+    }
+    # The fit is real (finite slope with an interval around it).
+    deming = result["deming"]
+    assert deming["slope_ci_low"] <= deming["slope"] <= deming["slope_ci_high"]
+    groups = {p["ortholog_group"] for p in result["pairs"]}
+    assert groups == {"UP", "DOWN", "MIX"}
+
+
+def test_the_committed_cross_species_is_internally_consistent():
+    """The shipped cross-species artifact, checked as data."""
+    data = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data"
+    path = data / "crossspecies.json"
+    if not path.exists():  # pragma: no cover
+        pytest.skip("crossspecies.json is not present")
+
+    payload = json.loads(path.read_text())
+    if not payload.get("available"):  # pragma: no cover
+        pytest.skip("cross-species not available in this build")
+
+    assert payload["n_pairs"] == len(payload["pairs"])
+    assert sum(payload["quadrants"].values()) == payload["n_pairs"]
+    d = payload["deming"]
+    assert d["slope_ci_low"] <= d["slope"] <= d["slope_ci_high"]
+    # Every pair carries a g in both species and a group it was paired on.
+    for pair in payload["pairs"][:50]:
+        assert pair["ortholog_group"]
+        assert isinstance(pair["g_human"], (int, float))
+        assert isinstance(pair["g_mouse"], (int, float))
+
+
+def test_the_committed_influence_is_internally_consistent():
+    """The derived fields that actually ship, checked as data.
+
+    The unit tests above pass on planted frames; this asserts the committed
+    full-corpus artifact carries the same guarantees — ``loo_g`` is the real
+    leave-one-out pool for a sampled gene, every contrast in the panel has a
+    corpus-influence row, and the PI headline on disk is the stronger (smaller)
+    count. Skips cleanly on a clean checkout that has not built the export.
+    """
+    import pandas as pd
+
+    from geroquery.harmonize import random_effects
+
+    data = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data"
+    if not (data / "contrasts.parquet").exists():  # pragma: no cover
+        pytest.skip("frontend/public/data is not present")
+
+    contrasts = pd.read_parquet(data / "contrasts.parquet")
+    if "loo_g" not in contrasts.columns:  # pragma: no cover
+        pytest.skip("export predates the influence enrichment")
+
+    # loo_g on a real gene equals an independent pool of its other contrasts.
+    with_loo = contrasts[contrasts["loo_g"].notna()]
+    counts = with_loo.groupby(["gene_id", "species"]).size()
+    gene_id, species = counts[counts >= 5].index[0]
+    group = contrasts[
+        (contrasts["gene_id"] == gene_id) & (contrasts["species"] == species)
+    ].reset_index(drop=True)
+    others = group.drop(index=0)
+    expected = random_effects(
+        others["effect_size"].tolist(), others["standard_error"].tolist()
+    ).pooled_effect
+    assert abs(group.loc[0, "loo_g"] - round(expected, 4)) <= 1e-4
+
+    ranking = json.loads((data / "influence_corpus.json").read_text())
+    assert {r["study_id"] for r in ranking} == set(contrasts["study_id"].unique())
+    assert all(
+        a["total_abs_shift"] >= b["total_abs_shift"]
+        for a, b in zip(ranking, ranking[1:], strict=False)
+    )
+
+    meta = json.loads((data / "meta.json").read_text())
+    pi = meta["prediction_interval"]
+    assert pi["n_pi_excludes_zero"] <= pi["n_ci_excludes_zero"] <= pi["n_with_pi"]

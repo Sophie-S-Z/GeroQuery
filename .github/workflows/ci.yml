@@ -84,6 +84,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # Colour is validated, not chosen (VISUAL_AND_STATISTICAL_PLAN §1 rule 4).
+      # Fails the build if any theme's verdict fills drift below the §6 floors —
+      # the defect that half-shipped once, fixed in one dark path and not the other.
+      - run: npm run validate:palette
       - run: npx playwright install --with-deps chromium
       # `frontend/public/data/` is committed, so this needs no Python ETL.
       - run: npm run build
