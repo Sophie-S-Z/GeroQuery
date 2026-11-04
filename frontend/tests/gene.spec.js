@@ -46,6 +46,20 @@ test.describe("gene readout", () => {
     expect(labels.length).toBe(contrastRows + 1);
   });
 
+  /**
+   * Honest 3D: GeroQuery asserts no structure of its own, it links to the real
+   * predicted one. A curated gene with a UniProt id gets an AlphaFold out-link
+   * built from that id — never a fabricated structure.
+   */
+  test("a gene with a UniProt id links out to its AlphaFold structure", async ({ page }) => {
+    await page.goto("/?view=gene&gene=CDKN2A&species=human");
+    await waitForGene(page);
+    const link = page.locator(".structure-link");
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", /alphafold\.ebi\.ac\.uk\/entry\/[A-Z0-9]+/);
+    await expect(link).toHaveAttribute("target", "_blank");
+  });
+
   test("a gene that was never measured says so, rather than showing an empty chart", async ({
     page,
   }) => {

@@ -460,6 +460,18 @@ main {
   font-family: var(--mono);
 }
 
+/* Out-link to the real predicted structure (AlphaFold) — honest 3D, where the
+   data earns it: GeroQuery asserts no structure of its own, it points at one. */
+.structure-link {
+  color: var(--down);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.structure-link:hover {
+  border-bottom-color: currentColor;
+}
+
 /* A corpus-level heading, same family as a gene symbol but a touch smaller —
    the Gene view names one gene, these views name a question. */
 .section-title {

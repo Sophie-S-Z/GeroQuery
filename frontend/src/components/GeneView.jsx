@@ -160,6 +160,20 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                 <p className="gene-meta">
                   {species} · {contrasts?.length ?? 0} contrasts
                   {here ? ` · I² ${here.i2}% · ${here.n_tissues} tissues` : ""}
+                  {here?.uniprot ? (
+                    <>
+                      {" · "}
+                      <a
+                        className="structure-link"
+                        href={`https://alphafold.ebi.ac.uk/entry/${here.uniprot}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`Predicted 3D structure for UniProt ${here.uniprot} at AlphaFold DB`}
+                      >
+                        3D structure ↗
+                      </a>
+                    </>
+                  ) : null}
                 </p>
               </div>
               {here ? (
