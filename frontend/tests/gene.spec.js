@@ -2,9 +2,9 @@ import { expect, test } from "@playwright/test";
 import { ACCESSION, axisLabels, pooledRows, waitForGene, watchForErrors } from "./helpers.js";
 
 test.describe("gene readout", () => {
-  test("the default view resolves to a real gene with an interval", async ({ page }) => {
+  test("the gene view resolves to a real gene with an interval", async ({ page }) => {
     const problems = watchForErrors(page);
-    await page.goto("/");
+    await page.goto("/?view=gene");
     await waitForGene(page);
 
     await expect(page.locator("h1.gene-symbol")).toHaveText(/^[A-Z0-9-]+$/);
@@ -59,7 +59,7 @@ test.describe("gene readout", () => {
 
   /** Bug #17: the search rail could not find 94% of the corpus by name. */
   test("search finds genes by symbol and never offers a raw accession", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?view=gene");
     await waitForGene(page);
 
     await page.locator("#gene-search").fill("CDKN");
@@ -73,7 +73,7 @@ test.describe("gene readout", () => {
   });
 
   test("picking a result moves the URL, so a result is linkable", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?view=gene");
     await waitForGene(page);
 
     await page.locator("#gene-search").fill("TP53");

@@ -197,6 +197,18 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   white-space: nowrap;
+  /* Now a button (navigates home), but it must look like the wordmark. */
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.wordmark:hover {
+  color: var(--ink);
 }
 
 /* The counts are queried, never typed. A stale corpus size on a page whose
@@ -789,6 +801,143 @@ th.num {
   display: block;
   max-width: 100%;
   height: auto;
+}
+
+/* --- overview / landing --------------------------------------------------- */
+
+.overview-hero {
+  margin-bottom: 2rem;
+}
+
+.overview-kicker {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 0.8rem;
+}
+
+.overview-head {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  margin: 0 0 1rem;
+  max-width: 24ch;
+}
+
+.overview-head b {
+  font-weight: 400;
+  color: var(--up);
+}
+
+.overview-head em {
+  font-style: italic;
+}
+
+.overview-lede {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 68ch;
+  margin: 0 0 1.4rem;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin-bottom: 2rem;
+}
+
+.stat {
+  background: var(--paper-raised);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.stat-value {
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.stat-label {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.finding-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.finding-card {
+  text-align: left;
+  appearance: none;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  padding: 1.1rem 1.2rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.finding-card:hover {
+  border-color: var(--rule-strong);
+  transform: translateY(-2px);
+}
+
+.finding-card:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.finding-title {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.finding-body {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.finding-cue {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--up);
+  margin-top: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finding-card {
+    transition: none;
+  }
+  .finding-card:hover {
+    transform: none;
+  }
 }
 
 /* --- footer --------------------------------------------------------------- */

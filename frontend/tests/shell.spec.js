@@ -4,6 +4,7 @@ import { ACCESSION, watchForErrors } from "./helpers.js";
 // view key → a substring of its tab label (the key is not always the label,
 // e.g. "crossspecies" is shown as "Cross-species").
 const VIEWS = {
+  overview: "overview",
   gene: "gene",
   landscape: "landscape",
   crossspecies: "cross-species",

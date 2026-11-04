@@ -3,6 +3,7 @@ import CrossSpecies from "./components/CrossSpecies.jsx";
 import GeneView from "./components/GeneView.jsx";
 import Landscape from "./components/Landscape.jsx";
 import Mortality from "./components/Mortality.jsx";
+import Overview from "./components/Overview.jsx";
 import Panel from "./components/Panel.jsx";
 import Volcano from "./components/Volcano.jsx";
 import { json } from "./lib/db.js";
@@ -11,6 +12,7 @@ import { useUrlState } from "./lib/state.js";
 import { useTheme } from "./lib/theme.js";
 
 const VIEWS = [
+  ["overview", "Overview"],
   ["gene", "Gene"],
   ["landscape", "Landscape"],
   ["certainty", "Certainty"],
@@ -19,10 +21,12 @@ const VIEWS = [
   ["mortality", "Mortality"],
 ];
 
-function Masthead({ meta, theme, onToggleTheme }) {
+function Masthead({ meta, theme, onToggleTheme, onHome }) {
   return (
     <header className="masthead">
-      <span className="wordmark">GeroQuery</span>
+      <button type="button" className="wordmark" onClick={onHome}>
+        GeroQuery
+      </button>
       {meta ? (
         <div className="masthead-stats">
           <span>
@@ -76,7 +80,12 @@ export default function App() {
 
   return (
     <div className="app">
-      <Masthead meta={meta} theme={resolvedTheme} onToggleTheme={toggleTheme} />
+      <Masthead
+        meta={meta}
+        theme={resolvedTheme}
+        onToggleTheme={toggleTheme}
+        onHome={() => update({ view: "overview" })}
+      />
 
       <nav className="tabs" role="tablist" aria-label="Views">
         {VIEWS.map(([key, label]) => (
@@ -94,6 +103,10 @@ export default function App() {
       </nav>
 
       <main key={themeKey}>
+        {state.view === "overview" ? (
+          <Overview onNavigate={(view) => update({ view })} />
+        ) : null}
+
         {state.view === "gene" ? (
           <GeneView
             symbol={state.gene}
