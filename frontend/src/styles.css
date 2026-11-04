@@ -97,7 +97,13 @@
     --rule-strong: #454854;
     --up: #e8834a;
     --down: #86a8ea;
-    --null: #9a968f;
+    /* Must match the [data-theme="dark"] block above, not the old #9a968f:
+       a system-dark reader who never touched the toggle took the media-query
+       path, and #9a968f separates from --down by only ΔE 12.8 (deutan 12.7) —
+       below the 15 floor, the exact defect §6 documents. The toggle path was
+       fixed and this one was not, so half the dark-mode users still got the
+       collapsed verdict colours. Verified by `node frontend/validate_palette.js`. */
+    --null: #7d7568;
     --up-wash: rgba(232, 131, 74, 0.15);
     --down-wash: rgba(134, 168, 234, 0.15);
     --focus: #86a8ea;

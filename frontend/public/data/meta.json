@@ -17,5 +17,10 @@
  ],
  "signature_mode": "full",
  "min_contrasts_for_pooling": 3,
- "crosslayer_available": true
+ "crosslayer_available": true,
+ "prediction_interval": {
+  "n_with_pi": 41983,
+  "n_pi_excludes_zero": 1280,
+  "n_ci_excludes_zero": 3707
+ }
 }
