@@ -296,6 +296,11 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                       <th className="num">g</th>
                       <th className="num">SE</th>
                       <th className="num">q</th>
+                      {here ? (
+                        <th className="num" title="pooled g with this contrast removed (leave-one-out)">
+                          pooled w/o
+                        </th>
+                      ) : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -310,6 +315,11 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                         </td>
                         <td className="num">{row.standard_error?.toFixed(3) ?? "—"}</td>
                         <td className="num">{fmtP(row.q_value)}</td>
+                        {here ? (
+                          <td className="num">
+                            {row.loo_g != null ? fmtEffect(row.loo_g, 3) : "—"}
+                          </td>
+                        ) : null}
                       </tr>
                     ))}
                   </tbody>
