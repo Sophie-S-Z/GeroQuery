@@ -171,6 +171,23 @@ export default function Overview({ onNavigate }) {
       </section>
 
       <section className="panel">
+        <h2 className="panel-title">How the numbers are made</h2>
+        <p className="note" style={{ maxWidth: "74ch" }}>
+          Per-study effects are standardized to Hedges&rsquo; <em>g</em> and pooled by random-effects
+          meta-analysis (DerSimonian-Laird with a Hartung-Knapp-Sidik-Jonkman interval, never
+          narrower than the conventional one), with a 95% prediction interval for where the next
+          study would land. A corpus-wide adaptive-shrinkage prior gives each gene a local false
+          sign rate — the probability its <em>direction</em> is wrong. Cross-species agreement uses a
+          Deming (errors-in-both-variables) fit; the mortality result is a survey-weighted Cox model
+          with a design-based sandwich variance, plus weighted Kaplan-Meier curves and restricted
+          mean survival time. Every one of these is computed in Python by the estimator the API
+          serves and shipped in the Parquet/JSON; this page renders them and never re-derives them,
+          so the website, the API and the MCP tool cannot disagree about what a gene&rsquo;s answer
+          is.
+        </p>
+      </section>
+
+      <section className="panel">
         <h2 className="panel-title">Running it</h2>
         <p className="note" style={{ maxWidth: "74ch" }}>
           This page is static — a React bundle that reads the pooled Parquet in your browser, no

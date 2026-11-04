@@ -85,7 +85,7 @@ ui  ->  api  ->  ( store, clocks, resilience, harmonize )  ->  ( sources, idmap 
 | **M5 `clocks`** | 236 published clocks + 3 transparent reference clocks; predicted-outcome metadata; age acceleration | `registry.py`, `library.py`, `pyaging_clocks.py`, `service.py` |
 | **M6 `resilience`** | The differentiator — critical slowing down, recovery rate | `csd.py`, `recovery.py` |
 | **M7 `api`** | FastAPI `/v1`, error envelope, pagination, `format=json\|csv\|parquet`, versioned LRU | `app.py`, `service.py`, `schemas.py` |
-| **M8 `ui`** | Streamlit dashboard + React showcase | `ui/streamlit_app.py`, `frontend/` |
+| **M8 `ui`** | Static React app (the product) + legacy Streamlit dashboard | `frontend/`, `ui/streamlit_app.py` |
 
 ### 2.2 The data layer's guarantees
 
@@ -245,7 +245,14 @@ All support `format=json|csv|parquet`; list endpoints support `limit`/`offset`.
 25. **Live tests are excluded by default** (`-m 'not live'`). They are the only
     thing that catches upstream drift.
 26. **The Streamlit dashboard has not been repointed** at the real signature data
-    (the React app has).
+    and is now **deprecated/legacy** — the static React app in `frontend/` is the
+    product and carries the current views. See `docs/HANDOFF_REVAMP_2026-11.md`.
+27. **The React app now has seven views**, including the overview landing (leading
+    with the prediction-interval headline), the cross-species Deming scatter, the
+    corpus-influence chart, the leave-one-out audit strip, tissue small-multiples,
+    and weighted survival curves + RMST. Colour is validated by
+    `frontend/validate_palette.js` in CI. The 2026-11 revamp is documented in
+    `docs/HANDOFF_REVAMP_2026-11.md`.
 
 ---
 
