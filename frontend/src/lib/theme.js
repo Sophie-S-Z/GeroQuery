@@ -28,6 +28,9 @@ export function css() {
     // underscore rather than quoted at every call site.
     null_: read("--null"),
     mono: read("--mono"),
+    // Sequential single-hue ramp (light→dark), for an *ordered* magnitude like
+    // the dysregulation quartiles on the survival curves — never for identity.
+    seq: [read("--seq-1"), read("--seq-2"), read("--seq-3"), read("--seq-4")],
   };
 }
 

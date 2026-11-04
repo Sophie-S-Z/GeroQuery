@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { axisLabels, watchForErrors } from "./helpers.js";
 
@@ -93,5 +94,29 @@ test.describe("mortality result", () => {
     const caveats = page.locator("ul.caveats li");
     await expect(caveats.first()).toBeVisible({ timeout: 30_000 });
     expect(await caveats.count()).toBeGreaterThan(3);
+  });
+
+  /**
+   * §4.3 / §3.4. The survival curves and RMST need the full per-subject cohort,
+   * which is rebuilt by the full ETL, not committed — so this asserts the
+   * rendering when the data is present and skips cleanly when it is not, rather
+   * than failing a build that ships only the summary.
+   */
+  test("survival curves and RMST render when the cohort carries them", async ({ page }) => {
+    const raw = await readFile(new URL("../dist/data/crosslayer.json", import.meta.url), "utf8");
+    const payload = JSON.parse(raw);
+    test.skip(
+      !payload.survival_curves?.quartiles?.length,
+      "crosslayer.json has no survival curves (summary-only build)",
+    );
+
+    await page.goto("/?view=mortality");
+    const panel = page.locator(".panel", { hasText: "Survival by dysregulation quartile" });
+    await expect(panel.locator("svg")).toBeVisible({ timeout: 30_000 });
+    // One line per quartile, an at-risk row per quartile, and an RMST sentence.
+    await expect(panel.locator("table.at-risk tbody tr")).toHaveCount(
+      payload.survival_curves.quartiles.length,
+    );
+    await expect(panel).toContainText(/fewer event-free years/);
   });
 });

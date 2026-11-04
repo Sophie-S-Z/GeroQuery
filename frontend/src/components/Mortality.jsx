@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as Plot from "@observablehq/plot";
+import SurvivalCurves from "./SurvivalCurves.jsx";
 import { css } from "../lib/theme.js";
 import { json } from "../lib/db.js";
 import { fmtHR, fmtHRInterval, fmtInt, fmtP } from "../lib/format.js";
@@ -126,6 +127,10 @@ export default function Mortality() {
           </span>
         </div>
       </div>
+
+      {data.survival_curves?.quartiles?.length ? (
+        <SurvivalCurves survival={data.survival_curves} />
+      ) : null}
 
       <div className="panel">
         <h2 className="panel-title">Does either add anything over the other?</h2>

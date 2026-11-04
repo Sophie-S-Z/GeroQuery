@@ -463,6 +463,58 @@ def _symbols(gene_ids: list[str]) -> dict[str, str]:
     return out
 
 
+def _survival_curves(frame: pd.DataFrame, dysregulation: np.ndarray, weight_col: str) -> dict:
+    """Weighted survival curves and RMST by dysregulation quartile (§4.3, §3.4).
+
+    The mortality view reports hazard ratios but no survival curve and no answer
+    in years. This computes, per quartile of physiological dysregulation, the
+    survey-weighted Kaplan-Meier curve on a shared time grid (with the
+    number-at-risk counts the plot needs beneath it) and the restricted mean
+    survival time at 10 and 15 years — the difference between the healthiest and
+    most-dysregulated quartile is a gap in event-free years, which a hazard ratio
+    cannot state.
+
+    All of it is computed here; the browser draws the curves and reads the RMST.
+    """
+    from ..survival import rmst, weighted_kaplan_meier
+
+    time = frame["followup_years"].to_numpy(dtype=float)
+    event = frame["died"].to_numpy(dtype=float)
+    weight = frame[weight_col].to_numpy(dtype=float)
+
+    # Quartiles of dysregulation (1 = healthiest, 4 = most dysregulated).
+    edges = np.quantile(dysregulation, [0.25, 0.5, 0.75])
+    quartile = np.digitize(dysregulation, edges, right=False) + 1
+
+    horizons = [10.0, 15.0]
+    grid = np.linspace(0.0, float(np.ceil(time.max())), 31)
+    quartiles = []
+    for q in (1, 2, 3, 4):
+        mask = quartile == q
+        if mask.sum() < 2:
+            continue
+        curve = weighted_kaplan_meier(time[mask], event[mask], weight=weight[mask], grid=grid)
+        quartiles.append(
+            {
+                "quartile": q,
+                "n": int(mask.sum()),
+                "curve": curve.to_dict(),
+                "rmst": {
+                    str(int(tau)): round(
+                        rmst(time[mask], event[mask], tau=tau, weight=weight[mask]).value, 3
+                    )
+                    for tau in horizons
+                },
+            }
+        )
+
+    return {
+        "grid": [round(float(t), 3) for t in grid],
+        "horizons": [int(h) for h in horizons],
+        "quartiles": quartiles,
+    }
+
+
 def _crosslayer_payload() -> dict:
     """The mortality result, precomputed. Absent if the cohort was never built.
 
@@ -541,6 +593,8 @@ def _crosslayer_payload() -> dict:
 
     clocks.sort(key=lambda row: -row["hr"])
     assert weighted_joint is not None  # AGE_LIKE_CLOCKS is never empty
+
+    km = _survival_curves(frame, dysregulation.values, nd.WEIGHT_COLUMN)
     return {
         "available": True,
         "mode": mode,
@@ -552,6 +606,7 @@ def _crosslayer_payload() -> dict:
         "sex_qc": nd.sex_discordance(frame),
         "dysregulation": dysregulation.to_dict(),
         "clocks": clocks,
+        "survival_curves": km,
         "caveats": list(nd.CAVEATS),
         "survey": {
             "weighted": True,
