@@ -697,6 +697,66 @@ th.num {
   display: inline-block;
 }
 
+/* --- forest + leave-one-out companion ------------------------------------- */
+
+/* The forest plot and its leave-one-out audit sit side by side on a wide
+   screen and stack on a narrow one. They share the contrast identity down the
+   y-axis; reading them together is the point (§4.4). */
+.forest-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  align-items: flex-start;
+}
+
+.forest-row > :first-child {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.loo {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.panel-subtitle {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 0.4rem;
+}
+
+/* --- tissue small-multiples ----------------------------------------------- */
+
+.facet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.6rem 1.4rem;
+}
+
+.facet {
+  margin: 0;
+  min-width: 0;
+}
+
+.facet-title {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  padding-bottom: 0.1rem;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 0.2rem;
+}
+
+.facet svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 /* --- footer --------------------------------------------------------------- */
 
 footer {

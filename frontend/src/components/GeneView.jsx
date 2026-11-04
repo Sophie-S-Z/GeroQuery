@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import ForestPlot from "./ForestPlot.jsx";
+import LeaveOneOut from "./LeaveOneOut.jsx";
+import TissueFacets from "./TissueFacets.jsx";
 import { contrastsForSymbol, pooledForSymbol, searchGenes } from "../lib/db.js";
 import {
   VERDICT_LABEL,
@@ -207,8 +209,20 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
 
             <div className="panel">
               <h2 className="panel-title">Per-study evidence</h2>
-              <ForestPlot contrasts={contrasts ?? []} pooled={here} symbol={symbol} />
+              <div className="forest-row">
+                <ForestPlot contrasts={contrasts ?? []} pooled={here} symbol={symbol} />
+                {here ? (
+                  <LeaveOneOut contrasts={contrasts ?? []} pooled={here} symbol={symbol} />
+                ) : null}
+              </div>
             </div>
+
+            {here && here.n_tissues > 1 ? (
+              <div className="panel">
+                <h2 className="panel-title">By tissue</h2>
+                <TissueFacets contrasts={contrasts ?? []} pooled={here} symbol={symbol} />
+              </div>
+            ) : null}
 
             {other.length ? (
               <div className="panel">

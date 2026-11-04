@@ -103,6 +103,57 @@ test.describe("gene readout", () => {
   });
 });
 
+test.describe("influence and decomposition", () => {
+  /**
+   * §4.4. The leave-one-out strip is the forest plot's audit: it must list the
+   * same contrasts, in the same order, and name the one whose removal moves the
+   * pooled estimate most. A build that shipped the forest without it would be
+   * back to a display that cannot answer "which study is carrying this".
+   */
+  test("the leave-one-out strip shares the forest's contrasts and names the mover", async ({
+    page,
+  }) => {
+    const problems = watchForErrors(page);
+    await page.goto("/?gene=CDKN2A&species=human&view=gene");
+    await waitForGene(page);
+
+    const loo = page.locator(".loo");
+    await expect(loo.locator("svg")).toBeVisible();
+
+    const forestLabels = (await axisLabels(page.locator(".forest-row .chart").first())).filter(
+      (l) => l !== "POOLED",
+    );
+    const looLabels = await axisLabels(loo);
+    // Same contrasts, same order — this is what "shares the y-axis" means.
+    expect(looLabels).toEqual(forestLabels);
+    await expect(loo.locator(".note")).toContainText(/moves it the most/);
+    expect(problems).toEqual([]);
+  });
+
+  /**
+   * §4.6. Small multiples, one per tissue, and the counts must add up to the
+   * contrast total — the whole point is to show that the pooled number hides a
+   * tissue imbalance, so no contrast may be silently dropped from the panels.
+   */
+  test("the tissue panels decompose every contrast, lean panels included", async ({ page }) => {
+    await page.goto("/?gene=CDKN2A&species=human&view=gene");
+    await waitForGene(page);
+
+    const facets = page.locator(".facet");
+    const n = await facets.count();
+    expect(n).toBeGreaterThan(1);
+
+    const titles = await page.locator(".facet-title").allTextContents();
+    const counted = titles.reduce((sum, t) => sum + Number(t.match(/·\s*(\d+)\s*contrast/)[1]), 0);
+    const contrastRows = await page
+      .locator('.panel:has(h2:text-is("Contrast table")) tbody tr')
+      .count();
+    expect(counted).toBe(contrastRows);
+    // A single-contrast tissue is drawn, not dropped (the honest-limit clause).
+    expect(titles.some((t) => /·\s*1\s*contrast\b/.test(t))).toBe(true);
+  });
+});
+
 test.describe("intervals", () => {
   /**
    * The prediction interval is the one statistic on this page that answers a
