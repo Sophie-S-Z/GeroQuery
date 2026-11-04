@@ -1,6 +1,7 @@
 """M3 harmonize — cross-study normalization & meta-analysis (public surface)."""
 
 from .batch import batch_variance, remove_batch_effect
+from .deming import DemingFit, deming_regression
 from .effect_size import EffectSize, cohens_d, hedges_g
 from .influence import LeaveOneOut, corpus_influence, leave_one_out
 from .meta import PooledEffect, random_effects
@@ -19,4 +20,6 @@ __all__ = [
     "LeaveOneOut",
     "leave_one_out",
     "corpus_influence",
+    "DemingFit",
+    "deming_regression",
 ]

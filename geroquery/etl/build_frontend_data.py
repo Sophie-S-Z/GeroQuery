@@ -315,6 +315,92 @@ def _annotate_pooled(pooled: pd.DataFrame) -> pd.DataFrame:
     return pooled
 
 
+def cross_species(pooled: pd.DataFrame) -> dict:
+    """Pair human and mouse pooled effects by ortholog group, and fit the line.
+
+    One point per ortholog group present in *both* species (§4.2). Where a group
+    has more than one pooled gene in a species — paralogues collapsed into one
+    orthology group — the best-measured one (largest k) represents it, so the
+    pairing is one-to-one and never silently averages two different genes.
+
+    The fitted line is Deming/orthogonal, computed here and shipped so the
+    browser draws it: an OLS line would be biased flat by the error on the x-axis
+    and would understate conservation. Concordance is read off the *verdicts*
+    (interval excludes zero), not the raw sign of a near-zero effect.
+    """
+    from ..harmonize.deming import deming_regression
+
+    annotated = pooled.dropna(subset=["ortholog_group"]).copy()
+    if annotated.empty:
+        return {"available": False, "reason": "no ortholog_group on the pooled table"}
+
+    # Best-measured gene per (group, species).
+    annotated = (
+        annotated.sort_values("k", ascending=False)
+        .drop_duplicates(["ortholog_group", "species"])
+        .set_index(["ortholog_group", "species"])
+    )
+
+    pairs = []
+    for group in annotated.index.get_level_values(0).unique():
+        try:
+            h = annotated.loc[(group, "human")]
+            m = annotated.loc[(group, "mouse")]
+        except KeyError:
+            continue  # not in both species
+        pairs.append(
+            {
+                "ortholog_group": group,
+                "symbol_human": h["symbol"],
+                "symbol_mouse": m["symbol"],
+                "g_human": float(h["g"]),
+                "g_mouse": float(m["g"]),
+                "verdict_human": h["verdict"],
+                "verdict_mouse": m["verdict"],
+            }
+        )
+
+    if len(pairs) < 3:
+        return {"available": False, "reason": f"only {len(pairs)} orthologous pairs"}
+
+    gx = np.array([p["g_human"] for p in pairs])
+    gy = np.array([p["g_mouse"] for p in pairs])
+    fit = deming_regression(gx, gy)
+
+    def _quadrant(p: dict) -> str:
+        vh, vm = p["verdict_human"], p["verdict_mouse"]
+        if vh == "no_evidence" or vm == "no_evidence":
+            return "unresolved"
+        if vh == vm:
+            return "both_up" if vh == "increases" else "both_down"
+        return "discordant"
+
+    quadrants: dict[str, int] = {"both_up": 0, "both_down": 0, "discordant": 0, "unresolved": 0}
+    for p in pairs:
+        quadrants[_quadrant(p)] += 1
+
+    return {
+        "available": True,
+        "n_pairs": len(pairs),
+        "deming": {
+            "slope": round(fit.slope, 4),
+            "intercept": round(fit.intercept, 4),
+            "slope_ci_low": round(fit.slope_ci_low, 4),
+            "slope_ci_high": round(fit.slope_ci_high, 4),
+        },
+        "quadrants": quadrants,
+        # Rounded for transport; the scatter draws these, it does not refit.
+        "pairs": [
+            {
+                **p,
+                "g_human": round(p["g_human"], 4),
+                "g_mouse": round(p["g_mouse"], 4),
+            }
+            for p in pairs
+        ],
+    }
+
+
 def prediction_interval_headline(pooled: pd.DataFrame) -> dict:
     """Count the honest headline: genes whose *prediction* interval clears zero.
 
@@ -510,6 +596,8 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     studies = [s.to_dict() for s in store.list_studies()]
     (out_dir / "studies.json").write_text(json.dumps(studies), encoding="utf-8")
 
+    (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
+
     crosslayer = _crosslayer_payload()
     (out_dir / "crosslayer.json").write_text(json.dumps(crosslayer), encoding="utf-8")
 
@@ -563,6 +651,7 @@ def enrich(out_dir: Path | None = None) -> dict:
 
     pooled = _annotate_pooled(pooled)
     pooled.to_parquet(out_dir / "pooled.parquet", index=False, compression="snappy")
+    (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
 
     contrasts, influence_ranking = add_influence(contrasts)
     contrasts.to_parquet(out_dir / "contrasts.parquet", index=False, compression="snappy")

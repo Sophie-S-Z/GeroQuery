@@ -431,6 +431,23 @@ main {
   font-family: var(--mono);
 }
 
+/* A corpus-level heading, same family as a gene symbol but a touch smaller —
+   the Gene view names one gene, these views name a question. */
+.section-title {
+  font-family: var(--mono);
+  font-size: clamp(1.5rem, 3.2vw, 2.1rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin: 0;
+}
+
+/* The qualifier beside a measurement, wherever it appears (not only the pooled
+   line). Recessive ink, so the number leads and the interval supports it. */
+.interval {
+  color: var(--ink-soft);
+}
+
 /* Instrument Serif, used here and almost nowhere else. This is the assertion. */
 .verdict {
   font-family: var(--serif);

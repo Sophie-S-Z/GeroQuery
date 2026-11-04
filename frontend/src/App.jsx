@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import CrossSpecies from "./components/CrossSpecies.jsx";
 import GeneView from "./components/GeneView.jsx";
 import Landscape from "./components/Landscape.jsx";
 import Mortality from "./components/Mortality.jsx";
@@ -13,6 +14,7 @@ const VIEWS = [
   ["gene", "Gene"],
   ["landscape", "Landscape"],
   ["certainty", "Certainty"],
+  ["crossspecies", "Cross-species"],
   ["panel", "Panel"],
   ["mortality", "Mortality"],
 ];
@@ -117,6 +119,10 @@ export default function App() {
             onPick={(gene) => update({ view: "gene", gene })}
             onSpecies={(species) => update({ species })}
           />
+        ) : null}
+
+        {state.view === "crossspecies" ? (
+          <CrossSpecies onPick={(gene) => update({ view: "gene", gene })} />
         ) : null}
 
         {state.view === "panel" ? <Panel /> : null}

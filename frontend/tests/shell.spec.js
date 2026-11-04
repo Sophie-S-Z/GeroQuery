@@ -1,7 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { ACCESSION, watchForErrors } from "./helpers.js";
 
-const VIEWS = ["gene", "landscape", "panel", "mortality"];
+// view key → a substring of its tab label (the key is not always the label,
+// e.g. "crossspecies" is shown as "Cross-species").
+const VIEWS = {
+  gene: "gene",
+  landscape: "landscape",
+  crossspecies: "cross-species",
+  panel: "panel",
+  mortality: "mortality",
+};
 
 /**
  * Bugs #9 and #10 were whole tabs that rendered but could never load anything —
@@ -11,12 +19,12 @@ const VIEWS = ["gene", "landscape", "panel", "mortality"];
  * page, and must do it without the console complaining.
  */
 test.describe("shell", () => {
-  for (const view of VIEWS) {
+  for (const [view, label] of Object.entries(VIEWS)) {
     test(`the ${view} view renders content and logs nothing`, async ({ page }) => {
       const problems = watchForErrors(page);
       await page.goto(`/?view=${view}`);
 
-      await expect(page.locator(`.tab[aria-selected="true"]`)).toHaveText(new RegExp(view, "i"));
+      await expect(page.locator(`.tab[aria-selected="true"]`)).toHaveText(new RegExp(label, "i"));
       // Something that took data to draw, not just a heading the bundle carries.
       await expect(
         page.locator(".chart svg, table tbody tr, .state-title").first(),

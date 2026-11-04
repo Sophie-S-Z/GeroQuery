@@ -543,6 +543,80 @@ def test_prediction_interval_headline_counts_the_honest_number():
     assert headline["n_pi_excludes_zero"] == 1
 
 
+def test_cross_species_pairs_by_ortholog_group_and_counts_concordance():
+    """§4.2: pair human and mouse by ortholog group, fit Deming, count quadrants.
+
+    Planted so the answer is known: three groups in both species, one where both
+    rise, one where both fall, one unresolved in mouse. The pairing must be on
+    the group (not symbol case), the Deming slope must come back finite, and the
+    quadrant tally must match the planted verdicts exactly.
+    """
+    import pandas as pd
+
+    from geroquery.etl.build_frontend_data import cross_species
+
+    def row(group, species, symbol, g, verdict, k=10):
+        return {
+            "gene_id": f"{group}:{species}",
+            "species": species,
+            "symbol": symbol,
+            "g": g,
+            "k": k,
+            "verdict": verdict,
+            "ortholog_group": group,
+        }
+
+    pooled = pd.DataFrame(
+        [
+            row("UP", "human", "UP", 0.8, "increases"),
+            row("UP", "mouse", "Up", 0.9, "increases"),
+            row("DOWN", "human", "DOWN", -0.7, "decreases"),
+            row("DOWN", "mouse", "Down", -0.6, "decreases"),
+            row("MIX", "human", "MIX", 0.5, "increases"),
+            row("MIX", "mouse", "Mix", 0.1, "no_evidence"),
+            # A human-only group — must not produce a pair.
+            row("SOLO", "human", "SOLO", 0.4, "increases"),
+        ]
+    )
+
+    result = cross_species(pooled)
+    assert result["available"]
+    assert result["n_pairs"] == 3  # UP, DOWN, MIX — not SOLO
+    assert result["quadrants"] == {
+        "both_up": 1,
+        "both_down": 1,
+        "discordant": 0,
+        "unresolved": 1,
+    }
+    # The fit is real (finite slope with an interval around it).
+    deming = result["deming"]
+    assert deming["slope_ci_low"] <= deming["slope"] <= deming["slope_ci_high"]
+    groups = {p["ortholog_group"] for p in result["pairs"]}
+    assert groups == {"UP", "DOWN", "MIX"}
+
+
+def test_the_committed_cross_species_is_internally_consistent():
+    """The shipped cross-species artifact, checked as data."""
+    data = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data"
+    path = data / "crossspecies.json"
+    if not path.exists():  # pragma: no cover
+        pytest.skip("crossspecies.json is not present")
+
+    payload = json.loads(path.read_text())
+    if not payload.get("available"):  # pragma: no cover
+        pytest.skip("cross-species not available in this build")
+
+    assert payload["n_pairs"] == len(payload["pairs"])
+    assert sum(payload["quadrants"].values()) == payload["n_pairs"]
+    d = payload["deming"]
+    assert d["slope_ci_low"] <= d["slope"] <= d["slope_ci_high"]
+    # Every pair carries a g in both species and a group it was paired on.
+    for pair in payload["pairs"][:50]:
+        assert pair["ortholog_group"]
+        assert isinstance(pair["g_human"], (int, float))
+        assert isinstance(pair["g_mouse"], (int, float))
+
+
 def test_the_committed_influence_is_internally_consistent():
     """The derived fields that actually ship, checked as data.
 
