@@ -125,7 +125,7 @@ telomeres shorten, and the sign is the check.
 |---|---|---|
 | **Python 3.10+** | everything | 3.13/3.14 fine for the core |
 | **Python 3.10–3.12** | the 240 real clocks only | `ecos` has no 3.14 wheel — see [Troubleshooting](#troubleshooting) |
-| **Node.js 18+** | the static web front end | |
+| **Node.js 20.19+ or 22.12+** | the static web front end | Vite 8 needs it; CI uses 22 |
 | **git** | cloning | |
 
 ### The fastest path — no network, no downloads
