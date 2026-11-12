@@ -9,7 +9,7 @@ suite.
 
 ## What this revamp was
 
-The product is the **static React explorer in `frontend/`** — React 18 + Vite 5 +
+The product is the **static React explorer in `frontend/`** — React 18 + Vite 8 +
 Observable Plot + hyparquet, reading two Parquet files and a handful of JSON in
 the browser, no backend. The Python side is an ETL that turns real upstreams
 (GEO transcriptome contrasts, NHANES clinical + DNAm, HAGR curated data,

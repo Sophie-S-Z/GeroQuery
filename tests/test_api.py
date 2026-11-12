@@ -2,6 +2,7 @@
 
 import io
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -275,6 +276,56 @@ def test_csd_does_not_claim_evidence_on_underpowered_real_sample(client):
     assert r["variance_evidence"]["ci_low"] < 0 < r["variance_evidence"]["ci_high"]
     assert r["variance_evidence"]["supported"] is False
     assert r["resilience_declines"] is False
+
+
+def test_inline_csd_infers_the_same_biomarkers_as_a_dataset(client):
+    """The dashboard's upload path once listed its own columns and let
+    survey_weight into the health state."""
+    records = [
+        {
+            "subject_id": f"s{i}",
+            "age": 20 + i % 60,
+            "survey_weight": 1000.0 + i,
+            "rdw": float(rdw),
+            "crp": float(crp),
+        }
+        for i, (rdw, crp) in enumerate(np.random.default_rng(0).normal(10, 1, (60, 2)))
+    ]
+    r = client.post("/v1/resilience/csd", json={"data": {"records": records}, "n_strata": 6})
+    assert r.json()["biomarker_cols"] == ["rdw", "crp"]
+
+    # One marker has no cross-correlation: a 422, not an unserializable NaN (500).
+    for row in records:
+        del row["crp"]
+    r = client.post("/v1/resilience/csd", json={"data": {"records": records}, "n_strata": 6})
+    assert r.status_code == 422
+
+
+@pytest.mark.parametrize("bad", [None, "high"])
+def test_csd_rejects_missing_or_non_numeric_values_with_a_422(client, bad):
+    """One NaN used to make every stratum variance NaN and the response unwritable
+    (500); a string used to fail the float cast (500)."""
+    records = [
+        {"age": 20 + i % 60, "albumin": 4.0 + (i % 7) / 10, "glucose": 90.0 + i % 11}
+        for i in range(60)
+    ]
+    records[5]["albumin"] = bad
+    r = client.post("/v1/resilience/csd", json={"data": {"records": records}, "n_strata": 6})
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "resilience_input_error"
+
+
+@pytest.mark.parametrize(
+    "path,body",
+    [
+        ("/v1/clock/apply", {"clock_id": "phenoage"}),
+        ("/v1/resilience/csd", {}),
+    ],
+)
+def test_matrix_with_mismatched_sample_ids_is_a_422(client, path, body):
+    matrix = {"records": [{"age": 50.0}, {"age": 60.0}], "sample_ids": ["only-one"]}
+    key = "data" if path.endswith("csd") else "matrix"
+    assert client.post(path, json={**body, key: matrix}).status_code == 422
 
 
 def test_resilience_recovery_endpoint(client):

@@ -81,12 +81,18 @@ export default function Overview({ onNavigate }) {
       title: "Human and mouse rarely resolve the same gene",
       body: `Of ${fmtInt(crossspecies.n_pairs)} orthologs measured in both species, only ${
         crossspecies.quadrants.both_up + crossspecies.quadrants.both_down
-      } have a direction in both at once — and none disagree.`,
+      } have a direction in both at once — and ${
+        crossspecies.quadrants.discordant === 0
+          ? "none disagree"
+          : `${fmtInt(crossspecies.quadrants.discordant)} disagree`
+      }.`,
       cue: "See the cross-species scatter →",
     },
     crosslayer?.available && {
       view: "mortality",
-      title: "A health state beats nine of ten aging clocks",
+      title: `A health state beats ${
+        crosslayer.clocks.filter((row) => row.c_dysregulation > row.c_clock).length
+      } of ${crosslayer.clocks.length} aging clocks`,
       body: `In ${fmtInt(crosslayer.n_subjects)} adults with ${fmtInt(
         crosslayer.n_deaths,
       )} deaths, six routine blood markers predict mortality better than most DNA-methylation clocks.`,
@@ -128,7 +134,7 @@ export default function Overview({ onNavigate }) {
             That is the honest headline. {fmtInt(pi.n_ci_excludes_zero)} genes clear the usual
             confidence interval — where the <em>mean</em> effect lies — but only{" "}
             {fmtInt(pi.n_pi_excludes_zero)} clear the prediction interval, where the effect of one
-            more study would land. GeroQuery pools {fmtInt(meta.n_genes)} genes from{" "}
+            more study would land. GeroQuery pools {fmtInt(meta.n_pooled)} genes from{" "}
             {meta.n_studies} contrasts and shows you which, and why — every number computed in
             Python and read, never re-derived, by this page.
           </p>
@@ -180,7 +186,7 @@ export default function Overview({ onNavigate }) {
           sign rate — the probability its <em>direction</em> is wrong. Cross-species agreement uses a
           Deming (errors-in-both-variables) fit; the mortality result is a survey-weighted Cox model
           with a design-based sandwich variance, plus weighted Kaplan-Meier curves and restricted
-          mean survival time. Every one of these is computed in Python by the estimator the API
+          mean survival time when the cohort build carries them. Every one of these is computed in Python by the estimator the API
           serves and shipped in the Parquet/JSON; this page renders them and never re-derives them,
           so the website, the API and the MCP tool cannot disagree about what a gene&rsquo;s answer
           is.

@@ -11,6 +11,25 @@ import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "geroquery-theme";
 
+// localStorage throws (SecurityError) when the browser blocks site data. The
+// theme choice is a convenience, so a failure falls back to the system theme.
+function stored() {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function store(value) {
+  try {
+    if (value) localStorage.setItem(STORAGE_KEY, value);
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Not persisted; the choice still holds for this page load.
+  }
+}
+
 /** Resolved design tokens, for canvas/SVG contexts that cannot use var(). */
 export function css() {
   const style = getComputedStyle(document.documentElement);
@@ -20,7 +39,6 @@ export function css() {
     inkSoft: read("--ink-soft"),
     inkFaint: read("--ink-faint"),
     paper: read("--paper"),
-    paperRaised: read("--paper-raised"),
     rule: read("--rule"),
     up: read("--up"),
     down: read("--down"),
@@ -42,7 +60,7 @@ export function css() {
  */
 export function useTheme() {
   const [choice, setChoice] = useState(
-    () => localStorage.getItem(STORAGE_KEY) ?? "system",
+    () => stored() ?? "system",
   );
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia("(prefers-color-scheme: dark)").matches,
@@ -60,10 +78,10 @@ export function useTheme() {
   useEffect(() => {
     if (choice === "system") {
       document.documentElement.removeAttribute("data-theme");
-      localStorage.removeItem(STORAGE_KEY);
+      store(null);
     } else {
       document.documentElement.setAttribute("data-theme", choice);
-      localStorage.setItem(STORAGE_KEY, choice);
+      store(choice);
     }
   }, [choice]);
 

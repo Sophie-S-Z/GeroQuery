@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install the package.
 COPY pyproject.toml README.md ./
 COPY geroquery ./geroquery
+COPY .streamlit ./.streamlit
 RUN pip install --no-cache-dir .
 
 # Materialize the bundled data slice at build time so first request is fast.

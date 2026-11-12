@@ -55,6 +55,7 @@ import pandas as pd
 
 from ..config import SOURCES_DATA
 from ..exceptions import SourceError
+from . import nhanes
 from .base import Capabilities, License, SourceAdapter
 from .fetch import fetch_artifact
 from .manifest import NHANES_1999_2002, NHANES_DNAM, NHANES_MORTALITY, VERIFIED_ON
@@ -125,17 +126,10 @@ CYCLES: tuple[Cycle, ...] = (
     ),
 )
 
-# The six-marker health state, identical to nhanes.MARKERS so the resilience
-# module sees the same state variable it was validated on. Do not widen: see the
+# The six-marker health state: nhanes.MARKERS itself, so the resilience module
+# sees the same state variable it was validated on. Do not widen: see the
 # warning on nhanes.MARKER_MAP.
-MARKERS: tuple[str, ...] = (
-    "albumin",
-    "creatinine",
-    "glucose",
-    "crp",
-    "lymphocyte_pct",
-    "rdw",
-)
+MARKERS: tuple[str, ...] = nhanes.MARKERS
 
 PHENOAGE_ONLY_MARKERS: tuple[str, ...] = ("mcv", "wbc", "alp")
 PHENOAGE_MARKERS: tuple[str, ...] = MARKERS + PHENOAGE_ONLY_MARKERS

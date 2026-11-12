@@ -193,8 +193,8 @@ and `n_studies` were decorative when the inputs were manufactured to agree.
    there is one blood contrast (n = 9) and no proteome or methylome at all. The
    `omic_layer` column reads `transcriptome` for every row.
 4. **Cross-study processing heterogeneity is uncorrected.** Twelve platforms,
-   three decades of normalization practice. `harmonize/batch.py` exists but is not
-   applied across studies — this is exactly the confound recount3 would remove.
+   three decades of normalization practice. No batch correction is applied across
+   studies — this is exactly the confound recount3 would remove.
 5. **Some studies share subjects.** 32 contrasts come from 27 GEO Series: GEO
    splits some experiments across two array halves (GDS287/GDS288,
    GDS355/GDS356, GDS472/GDS473, GDS2961/GDS2962). A random-effects pool assumes

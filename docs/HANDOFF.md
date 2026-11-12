@@ -4,6 +4,12 @@
 **Manifest:** 2026.3 (checksums verified 2026-08-05)
 **Gate:** ruff · black · mypy clean · **436 Python tests + 15 live + 34 Playwright**
 
+> **Read the 2026-11 documents first for the front end.** This snapshot predates
+> the React revamp, so its notes that `frontend/` is a stub, that results cannot
+> be linked, and that the React site is not repointed are out of date. Current
+> state: [`HANDOFF_REVAMP_2026-11.md`](HANDOFF_REVAMP_2026-11.md) and
+> [`CODE_REVIEW_2026-11.md`](CODE_REVIEW_2026-11.md).
+
 > **2026-08-06 session, second.** → [`HANDOFF_2026-08-06b.md`](HANDOFF_2026-08-06b.md).
 > Bug #20 turned out to be fixed on **four of six** interval columns, and the
 > research produced two results that changed the work rather than only recording
@@ -660,7 +666,10 @@ pre-merge state.
 
 | Document | What it is |
 |---|---|
-| **`HANDOFF.md`** | This document. Authoritative |
+| **`HANDOFF.md`** | This document. Authoritative for the Python side as of 2026-08-06 |
+| **`HANDOFF_REVAMP_2026-11.md`** | The React front end, as it now ships |
+| **`CODE_REVIEW_2026-11.md`** | The 2026-11 code review and what it changed |
+| `HANDOFF_2026-08-06.md` | Session record |
 | **`VISUAL_AND_STATISTICAL_PLAN.md`** | The next layer of charts and statistics — what to build, and what not to |
 | **`HANDOFF_2026-08-06b.md`** | Shrinkage, the lfsr, the Certainty view, bug #20's residual |
 | **`ROADMAP.md`** | Where this goes next, and why. Supersedes §10 |

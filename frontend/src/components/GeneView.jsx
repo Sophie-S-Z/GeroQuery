@@ -29,6 +29,7 @@ function QueryRail({ symbol, onPick }) {
 
   useEffect(() => {
     let live = true;
+    setError(null);
     if (debounced.length < 1) {
       setResults([]);
       return undefined;
@@ -47,8 +48,9 @@ function QueryRail({ symbol, onPick }) {
   const bySymbol = [];
   const seen = new Set();
   for (const row of results) {
-    if (seen.has(row.symbol)) continue;
-    seen.add(row.symbol);
+    const key = row.symbol.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
     bySymbol.push(row);
   }
 
@@ -70,7 +72,7 @@ function QueryRail({ symbol, onPick }) {
         }}
       />
       <p className="rail-hint">
-        Symbol or alias. 41,983 genes have three or more contrasts and can be pooled.
+        Gene symbol, matched by prefix. Only genes with three or more contrasts are pooled.
       </p>
       {error ? <p className="error">{error}</p> : null}
       {bySymbol.length ? (
@@ -146,8 +148,8 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
               {symbol} is not in this panel, or has fewer than three contrasts in {species}.
             </p>
             <p className="note" style={{ maxWidth: "42ch", margin: "0.8rem auto 0" }}>
-              That is different from finding no effect. The panel is 32 contrasts from 27 GEO
-              Series; a gene absent from it was never measured here.
+              That is different from finding no effect. The panel is a fixed set of GEO
+              contrasts; a gene absent from it was never measured here.
             </p>
           </div>
         ) : null}

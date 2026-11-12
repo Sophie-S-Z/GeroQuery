@@ -1,9 +1,11 @@
 [theme]
-base = "light"
-primaryColor = "#4f46e5"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f6f7fb"
-textColor = "#1f2430"
+# Matches the DARK palette in geroquery/ui/theme.py, the dashboard default, so
+# native widgets do not keep the colours of an earlier design.
+base = "dark"
+primaryColor = "#d4a24c"
+backgroundColor = "#12110f"
+secondaryBackgroundColor = "#1a1917"
+textColor = "#f2ede3"
 font = "sans serif"
 
 [server]

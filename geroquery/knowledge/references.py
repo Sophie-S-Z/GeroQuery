@@ -32,11 +32,6 @@ class Reference:
     pmid: str | None = None
 
     @property
-    def short(self) -> str:
-        """A compact in-text citation, e.g. 'Krishnamurthy et al., 2004'."""
-        return f"{self.authors}, {self.year}"
-
-    @property
     def url(self) -> str:
         if self.pmid:
             return f"https://pubmed.ncbi.nlm.nih.gov/{self.pmid}/"
@@ -290,7 +285,3 @@ _REFS: list[Reference] = [
 ]
 
 REFERENCES: dict[str, Reference] = {r.key: r for r in _REFS}
-
-
-def ref(key: str) -> Reference:
-    return REFERENCES[key]

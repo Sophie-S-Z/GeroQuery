@@ -114,6 +114,12 @@ def test_dietary_restriction_is_the_one_intervention_with_real_gene_links(store)
     mouse = next(i for i in dr if i.organism == "Mus musculus")
     assert mouse.source == "GenDR" and mouse.itype == "dietary"
     assert len(mouse.linked_gene_ids) >= 5
+    # Each record links only genes of its own organism. A symbol-only lookup
+    # used to give the yeast record human PCK1 and the mouse record human SIRT1.
+    assert all(g.startswith("ENSMUSG") for g in mouse.linked_gene_ids)
+    for record in dr:
+        if record.organism not in ("Homo sapiens", "Mus musculus"):
+            assert record.linked_gene_ids == (), record.organism
 
 
 def test_dataset_load_and_missing(store):
@@ -164,6 +170,24 @@ def test_version_is_reproducible(tmp_path):
     q1 = s1.query_signatures(gene_id="ENSG00000113368")
     q2 = s2.query_signatures(gene_id="ENSG00000113368")
     assert [x.to_dict() for x in q1] == [x.to_dict() for x in q2]
+
+
+def test_rebuild_drops_partitions_the_new_data_does_not_have(tmp_path):
+    """A rebuild replaces the signature table; it must not merge with the last one.
+
+    DuckDB's OVERWRITE_OR_IGNORE only overwrites the partitions it writes, so a
+    partition from an earlier build (here a planted one) used to survive and
+    keep answering queries, the snapshot and the static-site export.
+    """
+    store = GeroStore(data_home=tmp_path).build()
+    stale = store.sig_dir / "species=mouse" / "omic_layer=proteome"
+    stale.mkdir(parents=True)
+    source = next(store.sig_dir.glob("species=human/omic_layer=transcriptome/*.parquet"))
+    (stale / "data_0.parquet").write_bytes(source.read_bytes())
+
+    store.build()
+    assert not stale.exists()
+    assert store.query_signatures(species="mouse", omic_layer="proteome") == []
 
 
 # ---- the store path is data, not syntax (bug #25) --------------------------

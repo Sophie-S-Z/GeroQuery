@@ -92,6 +92,10 @@ export default function Mortality() {
   }
 
   const best = data.clocks[0];
+  // Counted from the shipped rows, not typed: a rebuild can move them.
+  const nClocks = data.clocks.length;
+  const nBeaten = data.clocks.filter((row) => row.c_dysregulation > row.c_clock).length;
+  const nSmallerUnweighted = data.clocks.filter((row) => row.hr_sample < row.hr).length;
 
   return (
     <>
@@ -175,9 +179,10 @@ export default function Mortality() {
           clocks tell you anything six routine blood tests do not — and that survives weighting.
         </p>
         <p className="note" style={{ marginTop: "0.6rem" }}>
-          The unweighted column is smaller than the weighted one for every clock. The DNAm
-          subsample under-represents the higher-risk part of the population, so the sample estimate
-          understates the effect rather than exaggerating it. Intervals use the Taylor-linearized
+          The unweighted column is smaller than the weighted one for {nSmallerUnweighted} of the{" "}
+          {nClocks} clocks. The DNAm subsample under-represents the higher-risk part of the
+          population, so the sample estimate mostly understates the effect rather than
+          exaggerating it. Intervals use the Taylor-linearized
           design variance; the median design effect is close to 1, so clustering costs little here
           and almost all of the change is the weighting.
         </p>
@@ -188,8 +193,8 @@ export default function Mortality() {
         <p className="note">
           Age and sex alone reach C ={" "}
           <strong className="mono">{best?.c_baseline}</strong>. The health state alone reaches{" "}
-          <strong className="mono">{best?.c_dysregulation}</strong> — better than nine of the ten
-          clocks. Together with the strongest clock, C ={" "}
+          <strong className="mono">{best?.c_dysregulation}</strong> — better than {nBeaten} of the{" "}
+          {nClocks} clocks. Together with the strongest clock, C ={" "}
           <strong className="mono">{best?.c_joint}</strong>.
         </p>
         <p className="note" style={{ marginTop: "0.6rem" }}>

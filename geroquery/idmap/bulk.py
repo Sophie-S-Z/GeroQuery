@@ -137,10 +137,11 @@ def resolve_bulk(
             if resolved[key] is None:
                 resolved[key] = record
         mapping.update(resolved)
+        # Saved per batch, so a network failure part-way keeps the finished
+        # batches and the next run sends only what is still missing.
+        _save(path, mapping)
         if progress:
             done = min(start + MAX_BATCH, len(missing))
             print(f"  idmap {species}: {done}/{len(missing)} resolved", flush=True)
 
-    if missing:
-        _save(path, mapping)
     return {q: mapping.get(q) for q in wanted}

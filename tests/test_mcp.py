@@ -22,22 +22,21 @@ from geroquery.mcp.server import SERVER_INSTRUCTIONS, TOOL_SCHEMAS
 # --- the verdict rule --------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    ("ci_low", "ci_high", "expected"),
-    [
-        (0.55, 1.59, "increases"),
-        (-1.20, -0.30, "decreases"),
-        # The CDKN2A case: a positive point estimate whose interval spans zero.
-        # Reporting this as a small increase is the single most damaging thing
-        # this tool could do.
-        (-0.20, 0.35, "no_evidence"),
-        (-0.01, 2.00, "no_evidence"),
-        (0.0, 1.0, "no_evidence"),
-        (None, None, "no_evidence"),
-    ],
-)
-def test_verdict_follows_the_interval_not_the_point_estimate(ci_low, ci_high, expected):
-    assert tools._verdict({"ci_low": ci_low, "ci_high": ci_high}) == expected
+def test_the_overall_verdict_never_speaks_for_a_species_it_did_not_measure():
+    """With no species given, both are pooled. The top-level verdict used to be
+    whichever entry sorted first, so a human null hid a mouse decrease."""
+    result = tools.gene_aging_signature("ENSG00000002746")
+    per_species = {m["species"]: m["verdict"] for m in result["pooled"]}
+    assert len(set(per_species.values())) > 1, per_species
+    assert result["verdict"] == "mixed"
+
+
+def test_each_pooled_verdict_is_the_one_the_api_ships(service):
+    """One rule, in PooledEffect.verdict; the tool only passes it on."""
+    raw = service.gene_signature("CDKN1A")
+    shipped = {(m["species"], m["omic_layer"]): m["verdict"] for m in raw["meta_signatures"]}
+    result = tools.gene_aging_signature("CDKN1A", service=service)
+    assert {(m["species"], m["omic_layer"]): m["verdict"] for m in result["pooled"]} == shipped
 
 
 def test_cdkn2a_returns_no_evidence_with_its_interval_intact():

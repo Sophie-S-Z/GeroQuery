@@ -137,22 +137,23 @@ def build_genes(*, allow_network: bool | None = None, quiet: bool = False) -> di
     paths = {key: fetch_artifact(HAGR[key], allow_network=allow_network) for key in HAGR}
     assertions = hagr.load_assertions(paths)
 
-    # Entrez first, symbol only as a fallback (LongevityMap indexes by symbol).
+    # Entrez first, within the assertion's own species (LongevityMap has none).
     by_species: dict[str, set[str]] = {"human": set(), "mouse": set()}
-    symbol_only: set[str] = set()
+    symbols: set[str] = set()
     for item in assertions:
         if not item.species:
             continue
+        symbols.add(item.symbol)
         if item.entrez and item.entrez.isdigit():
             by_species[item.species].add(item.entrez)
-        else:
-            symbol_only.add(item.symbol)
 
-    # HAGR curates mostly human genes. Querying every symbol against mouse too is
-    # what makes the offline table cross-species, which the ortholog view needs.
+    # HAGR curates mostly human genes. Querying every symbol against both species
+    # is what makes the offline table cross-species, which the ortholog view
+    # needs. Only symbol-only assertions used to be queried this way, so about a
+    # thousand Entrez-keyed human genes had no mouse record at all.
     records: dict[str, dict] = {}
     for species in ("human", "mouse"):
-        queries = sorted(by_species[species] | symbol_only)
+        queries = sorted(by_species[species] | symbols)
         resolved = resolve_bulk(queries, species, allow_network=allow_network, progress=not quiet)
         for query, record in resolved.items():
             if record is None:

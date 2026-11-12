@@ -18,6 +18,9 @@ function read() {
     const value = params.get(key);
     if (value) state[key] = value;
   }
+  // Links shared before the overview became the default carry only `gene`,
+  // because `view=gene` was then the default and was omitted. Keep them working.
+  if (params.has("gene") && !params.has("view")) state.view = "gene";
   return state;
 }
 

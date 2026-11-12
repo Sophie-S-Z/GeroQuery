@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as Plot from "@observablehq/plot";
 import { css } from "../lib/theme.js";
 
@@ -19,7 +19,7 @@ import { css } from "../lib/theme.js";
  */
 export default function SurvivalCurves({ survival }) {
   const host = useRef(null);
-  const quartiles = survival?.quartiles ?? [];
+  const quartiles = useMemo(() => survival?.quartiles ?? [], [survival]);
 
   useEffect(() => {
     if (!host.current || quartiles.length < 2) return undefined;

@@ -22,10 +22,7 @@ through under its own label rather than defaulted to ``chronological_age``.
 biolearn expects features as rows and samples as columns. The transpose happens
 here so callers never have to know.
 
-pyaging is deliberately *not* wrapped. It requires torch and ships its clocks as
-downloaded model artifacts, so a wrapper that cannot be exercised in CI would be
-untested code claiming real-clock support. Adding it is tracked work, not a
-silent gap.
+pyaging clocks are wrapped separately, in :mod:`geroquery.clocks.pyaging_clocks`.
 """
 
 from __future__ import annotations
@@ -91,8 +88,8 @@ MODEL_TYPE_INPUT: dict[str, tuple[str, str]] = {
 MAX_ADVERTISED_FEATURES = 50
 
 
-def _slug(text: str) -> str:
-    return "".join(c if c.isalnum() else "_" for c in text.strip().lower()).strip("_")
+def _slug(text: object) -> str:
+    return "".join(c if c.isalnum() else "_" for c in str(text).strip().lower()).strip("_")
 
 
 def map_outcome(output: str | None) -> str:

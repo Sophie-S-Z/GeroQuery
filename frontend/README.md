@@ -6,11 +6,13 @@ A static site. No server, no API, no runtime dependency on anything but a CDN.
 Python (offline)                    browser
 ─────────────────────────────       ──────────────────────────
 GeroStore ─┐
-           ├─ random_effects ──► pooled.parquet    ─┐
-           │                     contrasts.parquet ─┤
-survival/ ─┴─ Cox + LR tests  ──► crosslayer.json  ─┼─► hyparquet ─► React + Observable Plot
-                                  studies.json     ─┤
-                                  meta.json        ─┘
+           ├─ random_effects ──► pooled.parquet        ─┐
+           │                     contrasts.parquet     ─┤
+           ├─ Deming fit     ──► crossspecies.json     ─┤
+           ├─ leave-one-out  ──► influence_corpus.json ─┼─► hyparquet ─► React + Observable Plot
+survival/ ─┴─ Cox + LR tests  ──► crosslayer.json      ─┤
+                                  studies.json         ─┤
+                                  meta.json            ─┘
 ```
 
 **Every statistic is computed in Python.** The browser filters, sorts, bins and
@@ -33,7 +35,7 @@ npm install
 npm run dev            # http://localhost:5173
 
 # 3. Production build
-npm run build          # -> dist/, 8.2 MB total
+npm run build          # -> dist/, about 11 MB total
 ```
 
 Or from the repo root: `make frontend-data` then `make frontend`.
@@ -47,19 +49,20 @@ Free, unlimited bandwidth, no credit card, does not sleep.
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 | Root directory | `frontend` |
-| Node version | 20 or later |
+| Node version | 20.19+ or 22.12+ (Vite 8); set `NODE_VERSION` = `22` |
 
-`public/_headers` is picked up automatically and sets caching plus
-`Accept-Ranges`. Nothing else is needed — there is no server to configure and no
+`public/_headers` is picked up automatically and sets caching. Nothing else is
+needed — there is no server to configure and no
 environment variable to set.
 
 The data files must exist before the build. Either commit
 `frontend/public/data/` or run the export in CI ahead of `npm run build`; the
 build does not generate them.
 
-**GitHub Pages** works identically (`dist/` is plain static files). If deploying
-to a subpath, set `base` in `vite.config.js`; `DATA_BASE` in `src/lib/db.js`
-already honours `import.meta.env.BASE_URL`.
+**GitHub Pages** works identically (`dist/` is plain static files). To deploy to
+a subpath, set the `BASE_PATH` environment variable for the build (the Pages
+workflow sets `/GeroQuery/`); `DATA_BASE` in `src/lib/db.js` follows
+`import.meta.env.BASE_URL`.
 
 ## Why not DuckDB-WASM
 
@@ -93,11 +96,18 @@ src/
   lib/theme.js            light/dark, and resolved tokens for SVG contexts
   lib/format.js           signed effects, intervals, p-value floors
   components/
+    Overview.jsx          landing view: the headline findings
     GeneView.jsx          search rail + readout + contrast table
     ForestPlot.jsx        the signature chart
+    LeaveOneOut.jsx       which contrast carries a gene's pooled result
+    TissueFacets.jsx      one gene's contrasts, split by tissue
     Landscape.jsx         the whole corpus, binned by verdict
-    Panel.jsx             32 contrasts, with the selection rule printed
+    Volcano.jsx           effect against local false sign rate
+    CrossSpecies.jsx      human against mouse, with the Deming fit
+    Panel.jsx             the contrasts, with the selection rule printed
+    CorpusInfluence.jsx   which contrast moves the whole corpus most
     Mortality.jsx         the cross-layer survival result
+    SurvivalCurves.jsx    weighted Kaplan-Meier curves, when the data has them
 ```
 
 ## Design notes
@@ -138,6 +148,5 @@ directions.
 - The corpus loads whole (6.8 MB) on first query. Fine on desktop and on a
   decent phone connection; a 2G user waits. Splitting `contrasts.parquet` per
   species would halve it and is the obvious next step.
-- No test suite. Playwright against the built `dist` is the right harness and
-  is not written yet — worth doing, given the repo's history of UI bugs that a
-  green Python suite did not catch.
+- Tests: `npx playwright test` runs the Playwright suite in `tests/` against the
+  built `dist` (`vite preview`), and CI runs it on every pull request.

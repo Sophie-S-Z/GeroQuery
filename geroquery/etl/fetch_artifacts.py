@@ -13,19 +13,22 @@ import argparse
 
 from ..exceptions import SourceError
 from ..sources.fetch import fetch_all
-from ..sources.manifest import MANIFEST, MANIFEST_VERSION, VERIFIED_ON
+from ..sources.manifest import MANIFEST, MANIFEST_VERSION, METHYLATION_PANEL, VERIFIED_ON
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Fetch and verify pinned data artifacts.")
-    parser.add_argument("keys", nargs="*", help="manifest keys (default: all)")
+    parser.add_argument(
+        "keys", nargs="*", help="manifest keys (default: all but the methylation panel)"
+    )
     parser.add_argument("--force", action="store_true", help="re-download even if cached")
     parser.add_argument(
         "--offline", action="store_true", help="fail instead of downloading on a cache miss"
     )
     args = parser.parse_args(argv)
 
-    keys = args.keys or sorted(MANIFEST)
+    # The methylation panel (~358 MB) feeds no build step; fetch it by key only.
+    keys = args.keys or sorted(k for k in MANIFEST if k not in METHYLATION_PANEL)
     print(f"manifest {MANIFEST_VERSION} (checksums verified {VERIFIED_ON})")
     try:
         paths = fetch_all(

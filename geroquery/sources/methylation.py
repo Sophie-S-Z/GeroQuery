@@ -44,7 +44,6 @@ import pandas as pd
 from ..exceptions import SourceError
 
 GSE_FTP_ROOT = "https://ftp.ncbi.nlm.nih.gov/geo/series"
-GSE_BROWSER = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc="
 
 LICENSE = "NCBI GEO — US public domain, attribute"
 
@@ -82,10 +81,6 @@ class MethylationSeries:
             f"{GSE_FTP_ROOT}/{shard}/{self.accession}/matrix/"
             f"{self.accession}_series_matrix.txt.gz"
         )
-
-    @property
-    def browser_url(self) -> str:
-        return f"{GSE_BROWSER}{self.accession}"
 
 
 SERIES: dict[str, MethylationSeries] = {
@@ -352,12 +347,3 @@ def read_series(
     dropped["cpgs_total"] = before
 
     return MethylationDataset(series=series, betas=betas, metadata=metadata, dropped=dropped)
-
-
-def get_series(accession: str) -> MethylationSeries:
-    try:
-        return SERIES[accession]
-    except KeyError:
-        raise KeyError(
-            f"Unknown methylation series {accession!r}. Known: {sorted(SERIES)}"
-        ) from None

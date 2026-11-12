@@ -102,8 +102,9 @@ export default function TissueFacets({ contrasts, pooled, symbol }) {
       return panel;
     });
 
-    host.current.replaceChildren(...charts);
-    return () => host.current?.replaceChildren();
+    const node = host.current;
+    node.replaceChildren(...charts);
+    return () => node.replaceChildren();
   }, [contrasts, pooled, symbol]);
 
   if (!contrasts?.length) return null;

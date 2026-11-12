@@ -17,6 +17,9 @@ from ..exceptions import ClockInputError
 from ..models import ClockInfo
 from .registry import ClockRegistry, get_registry
 
+# Outcomes measured in years of age, for which prediction minus age is meaningful.
+AGE_OUTCOMES = frozenset({"chronological_age", "biological_age"})
+
 
 @dataclass
 class ClockResult:
@@ -59,6 +62,19 @@ class ClockService:
         clock = self.registry.get(clock_id)
         if matrix is None or len(matrix) == 0:
             raise ClockInputError("Input matrix is empty.", detail={"clock_id": clock_id})
+        # A clock that takes age as a feature (PhenoAge) reads it from the matrix,
+        # so an age given separately has to go there too, not only into metadata.
+        if (
+            chronological_age is not None
+            and "age" in clock.info.required_features
+            and "age" not in matrix.columns
+        ):
+            if len(chronological_age) != len(matrix):
+                raise ClockInputError(
+                    "chronological_age length does not match number of samples.",
+                    detail={"n_ages": len(chronological_age), "n_samples": len(matrix)},
+                )
+            matrix = matrix.assign(age=np.asarray(chronological_age, dtype=float))
 
         metadata = self._build_metadata(matrix, chronological_age, sample_metadata)
         predictions = _predict(clock, matrix, metadata)
@@ -89,7 +105,8 @@ class ClockService:
         chrono = chronological_age
         if chrono is None and "age" in matrix.columns:
             chrono = matrix["age"].tolist()
-        if chrono is not None and clock.info.predicted_outcome == "chronological_age":
+        # Both outcomes are ages in years; pyaging labels phenotypic age `biological_age`.
+        if chrono is not None and clock.info.predicted_outcome in AGE_OUTCOMES:
             chrono_arr = np.asarray(chrono, dtype=float)
             if len(chrono_arr) != len(predictions):
                 raise ClockInputError(

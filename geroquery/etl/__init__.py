@@ -1,6 +1,6 @@
-"""Offline, batch, versioned ETL that regenerates the harmonized data layer.
+"""Offline, batch ETL that builds the data layer. Never on the request path.
 
-Never on the request path. `build_fixtures.build_all()` writes the bundled,
-redistributable demonstration slice; the production ETL swaps the synthetic
-generators for live GEO/GTEx/recount3 harvests behind the same output schema.
+Each step is a ``python -m geroquery.etl.<module>`` target; the Makefile's
+``data``, ``signatures``, ``idmap``, ``crosslayer`` and ``frontend-data`` targets
+run them in order.
 """

@@ -41,7 +41,6 @@
   --down: #2b4585;
   --null: #7b776f;
   --up-wash: rgba(168, 72, 26, 0.12);
-  --down-wash: rgba(43, 69, 133, 0.12);
 
   /* Sequential single-hue ramp (the cool/--down hue), light→dark, for ordered
      magnitude only — the four dysregulation quartiles on the survival curves.
@@ -89,7 +88,6 @@
      in both themes, not by eye — docs/VISUAL_AND_STATISTICAL_PLAN.md §6. */
   --null: #7d7568;
   --up-wash: rgba(232, 131, 74, 0.15);
-  --down-wash: rgba(134, 168, 234, 0.15);
   --seq-1: #39486a;
   --seq-2: #53709f;
   --seq-3: #7093c9;
@@ -117,7 +115,6 @@
        collapsed verdict colours. Verified by `node frontend/validate_palette.js`. */
     --null: #7d7568;
     --up-wash: rgba(232, 131, 74, 0.15);
-    --down-wash: rgba(134, 168, 234, 0.15);
     /* Dark surface: the ramp runs dim→bright as the quartile rises. */
     --seq-1: #39486a;
     --seq-2: #53709f;
@@ -393,14 +390,6 @@ main {
   font-family: var(--mono);
   font-size: 0.85rem;
   font-weight: 500;
-}
-
-.result-species {
-  font-size: 0.64rem;
-  color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-left: 0.4rem;
 }
 
 .result-effect {

@@ -107,6 +107,9 @@ class MetaSignature:
     omic_layer: str
     species: str
     pooled_effect: float
+    # The DerSimonian-Laird standard error. It does NOT generate ``ci_low``,
+    # ``ci_high`` or ``p_value``, which use the Hartung-Knapp variance and a t
+    # reference, so ``pooled_effect / standard_error`` is not the reported test.
     standard_error: float
     ci_low: float
     ci_high: float

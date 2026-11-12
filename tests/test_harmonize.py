@@ -4,12 +4,7 @@ import numpy as np
 import pytest
 from scipy import stats
 
-from geroquery.harmonize import (
-    batch_variance,
-    hedges_g,
-    random_effects,
-    remove_batch_effect,
-)
+from geroquery.harmonize import hedges_g, random_effects
 from geroquery.harmonize.meta import PooledEffect
 
 
@@ -170,28 +165,6 @@ def test_widening_the_interval_can_only_retract_a_verdict_never_create_one():
         dl_claims = pooled.ci_low_dl > 0 or pooled.ci_high_dl < 0
         reported_claims = pooled.ci_low > 0 or pooled.ci_high < 0
         assert not (reported_claims and not dl_claims)
-
-
-def test_batch_correction_reduces_batch_signal_and_preserves_biology():
-    rng = np.random.default_rng(3)
-    n_features, per = 30, 10
-    # 40 samples: 2 biological groups x 2 batches.
-    group = np.array(["young"] * (2 * per) + ["old"] * (2 * per))
-    batch = np.array((["A"] * per + ["B"] * per) * 2)
-    base = rng.normal(0, 1, (n_features, 40))
-    group_effect = np.where(group == "old", 3.0, 0.0)  # real biology
-    batch_effect = np.where(batch == "B", 5.0, 0.0)  # nuisance
-    X = base + group_effect + batch_effect
-
-    before = batch_variance(X, batch)
-    corrected = remove_batch_effect(X, batch, biological_group=group)
-    after = batch_variance(corrected, batch)
-    assert after < before * 0.2  # batch signal largely removed
-
-    # Biological difference (old - young) is preserved.
-    diff_before = X[:, group == "old"].mean() - X[:, group == "young"].mean()
-    diff_after = corrected[:, group == "old"].mean() - corrected[:, group == "young"].mean()
-    assert diff_after == pytest.approx(diff_before, abs=0.3)
 
 
 # ---- the reported p-value and the reported interval must agree -------------

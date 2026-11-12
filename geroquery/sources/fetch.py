@@ -104,7 +104,7 @@ def _download(artifact: RemoteArtifact, dest: Path, timeout: float) -> None:
             artifact.url,
             timeout=timeout,
             follow_redirects=True,
-            headers={"User-Agent": "GeroQuery/1.0 (+https://github.com/praneel/geroquery)"},
+            headers={"User-Agent": "GeroQuery/1.0 (+https://github.com/Sophie-S-Z/GeroQuery)"},
         ) as resp:
             resp.raise_for_status()
             with open(dest, "wb") as fh:

@@ -272,9 +272,9 @@ Individual stages, in dependency order:
 ## Testing
 
 ```bash
-make ci                             # ruff + mypy + the full Python suite
+make ci                             # ruff + black + mypy + the full Python suite
 make test                           # pytest with coverage
-make frontend-test                  # export, build, and run 34 Playwright tests
+make frontend-test                  # build, then run the Playwright suite
 npx playwright install chromium     # once, before the first frontend-test
 
 pip install -e ".[dev,mcp]"         # the MCP transport tests need the SDK
@@ -283,9 +283,9 @@ pytest tests/test_mcp_transport.py
 GEROQUERY_ALLOW_NETWORK=1 pytest -m live   # live upstream drift checks
 ```
 
-**Current gate:** ruff · black · mypy clean on 65 files · **436 Python tests
-passed, 1 skipped, 15 live deselected** · **34 Playwright tests** (desktop +
-393px, against the built `dist`).
+**Current gate:** ruff · black · mypy clean on 66 files · **534 Python tests
+passed, 2 skipped, 15 live deselected** · **50 Playwright tests, 49 passed and 1
+skipped for data the build lacks** (desktop + 393px, against the built `dist`).
 
 Notes that will save you time:
 
@@ -522,8 +522,8 @@ geroquery/
   ui/             Streamlit dashboard (legacy)
 frontend/         the static React/Vite site — the primary surface
   public/data/    the committed, deployable Parquet/JSON export
-  tests/          34 Playwright tests against the built dist
-tests/            436 Python tests
+  tests/          Playwright tests against the built dist
+tests/            the Python test suite
 evidence/         the living-evidence baseline and changelog
 docs/             results, handoffs, roadmap, deployment
 ```

@@ -162,6 +162,10 @@ def _validate(x: np.ndarray, time: np.ndarray, event: np.ndarray) -> None:
         )
     if x.shape[0] == 0:
         raise SurvivalInputError("No subjects.")
+    # NaN passes `time < 0` and then never advances the tie-block loop, so the
+    # fit would hang rather than fail.
+    if not np.all(np.isfinite(time)):
+        raise SurvivalInputError("Follow-up times must be finite.")
     if np.any(time < 0):
         raise SurvivalInputError("Follow-up times must be non-negative.")
     if not np.all(np.isin(event, (0, 1))):
@@ -500,7 +504,9 @@ def cox_regression(
         for _ in range(20):
             trial = beta + factor * step
             trial_ll, _, _ = _breslow_terms(xw, time, event, trial, weights)
-            if trial_ll >= loglik:
+            # A relative slack of 1e-12: at the optimum a step still above the
+            # tolerance can lose ~1e-14 to rounding, which is not "worse".
+            if trial_ll >= loglik - 1e-12 * max(1.0, abs(loglik)):
                 improved = True
                 break
             factor /= 2.0

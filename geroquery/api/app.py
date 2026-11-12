@@ -15,7 +15,7 @@ from fastapi import FastAPI, Query, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from .. import __version__
-from ..exceptions import GeroQueryError
+from ..exceptions import ClockInputError, GeroQueryError
 from .schemas import (
     ClockApplyRequest,
     ClockCompareRequest,
@@ -28,24 +28,17 @@ from .service import GeroService, get_service
 API_PREFIX = "/v1"
 
 
-def _matrix_from_request(service: GeroService, dataset_id, matrix, feature_cols=None):
-    """Resolve a clock/resilience input to a DataFrame from either a dataset ID
-    or an inline matrix payload."""
+def _matrix_from_request(service: GeroService, dataset_id, matrix):
+    """Resolve a clock input to a DataFrame from a dataset ID or an inline matrix."""
     if matrix is not None:
         return matrix.to_frame()
     if dataset_id is not None:
-        df = service.store.get_dataset(dataset_id)
-        return df[feature_cols] if feature_cols else df
-    from ..exceptions import ClockInputError
-
+        return service.store.get_dataset(dataset_id)
     raise ClockInputError("Provide either 'dataset_id' or 'matrix'.")
 
 
 def _formatted(rows: list[dict], fmt: str, filename: str) -> Response:
-    """Return a list of dict rows as JSON, CSV, or Parquet."""
-    fmt = (fmt or "json").lower()
-    if fmt == "json":
-        return JSONResponse(rows)
+    """Return a list of dict rows as CSV or Parquet (the route validates ``fmt``)."""
     df = pd.DataFrame(rows)
     if fmt == "csv":
         buf = io.StringIO()
@@ -55,18 +48,14 @@ def _formatted(rows: list[dict], fmt: str, filename: str) -> Response:
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment; filename={filename}.csv"},
         )
-    if fmt == "parquet":
-        bbuf = io.BytesIO()
-        df.to_parquet(bbuf, index=False)
-        bbuf.seek(0)
-        return StreamingResponse(
-            bbuf,
-            media_type="application/octet-stream",
-            headers={"Content-Disposition": f"attachment; filename={filename}.parquet"},
-        )
-    from ..exceptions import GeroQueryError as _E
-
-    raise _E(f"Unsupported format {fmt!r}. Use json, csv, or parquet.")
+    bbuf = io.BytesIO()
+    df.to_parquet(bbuf, index=False)
+    bbuf.seek(0)
+    return StreamingResponse(
+        bbuf,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={filename}.parquet"},
+    )
 
 
 def _paginate(items: list, limit: int | None, offset: int) -> list:

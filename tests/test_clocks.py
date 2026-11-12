@@ -96,3 +96,15 @@ def test_unknown_clock_raises(svc, clinical_matrix):
 def test_empty_matrix_rejected(svc):
     with pytest.raises(ClockInputError):
         svc.apply_clock("clinical_phenoage_demo", pd.DataFrame())
+
+
+def test_phenoage_takes_age_from_chronological_age_as_well_as_the_matrix(svc, store):
+    """PhenoAge uses age as a feature. A separately supplied age used to reach
+    only the metadata, so the clock reported `age` as a missing feature."""
+    frame = store.get_dataset("clinical_nhanes_phenoage").head(5)
+    with_column = svc.apply_clock("phenoage", frame)
+    separate = svc.apply_clock(
+        "phenoage", frame.drop(columns=["age"]), chronological_age=frame["age"].tolist()
+    )
+    assert separate.predictions == pytest.approx(with_column.predictions)
+    assert separate.age_acceleration == pytest.approx(with_column.age_acceleration)

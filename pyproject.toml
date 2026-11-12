@@ -33,7 +33,10 @@ dependencies = [
 ui = ["streamlit>=1.30", "plotly>=5.18"]
 # pyyaml is a test dependency, not a runtime one: tests/test_panel_diff.py
 # parses the living-evidence workflow to assert it can never auto-merge.
-dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.3", "black>=24.1", "mypy>=1.8", "pyyaml>=6.0"]
+dev = [
+  "pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.3", "black>=24.1", "mypy>=1.8", "pyyaml>=6.0",
+  "pre-commit>=3.5",
+]
 # Real published aging clocks (Horvath, Hannum, PhenoAge, GrimAge, DunedinPACE).
 # Optional: the registry falls back to the transparent reference clocks without
 # it and reports why via ClockRegistry.library_status.
@@ -67,11 +70,10 @@ clocks = [
 mcp = ["mcp>=1.2,<2", "anyio>=4.0"]
 
 [project.urls]
-Homepage = "https://github.com/praneel/geroquery"
-Repository = "https://github.com/praneel/geroquery"
+Homepage = "https://github.com/Sophie-S-Z/GeroQuery"
+Repository = "https://github.com/Sophie-S-Z/GeroQuery"
 
 [project.scripts]
-geroquery-etl = "geroquery.etl.build_fixtures:build_all"
 geroquery-mcp = "geroquery.mcp.server:main"
 
 [tool.setuptools.packages.find]

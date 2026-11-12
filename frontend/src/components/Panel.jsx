@@ -63,8 +63,7 @@ export default function Panel() {
           <h2 className="panel-title">Which contrast bends the corpus</h2>
           <p className="note" style={{ marginBottom: "0.8rem" }}>
             Every gene is pooled from very nearly the same contrasts, so a single contrast&rsquo;s
-            leave-one-out shift — summed across all {influence.length === 32 ? "~42,000" : "the"}{" "}
-            pooled genes — measures how much that one contrast moves the <em>whole</em> published
+            leave-one-out shift — summed across every pooled gene — measures how much that one contrast moves the <em>whole</em> published
             corpus. This is not a per-gene question; it is a question about the panel itself, and
             nothing in a curated database can answer it.
           </p>

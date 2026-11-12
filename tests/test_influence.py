@@ -12,7 +12,6 @@ from __future__ import annotations
 import numpy as np
 
 from geroquery.harmonize import leave_one_out, random_effects
-from geroquery.harmonize.influence import corpus_influence
 
 
 def test_leave_one_out_matches_an_independent_pool_of_the_same_subset():
@@ -72,38 +71,3 @@ def test_cooks_distance_is_the_standardised_squared_shift():
 
     expected = loo.shifts**2 / full.standard_error**2
     assert np.allclose(loo.cooks, expected)
-
-
-def test_a_single_discordant_contrast_dominates_the_corpus_influence_ranking():
-    """One contrast present with a discordant effect in many genes ranks first.
-
-    This is the §4.5 claim made testable: aggregate each contrast's absolute
-    leave-one-out shift across the whole (gene, study) table, and the contrast
-    that is systematically bending the corpus rises to the top. "STUDY_BAD"
-    carries a high effect in every gene while the others are concordant and low.
-    """
-    rows = []
-    for g in range(30):
-        base = 0.30 + 0.01 * (g % 5)
-        for study, eff in (
-            ("STUDY_A", base),
-            ("STUDY_B", base + 0.02),
-            ("STUDY_C", base - 0.02),
-            ("STUDY_BAD", base + 0.90),
-        ):
-            rows.append(
-                {
-                    "gene_id": f"G{g}",
-                    "study_id": study,
-                    "effect_size": eff,
-                    "standard_error": 0.12,
-                }
-            )
-
-    ranking = corpus_influence(rows)
-
-    assert ranking[0]["study_id"] == "STUDY_BAD"
-    assert ranking[0]["total_abs_shift"] > ranking[1]["total_abs_shift"]
-    assert ranking[0]["n_genes"] == 30
-    # The ranking covers every contrast and nothing else.
-    assert {r["study_id"] for r in ranking} == {"STUDY_A", "STUDY_B", "STUDY_C", "STUDY_BAD"}

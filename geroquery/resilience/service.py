@@ -33,6 +33,13 @@ class ResilienceService:
                 variance — making the variance trend a story about outliers
                 rather than about the population.
         """
+        if len(biomarker_cols) < 2:
+            # Cross-correlation is between markers; with one it is NaN, which
+            # the API cannot even serialize.
+            raise ResilienceInputError(
+                "CSD needs at least two biomarkers.",
+                detail={"biomarker_cols": list(biomarker_cols)},
+            )
         missing = [c for c in [*biomarker_cols, age_col] if c not in data.columns]
         if missing:
             raise ResilienceInputError(
@@ -40,7 +47,13 @@ class ResilienceService:
                 detail={"missing": missing, "available": list(data.columns)},
             )
 
-        frame = data[list(biomarker_cols)]
+        try:
+            frame = data[list(biomarker_cols)].astype(float)
+            ages = data[age_col].to_numpy(dtype=float)
+        except (TypeError, ValueError) as exc:
+            raise ResilienceInputError(
+                "Biomarker and age columns must be numeric.", detail={"error": str(exc)}
+            ) from exc
         if log_columns:
             unknown = [c for c in log_columns if c not in biomarker_cols]
             if unknown:
@@ -48,7 +61,6 @@ class ResilienceService:
                     "log_columns must name biomarker columns.",
                     detail={"unknown": unknown, "biomarker_cols": list(biomarker_cols)},
                 )
-            frame = frame.copy()
             for col in log_columns:
                 if (frame[col] <= 0).any():
                     raise ResilienceInputError(
@@ -57,8 +69,16 @@ class ResilienceService:
                     )
                 frame[col] = np.log(frame[col])
 
-        values = frame.to_numpy(dtype=float)
-        ages = data[age_col].to_numpy(dtype=float)
+        values = frame.to_numpy()
+        # A NaN poisons every stratum variance it falls in, and the bootstrap
+        # then silently keeps only the resamples that missed it.
+        incomplete = ~(np.isfinite(values).all(axis=1) & np.isfinite(ages))
+        if incomplete.any():
+            raise ResilienceInputError(
+                f"{int(incomplete.sum())} rows have missing or non-finite values; "
+                "drop or impute them first.",
+                detail={"incomplete_rows": int(incomplete.sum())},
+            )
         return csd_indicators(
             values,
             ages,

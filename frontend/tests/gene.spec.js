@@ -84,6 +84,16 @@ test.describe("gene readout", () => {
     expect(symbols.length).toBeGreaterThan(1);
     for (const symbol of symbols) expect(symbol).not.toMatch(ACCESSION);
     expect(symbols.some((s) => s.startsWith("CDKN"))).toBe(true);
+    // Human CDKN2A and mouse Cdkn2a are one entry: the readout shows both species.
+    const upper = symbols.map((s) => s.toUpperCase());
+    expect(new Set(upper).size).toBe(upper.length);
+  });
+
+  test("a link shared before the overview default still opens the gene", async ({ page }) => {
+    // `view=gene` used to be the default and so was left out of shared links.
+    await page.goto("/?gene=TP53");
+    await waitForGene(page);
+    await expect(page.locator("h1.gene-symbol")).toHaveText("TP53");
   });
 
   test("picking a result moves the URL, so a result is linkable", async ({ page }) => {

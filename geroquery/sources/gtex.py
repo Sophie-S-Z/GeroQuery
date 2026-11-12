@@ -37,7 +37,7 @@ API_ROOT = "https://gtexportal.org/api/v2"
 DEFAULT_DATASET_ID = "gtex_v8"
 
 _HEADERS = {
-    "User-Agent": "GeroQuery/1.0 (+https://github.com/praneel/geroquery)",
+    "User-Agent": "GeroQuery/1.0 (+https://github.com/Sophie-S-Z/GeroQuery)",
     "Accept": "application/json",
 }
 
@@ -235,15 +235,4 @@ class GtexOpenSource(SourceAdapter):
                 "GTEx open API returns donor ages only in the protected tier; these "
                 "samples are unstratified. Age-resolved GTEx requires dbGaP access."
             ),
-        }
-
-    def fetch_signature(self, gene: str, tissue_id: str | None = None) -> dict:
-        """Uniform entry point used by the federated query path."""
-        if tissue_id:
-            return self.sample_expression(gene, tissue_id)
-        return {
-            "gene": gene,
-            "dataset_id": self.dataset_id,
-            "median_expression": [t.to_dict() for t in self.median_expression(gene)],
-            "age_stratified": False,
         }

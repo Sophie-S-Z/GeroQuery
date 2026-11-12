@@ -249,7 +249,7 @@ disclosed in the UI (About tab), README, and DATA_SOURCES.
 - **Quantitative gene evidence:** currently ordinal confidence + direction. If a
   real, citable meta-analysis with reproducible effect sizes is encoded, the
   `harmonize` module can surface pooled numbers again — honestly this time.
-- **PRD doc** (`docs/PRD_GeroQuery_Multi-Omic_Aging_Aggregator (1).md`) is a
+- **PRD doc** (`docs/PRD_GeroQuery_Multi-Omic_Aging_Aggregator.md`) is a
   historical planning artifact describing the original (partly fabricated) design;
   left as-is. Update if it should reflect the new honest model.
 

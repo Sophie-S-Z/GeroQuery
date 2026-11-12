@@ -1334,8 +1334,8 @@ DRUGAGE:sodium_l_thiazolidine_4_carboxylate:drosophila_melanogaster,sodium L-thi
 DRUGAGE:trans_2_40_5_trihydroxystilbene:caenorhabditis_elegans,"trans-2,40,5-trihydroxystilbene",drug,DrugAge,Caenorhabditis elegans,6.44,,https://genomics.senescence.info/drugs/,1
 DRUGAGE:trans_3_5_dimethoxy_4_fluoro_4__hydroxystilbene:caenorhabditis_elegans,"trans-3,5-dimethoxy-4-fluoro-4'-hydroxystilbene",drug,DrugAge,Caenorhabditis elegans,3.63,,https://genomics.senescence.info/drugs/,1
 DRUGAGE:trans_zeatin:caenorhabditis_elegans,trans-zeatin,drug,DrugAge,Caenorhabditis elegans,,,https://genomics.senescence.info/drugs/,1
-GENDR:dietary_restriction:caenorhabditis_elegans,dietary restriction,dietary,GenDR,Caenorhabditis elegans,,ENSG00000175567,https://genomics.senescence.info/diet/,62
-GENDR:dietary_restriction:drosophila_melanogaster,dietary restriction,dietary,GenDR,Drosophila melanogaster,,ENSG00000160200,https://genomics.senescence.info/diet/,27
-GENDR:dietary_restriction:mus_musculus,dietary restriction,dietary,GenDR,Mus musculus,,ENSG00000096717|ENSG00000112964|ENSG00000118689|ENSG00000124253|ENSG00000173175|ENSG00000175325|ENSMUSG00000029819,https://genomics.senescence.info/diet/,7
-GENDR:dietary_restriction:saccharomyces_cerevisiae,dietary restriction,dietary,GenDR,Saccharomyces cerevisiae,,ENSG00000014641|ENSG00000124253|ENSG00000142168|ENSG00000152348|ENSG00000162735|ENSG00000197548|ENSG00000291237|ENSMUSG00000038160,https://genomics.senescence.info/diet/,112
+GENDR:dietary_restriction:caenorhabditis_elegans,dietary restriction,dietary,GenDR,Caenorhabditis elegans,,,https://genomics.senescence.info/diet/,62
+GENDR:dietary_restriction:drosophila_melanogaster,dietary restriction,dietary,GenDR,Drosophila melanogaster,,,https://genomics.senescence.info/diet/,27
+GENDR:dietary_restriction:mus_musculus,dietary restriction,dietary,GenDR,Mus musculus,,ENSMUSG00000020063|ENSMUSG00000022840|ENSMUSG00000027513|ENSMUSG00000029819|ENSMUSG00000044542|ENSMUSG00000048756|ENSMUSG00000055737,https://genomics.senescence.info/diet/,7
+GENDR:dietary_restriction:saccharomyces_cerevisiae,dietary restriction,dietary,GenDR,Saccharomyces cerevisiae,,,https://genomics.senescence.info/diet/,112
 GENDR:dietary_restriction:schizosaccharomyces_pombe,dietary restriction,dietary,GenDR,Schizosaccharomyces pombe,,,https://genomics.senescence.info/diet/,6

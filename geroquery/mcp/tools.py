@@ -19,7 +19,8 @@ launders a null into a number.
 So each payload carries, unconditionally:
 
 * ``verdict`` — one of ``increases``, ``decreases``, ``no_evidence``,
-  ``not_measured``. ``no_evidence`` is a real answer, not an error.
+  ``not_measured``, or ``mixed`` when the pooled entries (one per species)
+  disagree. ``no_evidence`` is a real answer, not an error.
 * ``interval`` — the CI, always.
 * ``n_studies`` / ``n_contrasts`` — how much evidence is behind it.
 * ``caveats`` — the limitations that apply to *this* answer.
@@ -36,41 +37,20 @@ from ..exceptions import GeroQueryError
 # a tool response is often the only thing a caller ever reads.
 SIGNATURE_CAVEATS: tuple[str, ...] = (
     "Microarray-era GEO DataSets only; no RNA-seq.",
-    "Groups of 3-15 subjects; median 95% CI width 0.84 — detects large consistent "
+    "Groups of 3-15 subjects, so intervals are wide: detects large consistent "
     "effects, cannot rule out moderate ones.",
     "Half the human contrasts are skeletal muscle; one blood contrast (n=9).",
-    "32 contrasts come from 27 GEO Series, so some share subjects.",
+    "Some contrasts come from the same GEO Series, so some share subjects.",
     "Cross-study processing heterogeneity is not corrected.",
 )
-
-# A pooled estimate whose interval contains zero is reported as no evidence,
-# regardless of the point estimate's sign.
-NULL_VERDICT = "no_evidence"
-
-
-def _verdict(meta: dict) -> str:
-    """Turn a pooled estimate into a word, honestly.
-
-    The rule is the interval, not the point estimate and not the p-value. An
-    effect of +0.07 with an interval spanning [-0.20, +0.35] is not a small
-    increase; it is an absence of evidence, and saying so is the only reason
-    this tool is worth calling.
-    """
-    low, high = meta.get("ci_low"), meta.get("ci_high")
-    if low is None or high is None:
-        return NULL_VERDICT
-    if low > 0:
-        return "increases"
-    if high < 0:
-        return "decreases"
-    return NULL_VERDICT
 
 
 def _summarize(meta: dict) -> dict:
     return {
         "species": meta.get("species"),
         "omic_layer": meta.get("omic_layer"),
-        "verdict": _verdict(meta),
+        # Computed once, in PooledEffect.verdict, from the reported interval.
+        "verdict": meta.get("verdict", "no_evidence"),
         "pooled_effect_hedges_g": meta.get("pooled_effect"),
         "interval": {
             "ci_low": meta.get("ci_low"),
@@ -92,6 +72,16 @@ def _summarize(meta: dict) -> dict:
         "heterogeneity_i2": meta.get("heterogeneity_i2"),
         "p_value": meta.get("p_value"),
     }
+
+
+def _overall_verdict(metas: list[dict]) -> str:
+    """One word for the whole answer, never one species' word for both."""
+    # If nothing was measured, say that rather than returning an empty list a
+    # caller might read as "no effect".
+    verdicts = {m["verdict"] for m in metas}
+    if not verdicts:
+        return "not_measured"
+    return verdicts.pop() if len(verdicts) == 1 else "mixed"
 
 
 def gene_aging_signature(
@@ -124,9 +114,7 @@ def gene_aging_signature(
     return {
         "query": gene,
         "gene": raw.get("gene"),
-        # If nothing was measured, say that rather than returning an empty list
-        # a caller might read as "no effect".
-        "verdict": metas[0]["verdict"] if metas else "not_measured",
+        "verdict": _overall_verdict(metas),
         "pooled": metas,
         "n_contrasts": len(contrasts),
         "contrasts": [

@@ -63,7 +63,7 @@ Better if you want every push to `main` to redeploy automatically.
 6. Save and Deploy.
 
 `frontend/public/_headers` is picked up automatically and sets the caching and
-`Accept-Ranges` headers. Nothing else needs configuring.
+security headers. Nothing else needs configuring.
 
 **Why the data has to be committed.** Cloudflare's build container runs
 `npm run build` only — it has no Python, no store, and no id maps, so it cannot

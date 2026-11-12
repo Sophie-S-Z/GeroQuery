@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 import pandas as pd
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class GeneSetRequest(BaseModel):
@@ -44,11 +44,16 @@ class MatrixPayload(BaseModel):
             raise ValueError("Matrix exceeds 20000 rows; use the batch/ETL path instead.")
         return v
 
+    @model_validator(mode="after")
+    def _ids_match_rows(self):
+        # Checked at validation time so a mismatch is a 422, not a 500 from to_frame.
+        if self.sample_ids is not None and len(self.sample_ids) != len(self.records):
+            raise ValueError("sample_ids length must match number of records.")
+        return self
+
     def to_frame(self) -> pd.DataFrame:
         df = pd.DataFrame(self.records)
         if self.sample_ids is not None:
-            if len(self.sample_ids) != len(df):
-                raise ValueError("sample_ids length must match number of records.")
             df.index = self.sample_ids
         return df
 
@@ -78,13 +83,3 @@ class ResilienceCSDRequest(BaseModel):
 
 class ResilienceRecoveryRequest(BaseModel):
     series: list[float] = Field(..., min_length=4)
-
-
-class ErrorBody(BaseModel):
-    code: str
-    message: str
-    detail: Any | None = None
-
-
-class ErrorEnvelope(BaseModel):
-    error: ErrorBody

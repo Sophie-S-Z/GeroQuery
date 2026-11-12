@@ -212,10 +212,6 @@ class GeneResolver:
         group = self._by_group.get(rec.get("ortholog_group") or "", [rec])
         return [self._to_gene(r, matched_from=canonical_id) for r in group]
 
-    def genes_in_group(self, group: str) -> list[CanonicalGene]:
-        """All canonical genes in a named ortholog group (empty list if unknown)."""
-        return [self._to_gene(r, matched_from=group) for r in self._by_group.get(group, [])]
-
     @staticmethod
     def _pick_primary(candidates: list[dict]) -> dict:
         # Deterministic: human first, then alphabetical by canonical_id.

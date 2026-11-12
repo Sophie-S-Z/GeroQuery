@@ -31,6 +31,3 @@ class VersionedLRU:
         self._data.move_to_end(key)
         while len(self._data) > self.maxsize:
             self._data.popitem(last=False)
-
-    def clear(self) -> None:
-        self._data.clear()

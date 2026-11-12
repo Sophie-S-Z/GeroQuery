@@ -36,16 +36,11 @@ import pandas as pd
 
 from ..exceptions import SourceError
 from .base import Capabilities, License, SourceAdapter
+from .manifest import GEO_AGING_PANEL, GEO_ATTRIBUTION, GEO_LICENSE, VERIFIED_ON
 
 GDS_FTP_ROOT = "https://ftp.ncbi.nlm.nih.gov/geo/datasets"
 GDS_BROWSER = "https://www.ncbi.nlm.nih.gov/sites/GDSbrowser?acc="
 
-LICENSE = "NCBI GEO — US public domain, attribute"
-ATTRIBUTION = (
-    "National Center for Biotechnology Information (NCBI), Gene Expression Omnibus (GEO). "
-    "Edgar R, Domrachev M, Lash AE. Gene Expression Omnibus: NCBI gene expression and "
-    "hybridization array data repository. Nucleic Acids Res. 2002;30(1):207-10."
-)
 
 # --- age vocabulary ---------------------------------------------------------
 
@@ -717,8 +712,6 @@ class GeoDataSetsSource(SourceAdapter):
     name = "geo-datasets"
 
     def capabilities(self) -> Capabilities:
-        from .manifest import GEO_AGING_PANEL, VERIFIED_ON
-
         return Capabilities(
             source_name=self.name,
             omics=("transcriptome",),
@@ -733,4 +726,4 @@ class GeoDataSetsSource(SourceAdapter):
         )
 
     def license(self) -> License:
-        return License(LICENSE, redistributable=True, attribution=ATTRIBUTION)
+        return License(GEO_LICENSE, redistributable=True, attribution=GEO_ATTRIBUTION)

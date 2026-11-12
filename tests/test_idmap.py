@@ -50,6 +50,13 @@ def test_orthologs_span_species(r):
     assert {CDKN2A_HUMAN, CDKN2A_MOUSE} <= ids
 
 
+def test_entrez_keyed_human_genes_also_carry_their_mouse_ortholog(r):
+    """ABL1 is curated with an Entrez id. Only symbol-keyed assertions used to be
+    queried against mouse, so its 15 mouse contrasts were unreachable."""
+    assert r.resolve_gene("Abl1", species="mouse").canonical_id == "ENSMUSG00000026842"
+    assert {g.species for g in r.orthologs("ENSG00000097007")} == {"human", "mouse"}
+
+
 def test_unknown_gene_raises(r):
     with pytest.raises(GeneNotFoundError):
         r.resolve_gene("definitely_not_a_gene")

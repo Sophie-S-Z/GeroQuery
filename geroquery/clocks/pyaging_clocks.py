@@ -36,7 +36,7 @@ import pandas as pd
 from .. import config
 from ..exceptions import ClockInputError
 from ..models import ClockInfo
-from .library import LibraryStatus
+from .library import LibraryStatus, _slug
 
 PYAGING = "pyaging"
 
@@ -81,10 +81,6 @@ DATA_TYPE_INPUT: dict[str, str] = {
     "histone modification": "histone_modification",
     "chromatin accessibility": "chromatin_accessibility",
 }
-
-
-def _slug(text: str) -> str:
-    return "".join(c if c.isalnum() else "_" for c in str(text).strip().lower()).strip("_")
 
 
 def map_outcome(predicts: Any) -> str:
@@ -297,7 +293,3 @@ def load_pyaging_clocks(
         n_skipped=len(skipped),
         reason=(f"{len(skipped)} clock(s) skipped" if skipped else None),
     )
-
-
-def pyaging_clocks() -> dict[str, PyagingClock]:
-    return load_pyaging_clocks()[0]

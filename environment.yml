@@ -1,12 +1,11 @@
 # One-command reproducible environment (Conda/Bioconda).
 #   conda env create -f environment.yml && conda activate geroquery
 #
-# The R/Bioconductor packages are ONLY used by the offline ETL bridge
-# (recount3, GEOquery, gtexr) — never on the API request path.
+# Installs the package with the `dev` and `ui` extras, the same set CI uses, so
+# `make ci` (pytest-cov, pyyaml, streamlit) works in this environment.
 name: geroquery
 channels:
   - conda-forge
-  - bioconda
 dependencies:
   - python=3.11
   - numpy>=1.24
@@ -20,15 +19,6 @@ dependencies:
   - httpx>=0.26
   - streamlit>=1.30
   - plotly>=5.18
-  - pytest>=7.4
-  - ruff>=0.3
-  - black>=24.1
-  - mypy>=1.8
-  # ETL bridge only (optional, heavy): uncomment to enable live recount3/GEO ingestion
-  # - bioconductor-recount3
-  # - bioconductor-geoquery
-  # - r-base>=4.3
-  # - rpy2>=3.5
   - pip
   - pip:
-      - -e .
+      - -e .[dev,ui]

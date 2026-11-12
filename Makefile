@@ -49,8 +49,9 @@ dashboard:  ## run the Streamlit dashboard
 test:
 	pytest --cov=geroquery --cov-report=term-missing
 
-lint:
+lint:  ## the same checks as CI: ruff, then black in check mode
 	ruff check geroquery tests
+	black --check geroquery tests
 
 format:
 	black geroquery tests

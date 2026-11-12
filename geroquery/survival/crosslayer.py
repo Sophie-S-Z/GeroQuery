@@ -115,7 +115,9 @@ def mahalanobis_dysregulation(
         )
 
     values = frame[markers].astype(float).copy()
-    reference_mask = frame[age_col] <= reference_age_max
+    # Complete rows only: np.cov does not skip NaN, so one missing marker in the
+    # reference sample used to turn every subject's distance into NaN.
+    reference_mask = (frame[age_col] <= reference_age_max) & values.notna().all(axis=1)
     if int(reference_mask.sum()) < MIN_REFERENCE_N:
         raise SurvivalInputError(
             f"Reference sample (age <= {reference_age_max}) has "

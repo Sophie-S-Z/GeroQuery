@@ -28,6 +28,6 @@ one of them unfalsifiable.
 from __future__ import annotations
 
 from .hallmarks import HALLMARKS
-from .references import REFERENCES, Reference, ref
+from .references import REFERENCES, Reference
 
-__all__ = ["HALLMARKS", "REFERENCES", "Reference", "ref"]
+__all__ = ["HALLMARKS", "REFERENCES", "Reference"]

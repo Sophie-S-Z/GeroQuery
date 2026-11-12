@@ -120,20 +120,24 @@ class GeroService:
     ) -> dict:
         gene = self.resolver.resolve_gene(gene_query, species)
         ids = self._group_canonical_ids(gene, species)
-        signatures = []
-        for cid in ids:
-            signatures.extend(
-                self.store.query_signatures(
-                    gene_id=cid, species=species, tissue=tissue, omic_layer=omic_layer, sex=sex
-                )
-            )
-        metas = self._meta_from_signatures(signatures)
+        signatures, metas = self._measured(
+            ids, species, tissue=tissue, omic_layer=omic_layer, sex=sex
+        )
         return {
             "gene": gene.to_dict(),
             "meta_signatures": [m.to_dict() for m in metas],
             "signatures": [s.to_dict() for s in signatures],
             "n_signatures": len(signatures),
         }
+
+    def _measured(self, ids: list[str], species: str | None, **filters) -> tuple[list, list]:
+        """Every signature of an ortholog group, and their per-layer pools."""
+        signatures = [
+            sig
+            for cid in ids
+            for sig in self.store.query_signatures(gene_id=cid, species=species, **filters)
+        ]
+        return signatures, self._meta_from_signatures(signatures)
 
     def gene_card(self, gene_query: str, species: str | None = None) -> dict:
         gene = self.resolver.resolve_gene(gene_query, species)
@@ -143,10 +147,7 @@ class GeroService:
             return cached
 
         ids = self._group_canonical_ids(gene, species)
-        signatures = []
-        for cid in ids:
-            signatures.extend(self.store.query_signatures(gene_id=cid, species=species))
-        metas = self._meta_from_signatures(signatures)
+        signatures, metas = self._measured(ids, species)
 
         curated, interventions, seen_iv = [], [], set()
         for cid in ids:
@@ -182,11 +183,11 @@ class GeroService:
         ``docs/HANDOFF_2026-08-03.md``.
         """
         card = self.gene_card(gene_query, species)
-        gene = self.resolver.resolve_gene(gene_query, species)
-        orthologs = self.resolver.orthologs(gene.canonical_id)
+        gene = card["gene"]
+        orthologs = self.resolver.orthologs(gene["canonical_id"])
         return {
             **card,
-            "group": gene.ortholog_group or gene.symbol.upper(),
+            "group": gene.get("ortholog_group") or gene["symbol"].upper(),
             "orthologs": [
                 {"species": o.species, "symbol": o.symbol, "canonical_id": o.canonical_id}
                 for o in orthologs
@@ -370,10 +371,9 @@ class GeroService:
             if dataset_id is None:
                 raise ResilienceInputError("Provide either dataset_id or inline data.")
             data = self.store.get_dataset(dataset_id)
-            if biomarker_cols is None:
-                biomarker_cols = [c for c in data.columns if c not in NON_BIOMARKER_COLUMNS]
         if biomarker_cols is None:
-            raise ResilienceInputError("biomarker_cols is required for inline data.")
+            excluded = NON_BIOMARKER_COLUMNS | {age_col}
+            biomarker_cols = [c for c in data.columns if c not in excluded]
         result = self.resilience.csd(
             data, biomarker_cols, age_col=age_col, n_strata=n_strata, longitudinal=longitudinal
         )

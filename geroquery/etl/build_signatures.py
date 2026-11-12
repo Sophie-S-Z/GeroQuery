@@ -243,14 +243,17 @@ def build_curated(
                 mapping[(species, query)] = record["canonical_id"]
 
     knowledge_rows = []
-    symbol_to_gene: dict[str, str] = {}
+    # Keyed by species too: GenDR lists yeast, worm and fly genes, and a bare
+    # symbol key linked those organisms' dietary-restriction records to whichever
+    # human or mouse gene first claimed the same symbol.
+    symbol_to_gene: dict[tuple[str, str], str] = {}
     for item in assertions:
         if not item.species:
             continue
         gene_id = mapping.get((item.species, item.entrez or item.symbol))
         if gene_id is None:
             continue
-        symbol_to_gene.setdefault(item.symbol.upper(), gene_id)
+        symbol_to_gene.setdefault((item.species, item.symbol.upper()), gene_id)
         knowledge_rows.append(
             {
                 "gene_id": gene_id,
@@ -266,6 +269,13 @@ def build_curated(
     stats["assertions_loaded"] = len(knowledge)
     stats["assertions_dropped_non_mammalian"] = sum(1 for a in assertions if not a.species)
 
+    def linked_genes(item: hagr.LifespanIntervention) -> str:
+        species = hagr.ORGANISM_TO_SPECIES.get(item.organism)
+        if species is None:  # yeast, worm, fly: no modelled gene to link
+            return ""
+        genes = {symbol_to_gene.get((species, s.upper())) for s in item.gene_symbols}
+        return "|".join(sorted(g for g in genes if g))
+
     intervention_rows = [
         {
             "intervention_id": item.intervention_id,
@@ -274,9 +284,7 @@ def build_curated(
             "source": item.source,
             "organism": item.organism,
             "lifespan_effect_pct": item.lifespan_effect_pct,
-            "linked_gene_ids": "|".join(
-                sorted({g for s in item.gene_symbols if (g := symbol_to_gene.get(s.upper()))})
-            ),
+            "linked_gene_ids": linked_genes(item),
             "url": item.url,
             "n_experiments": item.n_experiments,
         }

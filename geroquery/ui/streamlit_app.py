@@ -84,13 +84,13 @@ def badge(kind: str, text: str) -> str:
 def read_interval(meta: dict) -> tuple[str, str, str]:
     """Turn a pooled estimate into a claim, a colour, and the reason for it.
 
-    This is the only place the dashboard decides what a number means, and it
-    decides it from the interval rather than the point estimate.
+    The verdict itself comes from PooledEffect.verdict (read off the reported
+    interval), so the dashboard, the API and the MCP tool cannot disagree.
     """
-    lo, hi, g = meta["ci_low"], meta["ci_high"], meta["pooled_effect"]
-    if lo > 0:
+    verdict, g = meta["verdict"], meta["pooled_effect"]
+    if verdict == "increases":
         return ("rises with age", P.up, "the interval lies entirely above zero")
-    if hi < 0:
+    if verdict == "decreases":
         return ("falls with age", P.down, "the interval lies entirely below zero")
     direction = "higher" if g > 0 else "lower"
     return (
@@ -291,7 +291,7 @@ def render_gene() -> None:
         panel(
             "<h4>No pooled estimate</h4>"
             "<div class='gq-note'>This gene resolves, but no contrast in the "
-            "31-dataset GEO panel carries a probe for it. That is a coverage gap in a "
+            "GEO panel carries a probe for it. That is a coverage gap in a "
             "microarray-era panel, not a statement about the gene.</div>"
         )
     else:
@@ -328,7 +328,7 @@ def render_gene() -> None:
         st.markdown(
             "<div class='gq-caveat'>Each horizontal line is one published contrast "
             "and its 95% interval; the diamond is the random-effects pool. Groups here "
-            "are 3–15 samples, so the median interval is 0.84 wide — this panel detects "
+            "are 3–15 samples, so the intervals are wide — this panel detects "
             "large, consistent effects and cannot rule out moderate ones.</div>",
             unsafe_allow_html=True,
         )
@@ -549,8 +549,8 @@ def render_resilience() -> None:
         if dataset_id:
             res = svc.resilience_csd(dataset_id=dataset_id, n_strata=n_strata)
         else:
-            cols = [c for c in frame.columns if c not in ("subject_id", "age", "sex")]
-            res = svc.resilience_csd(data=frame, biomarker_cols=cols, n_strata=n_strata)
+            # The service infers the biomarker columns, survey weight excluded.
+            res = svc.resilience_csd(data=frame, n_strata=n_strata)
     except GeroQueryError as exc:
         panel(f"<h4>Could not compute</h4><div class='gq-note'>{exc.message}</div>")
         return

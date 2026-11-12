@@ -635,8 +635,7 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     symbols = _symbols(sorted(pooled["gene_id"].unique()))
     pooled["symbol"] = pooled["gene_id"].map(symbols).fillna(pooled["gene_id"])
     pooled = _annotate_pooled(pooled)
-    # Sorted by symbol: the search path scans this file, and a sorted column
-    # lets DuckDB's row-group statistics skip almost all of it.
+    # Sorted, so the export is deterministic and the browser's species order is stable.
     pooled = pooled.sort_values(["symbol", "species"]).reset_index(drop=True)
     pooled.to_parquet(out_dir / "pooled.parquet", index=False, compression="snappy")
 

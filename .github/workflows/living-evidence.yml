@@ -64,9 +64,10 @@ jobs:
             exit 1
           }
 
-      # The selection query is the discovery mechanism. A live test already pins
-      # that it returns >=180 records; if that fails the panel definition moved
-      # under us and a rebuild would be rebuilding something else.
+      # The selection query is the discovery mechanism. A live test pins that it
+      # returns >=180 records. Advisory only: a GEO outage must not stop the
+      # monthly run, so a failure is a warning here and a reason to read the
+      # diff below with care, not a gate.
       - name: Check the selection query still resolves
         env:
           GEROQUERY_ALLOW_NETWORK: "1"

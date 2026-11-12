@@ -31,6 +31,7 @@ from geroquery.survival import (
     wald_test,
 )
 from geroquery.survival.cox import SurvivalInputError, _breslow_terms, _score_residuals
+from geroquery.survival.crosslayer import REFERENCE_AGE_MAX
 
 # --- the estimator itself ----------------------------------------------------
 
@@ -150,6 +151,9 @@ def test_cox_rejects_input_it_cannot_fit():
         cox_regression(x, [-1, 2, 3, 4, 5], [1, 0, 0, 0, 0])
     with pytest.raises(SurvivalInputError, match="same number of rows"):
         cox_regression(x, [1, 2, 3], [1, 0, 1])
+    # NaN used to slip past the sign check and hang the tie-block loop.
+    with pytest.raises(SurvivalInputError, match="finite"):
+        cox_regression(x, [1, 2, np.nan, 4, 5], [1, 0, 1, 1, 0])
 
 
 def test_likelihood_ratio_refuses_models_fitted_on_different_rows():
@@ -562,6 +566,17 @@ def test_dysregulation_reference_must_be_large_enough():
         )
 
 
+def test_one_missing_reference_marker_does_not_blank_every_score():
+    frame, _ = _toy_cohort()
+    markers = ["albumin", "creatinine", "glucose", "crp", "lymphocyte_pct", "rdw"]
+    young = frame.index[frame["age"] <= REFERENCE_AGE_MAX][0]  # inside the reference sample
+    frame.loc[young, "crp"] = np.nan
+
+    scores = mahalanobis_dysregulation(frame, markers).values
+    assert np.isnan(scores[young])
+    assert scores.drop(young).notna().all()
+
+
 # ---- a failed line search is not convergence (bug #24) ---------------------
 
 
@@ -604,3 +619,15 @@ def test_a_healthy_fit_still_reports_convergence():
     fit = cox_regression(x, time, event, covariates=["x"])
     assert fit.converged is True
     assert fit.coefficients[0] == pytest.approx(0.7, abs=0.25)
+
+
+def test_a_fit_at_its_optimum_reports_converged():
+    """Rounding can leave the last Newton step ~1e-14 short of improving the
+    likelihood. That is the optimum, not a stalled line search."""
+    rng = np.random.default_rng(117)
+    n, p = int(rng.integers(30, 800)), int(rng.integers(1, 4))
+    x = rng.normal(size=(n, p))
+    time = np.round(rng.exponential(np.exp(-x[:, 0] * 0.5)) * 12) / 12 + 0.01
+    event = (rng.random(n) < 0.4).astype(int)
+    weights = rng.uniform(0.5, 3, n)
+    assert cox_regression(x, time, event, weights=weights).converged

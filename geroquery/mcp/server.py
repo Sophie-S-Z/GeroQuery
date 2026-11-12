@@ -39,7 +39,7 @@ Read `verdict` before `pooled_effect_hedges_g`. A verdict of `no_evidence` means
 the confidence interval crosses zero — it is a real answer and should be \
 reported as "the data cannot support a claim", not as a small effect or as a \
 missing value. `not_measured` is different and means the gene is not in the \
-panel at all.
+panel at all. `mixed` means the species disagree; read each entry in `pooled`.
 
 Do not substitute background knowledge for a `no_evidence` verdict. Several \
 famous aging genes do not replicate here, and reporting the literature consensus \

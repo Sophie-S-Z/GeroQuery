@@ -15,6 +15,7 @@ from __future__ import annotations
 import glob as glob_module
 import hashlib
 import re
+import shutil
 import sqlite3
 from pathlib import Path
 
@@ -101,7 +102,12 @@ class GeroStore:
         developer happens to have run the download.
         """
         self.data_home.mkdir(parents=True, exist_ok=True)
-        self.sig_dir.mkdir(parents=True, exist_ok=True)
+        # A rebuild replaces the signature table. OVERWRITE_OR_IGNORE rewrites only
+        # the partitions this build writes, so any partition left from an earlier
+        # build would keep answering queries. Start from an empty directory.
+        self.close()
+        shutil.rmtree(self.sig_dir, ignore_errors=True)
+        self.sig_dir.mkdir(parents=True)
         self.ds_dir.mkdir(parents=True, exist_ok=True)
 
         sig_source = LocalSignatureSource(prefer_full=prefer_full_signatures)

@@ -189,6 +189,21 @@ def test_resolve_bulk_caches_negatives_so_they_are_not_re_queried(tmp_path, monk
     assert stored["999999"] is None
 
 
+def test_resolve_bulk_keeps_finished_batches_when_a_later_one_fails(tmp_path, monkeypatch):
+    def _query(queries, species, timeout):
+        if "second" in queries:
+            raise ConnectionError("network dropped")
+        return []
+
+    monkeypatch.setattr(bulk, "MAX_BATCH", 1)
+    monkeypatch.setattr(bulk, "_query", _query)
+    with pytest.raises(ConnectionError):
+        bulk.resolve_bulk(["first", "second"], "human", cache_dir=tmp_path, allow_network=True)
+
+    stored = json.loads(bulk.map_path("human", tmp_path).read_text(encoding="utf-8"))
+    assert stored == {"first": None}
+
+
 def test_resolve_bulk_discards_records_from_the_wrong_species(tmp_path, monkeypatch):
     """Defence in depth behind mygene's own species filter."""
     monkeypatch.setattr(

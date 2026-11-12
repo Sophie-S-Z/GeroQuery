@@ -89,11 +89,23 @@ function table(name) {
 const pooledTable = () => table("pooled.parquet");
 const contrastsTable = () => table("contrasts.parquet");
 
-/** Static JSON fetched whole — all of these are a few KB. */
-export async function json(name) {
-  const response = await fetch(`${DATA_BASE}/${name}`);
-  if (!response.ok) throw new Error(`Could not load ${name} (${response.status})`);
-  return response.json();
+/** Static JSON fetched whole — all of these are a few KB. Memoized like `table`. */
+export function json(name) {
+  if (!cache.has(name)) {
+    cache.set(
+      name,
+      fetch(`${DATA_BASE}/${name}`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`Could not load ${name} (${response.status})`);
+          return response.json();
+        })
+        .catch((error) => {
+          cache.delete(name);
+          throw error;
+        }),
+    );
+  }
+  return cache.get(name);
 }
 
 // --- queries -----------------------------------------------------------------
