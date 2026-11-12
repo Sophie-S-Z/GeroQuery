@@ -354,8 +354,8 @@ CAVEATS: tuple[str, ...] = (
     "this; individual records are not trustworthy on their own.",
     "The reported hazard ratios apply WTDN4YR with SDMVSTRA/SDMVPSU, so they describe "
     "US adults aged 50+ in 1999-2002 rather than the 2,517 people measured. The "
-    "unweighted estimate is shown beside each one; it is smaller in every case, which "
-    "means the subsample under-represents the higher-risk part of the population. "
+    "unweighted estimate is shown beside each one; where it is smaller, the subsample "
+    "under-represents the higher-risk part of the population. "
     "Weighting corrects the estimate; it cannot correct who was eligible to be "
     "sampled in the first place.",
     "Clocks are NCHS's own computed values, not recomputed here. That removes our "

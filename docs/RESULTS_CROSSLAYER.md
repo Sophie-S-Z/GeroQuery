@@ -89,8 +89,9 @@ Dysregulation HR per SD = **1.28–1.42** depending on which clock it sits besid
 
 ### 2.0 Every effect is larger in the population than in the sample
 
-The weighted hazard ratio exceeds the unweighted one for **nine of the ten
-clocks** and for dysregulation under every clock. That direction is not a
+The weighted hazard ratio exceeds the unweighted one for **eight of the ten
+clocks** (HorvathAge and LinAge are the exceptions) and for dysregulation under
+every clock. That direction is not a
 detail. It means the DNAm subsample over-represents people whose measured aging
 markers carry *less* mortality information than they do nationally — so the
 unweighted analysis was a conservative one, and correcting it strengthens rather

@@ -661,3 +661,22 @@ def test_the_committed_influence_is_internally_consistent():
     meta = json.loads((data / "meta.json").read_text())
     pi = meta["prediction_interval"]
     assert pi["n_pi_excludes_zero"] <= pi["n_ci_excludes_zero"] <= pi["n_with_pi"]
+
+
+def test_the_committed_crosslayer_caveats_match_their_source():
+    """The shipped caveats are a copy of ``nhanes_dnam.CAVEATS`` and must not drift.
+
+    One of them said the unweighted hazard ratio was smaller "in every case";
+    the full cohort contradicts that for HorvathAge and LinAge. Fixing the
+    constant alone would have left the shipped copy saying the old thing, which
+    is why the two are pinned together here.
+    """
+    from geroquery.sources import nhanes_dnam as nd
+
+    path = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data" / "crosslayer.json"
+    if not path.exists():  # pragma: no cover
+        pytest.skip("crosslayer.json is not present")
+    payload = json.loads(path.read_text())
+    if not payload.get("available"):  # pragma: no cover
+        pytest.skip("cohort not built")
+    assert payload["caveats"] == list(nd.CAVEATS)
