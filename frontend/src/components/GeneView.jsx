@@ -59,6 +59,7 @@ function QueryRail({ symbol, onPick }) {
       </label>
       <input
         id="gene-search"
+        data-search
         className="search-field"
         value={term}
         placeholder="CDKN2A"
@@ -70,7 +71,10 @@ function QueryRail({ symbol, onPick }) {
         }}
       />
       <p className="rail-hint">
-        Symbol or alias. 41,983 genes have three or more contrasts and can be pooled.
+        Symbol or alias. 41,983 genes have three or more contrasts and can be pooled.{" "}
+        <span className="keyboard-only">
+          Press <span className="kbd">/</span> to search from any view.
+        </span>
       </p>
       {error ? <p className="error">{error}</p> : null}
       {bySymbol.length ? (

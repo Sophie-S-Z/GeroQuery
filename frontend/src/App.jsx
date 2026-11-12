@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CrossSpecies from "./components/CrossSpecies.jsx";
 import GeneView from "./components/GeneView.jsx";
 import Landscape from "./components/Landscape.jsx";
@@ -73,6 +73,32 @@ export default function App() {
     json("meta.json").then(setMeta).catch(() => setMeta(null));
   }, []);
 
+  // "/" focuses gene search from any view — the convention researchers already
+  // know from GitHub and documentation sites. Ignored while typing in a field.
+  const focusSearch = useRef(false);
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const { target } = event;
+      if (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      event.preventDefault();
+      const field = document.querySelector("[data-search]");
+      if (field) field.focus();
+      else {
+        focusSearch.current = true;
+        update({ view: "gene" });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [update]);
+
+  useEffect(() => {
+    if (!focusSearch.current) return;
+    focusSearch.current = false;
+    document.querySelector("[data-search]")?.focus();
+  }, [state.view]);
+
   // Charts resolve CSS custom properties at draw time, so a theme change has to
   // force a redraw. Keying the view subtree on the theme is the cheapest
   // correct way to do that.
@@ -104,7 +130,10 @@ export default function App() {
 
       <main key={themeKey}>
         {state.view === "overview" ? (
-          <Overview onNavigate={(view) => update({ view })} />
+          <Overview
+            onNavigate={(view) => update({ view })}
+            onPick={(gene) => update({ view: "gene", gene })}
+          />
         ) : null}
 
         {state.view === "gene" ? (
