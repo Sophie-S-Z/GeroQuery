@@ -59,7 +59,7 @@ Better if you want every push to `main` to redeploy automatically.
    | Build output directory | `dist` |
    | Root directory | `frontend` |
 
-5. **Settings → Environment variables → Production**, add `NODE_VERSION` = `20`.
+5. **Settings → Environment variables → Production**, add `NODE_VERSION` = `22`.
 6. Save and Deploy.
 
 `frontend/public/_headers` is picked up automatically and sets the caching and
