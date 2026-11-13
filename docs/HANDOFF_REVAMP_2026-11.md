@@ -24,8 +24,8 @@ with a failing-if-wrong test *first*, then the JSX that draws them.
 
 | Module | What it adds | Tests |
 |---|---|---|
-| `geroquery/harmonize/influence.py` | Leave-one-out for a random-effects pool (Viechtbauer & Cheung 2010): per-contrast pooled estimate with that contrast removed, Cook's distance, Baujat coords; `corpus_influence` aggregates each contrast's shift across every gene | `tests/test_influence.py` — planted-outlier identity, Cook's ranking, LOO = independent pool |
-| `geroquery/harmonize/deming.py` | Deming / orthogonal (errors-in-both-variables) regression with a jackknife slope interval | `tests/test_deming.py` — exact recovery on a line, slope(y~x)·slope(x~y)=1, steeper-than-OLS under x-noise |
+| `geroquery/harmonize/influence.py` | Leave-one-out for a random-effects pool (Viechtbauer & Cheung 2010): per-contrast pooled estimate with that contrast removed, Cook's distance, Baujat coords (the per-contrast aggregate lives in the exporter's `add_influence`) | `tests/test_influence.py` — planted-outlier identity, Cook's ranking, LOO = independent pool |
+| `geroquery/harmonize/deming.py` | Deming (errors-in-both-variables) regression with a jackknife slope interval | `tests/test_deming.py` — exact recovery on a line, slope(y~x)·slope(x~y)=1, steeper-than-OLS under x-noise |
 | `geroquery/survival/km.py` | Survey-weighted Kaplan-Meier and restricted mean survival time | `tests/test_km.py` — exponential closed form, unit-weight identity, KM = 1−ECDF, RMST = area under curve |
 
 ## Exporter (`geroquery/etl/build_frontend_data.py`)
@@ -58,11 +58,13 @@ artifacts as data.
   (`LeaveOneOut.jsx`), **tissue small-multiples** (`TissueFacets.jsx`), and an
   **AlphaFold structure out-link** via `uniprot`.
 - **Cross-species** (new tab) — human vs mouse scatter with a y=x identity line
-  and the precomputed Deming fit; the honest finding is that only 6 of 677
-  orthologs resolve a direction in both species, and none disagree.
+  and the precomputed Deming fit (error ratio measured from the pooled SEs:
+  slope 0.31, r = 0.15); only 6 of 677 orthologs resolve a direction in both
+  species, and none of those disagree.
   `CrossSpecies.jsx`.
-- **Panel** — a **corpus-influence** bar chart above the provenance table, with a
-  "corpus shift" column joining the two. `CorpusInfluence.jsx`.
+- **Panel** — a **corpus-influence** chart above the provenance table: each
+  contrast's mean leave-one-out shift per gene it measures, one panel per
+  species, with a "mean shift" column joining the two. `CorpusInfluence.jsx`.
 - **Mortality** — **weighted survival curves + RMST** by dysregulation quartile
   (`SurvivalCurves.jsx`), rendered when the cohort carries them.
 
@@ -87,7 +89,7 @@ is the product and new UI work goes to `frontend/`.**
 
 ```bash
 # Python side (the estimators + API + MCP)
-python3.13 -m pytest                    # 529 passed, survival/clocks skips
+python3.13 -m pytest                    # 533 passed, survival/clocks skips
 python3.13 -m ruff check geroquery tests && python3.13 -m black --check geroquery tests
 python3.13 -m mypy geroquery
 
