@@ -70,6 +70,25 @@ test.describe("shell", () => {
     expect(symbols.filter((s) => ACCESSION.test(s))).toEqual([]);
   });
 
+  /**
+   * The masthead and the overview both need meta.json; each JSON artifact must
+   * still be fetched once per page load, not once per component that reads it.
+   */
+  test("each data file is fetched once, however many views read it", async ({ page }) => {
+    const fetched = [];
+    page.on("request", (request) => {
+      const { pathname } = new URL(request.url());
+      if (pathname.startsWith("/data/")) fetched.push(pathname);
+    });
+    await page.goto("/");
+    await expect(page.locator(".findings button").first()).toBeVisible({ timeout: 30_000 });
+    await page.locator(".tab", { hasText: "Panel" }).click();
+    await expect(page.locator(".panel-title", { hasText: "bends the corpus" })).toBeVisible();
+
+    const repeated = fetched.filter((path, i) => fetched.indexOf(path) !== i);
+    expect(repeated).toEqual([]);
+  });
+
   test("the view tabs are reachable and operable from the keyboard", async ({ page }) => {
     await page.goto("/");
     const landscape = page.locator(".tab", { hasText: "Landscape" });

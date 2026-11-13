@@ -89,11 +89,29 @@ function table(name) {
 const pooledTable = () => table("pooled.parquet");
 const contrastsTable = () => table("contrasts.parquet");
 
-/** Static JSON fetched whole — all of these are a few KB. */
-export async function json(name) {
-  const response = await fetch(`${DATA_BASE}/${name}`);
-  if (!response.ok) throw new Error(`Could not load ${name} (${response.status})`);
-  return response.json();
+/**
+ * Static JSON fetched whole — all of these are a few KB — and memoized like the
+ * tables: the masthead and the overview both read meta.json, and several views
+ * share crosslayer.json and studies.json, so each is fetched once per page.
+ * Callers share the parsed object and must not mutate it.
+ */
+export function json(name) {
+  const key = `json:${name}`;
+  if (!cache.has(key)) {
+    cache.set(
+      key,
+      fetch(`${DATA_BASE}/${name}`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`Could not load ${name} (${response.status})`);
+          return response.json();
+        })
+        .catch((error) => {
+          cache.delete(key); // a transient failure must not poison later reads
+          throw error;
+        }),
+    );
+  }
+  return cache.get(key);
 }
 
 // --- queries -----------------------------------------------------------------

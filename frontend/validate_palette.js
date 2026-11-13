@@ -13,6 +13,9 @@
  *   1. Pairwise separation of the three verdict fills, in OKLab ΔE×100, under
  *      normal vision and simulated protan/deutan/tritan (Machado 2009, sev 1.0).
  *   2. Contrast of each fill against its own surface (WCAG ≥ 3:1).
+ *   3. The sequential ramp (--seq-1..4, ordered magnitude such as the survival
+ *      quartiles): every step ≥ 3:1 against the surface, lightness monotone,
+ *      and adjacent steps at least 0.06 apart in OKLCH L so the order reads.
  *
  * The gate reflects what §6 actually adjudicated. The confusable pair — the one
  * whose collapse "destroys the distinction the whole tool exists to draw" — is
@@ -43,6 +46,7 @@ import { dirname, resolve } from "node:path";
 const NORMAL_FLOOR = 15.0; // hard floor for the audited pairs, unsimulated vision
 const CVD_FLOOR = 8.0; // hard floor for the audited pairs, min(protan, deutan)
 const CONTRAST_MIN = 3.0; // each fill vs its surface
+const RAMP_MIN_DL = 0.06; // OKLCH lightness gap between adjacent ramp steps
 
 // Machado, Oliveira & Fernandes (2009) CVD transforms at severity 1.0 (linear RGB).
 const MACHADO = {
@@ -104,7 +108,10 @@ function themesFromCss(css) {
     }
     const body = css.slice(start + 1, i);
     const up = token(body, "up"), down = token(body, "down"), nul = token(body, "null"), surface = token(body, "paper");
-    if (up && down && nul && surface) themes.push({ label, mode, up, down, null: nul, surface });
+    const seq = [1, 2, 3, 4].map((i) => token(body, `seq-${i}`));
+    if (up && down && nul && surface) {
+      themes.push({ label, mode, up, down, null: nul, surface, seq: seq.every(Boolean) ? seq : null });
+    }
   }
   return themes;
 }
@@ -140,7 +147,21 @@ function auditTheme(t) {
     if (state === "FAIL") hardFail = true;
     contrasts.push({ fill: k, ratio: `${cr.toFixed(2)}:1`, state });
   }
-  return { rows, contrasts, ok: !hardFail };
+  // An ordered ramp fails if any step cannot be seen against the surface, or if
+  // neighbouring steps collapse or reverse in lightness — the order is the data.
+  const ramp = [];
+  if (t.seq) {
+    const L = t.seq.map((h) => oklabFromLin(lin(h))[0]);
+    const direction = Math.sign(L[1] - L[0]);
+    t.seq.forEach((hex, i) => {
+      const cr = contrast(hex, t.surface);
+      const step = i ? (L[i] - L[i - 1]) * direction : null;
+      const ok = cr >= CONTRAST_MIN && (step === null || step >= RAMP_MIN_DL);
+      if (!ok) hardFail = true;
+      ramp.push({ step: `seq-${i + 1}`, hex, ratio: `${cr.toFixed(2)}:1`, dl: step === null ? "—" : step.toFixed(3), state: ok ? "PASS" : "FAIL" });
+    });
+  }
+  return { rows, contrasts, ramp, ok: !hardFail };
 }
 
 export { deltaE, contrast, themesFromCss, auditTheme };
@@ -169,7 +190,7 @@ if (isMain()) {
   console.log(`floors: normal ΔE ≥ ${NORMAL_FLOOR}, CVD ΔE ≥ ${CVD_FLOOR}, contrast ≥ ${CONTRAST_MIN}:1  (OKLab ΔE×100, Machado 2009)\n`);
   let allOk = true;
   for (const t of themes) {
-    const { rows, contrasts, ok } = auditTheme(t);
+    const { rows, contrasts, ramp, ok } = auditTheme(t);
     allOk = allOk && ok;
     console.log(`  ${t.label}  up ${t.up} · down ${t.down} · null ${t.null} · surface ${t.surface}`);
     for (const r of rows) {
@@ -177,6 +198,9 @@ if (isMain()) {
     }
     for (const c of contrasts) {
       console.log(`    [${c.state.padEnd(4)}] contrast ${c.fill.padEnd(5)} ${c.ratio} vs surface`);
+    }
+    for (const r of ramp) {
+      console.log(`    [${r.state.padEnd(4)}] ramp ${r.step} ${r.hex}  ${r.ratio} vs surface  ΔL ${r.dl}`);
     }
     console.log("");
   }

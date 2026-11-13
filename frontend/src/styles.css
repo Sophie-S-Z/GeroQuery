@@ -45,11 +45,12 @@
 
   /* Sequential single-hue ramp (the cool/--down hue), light→dark, for ordered
      magnitude only — the four dysregulation quartiles on the survival curves.
-     Monotone in lightness so it reads as a ramp, never as four categories. */
-  --seq-1: #b7c6e4;
-  --seq-2: #7f9bd0;
-  --seq-3: #4f73b4;
-  --seq-4: #2b4585;
+     Monotone in lightness so it reads as a ramp, never as four categories, and
+     every step ≥ 3:1 against the paper — validate_palette.js enforces both. */
+  --seq-1: #6680b5;
+  --seq-2: #4d669d;
+  --seq-3: #374d82;
+  --seq-4: #1e3159;
 
   --focus: #2b4585;
 
@@ -90,10 +91,10 @@
   --null: #7d7568;
   --up-wash: rgba(232, 131, 74, 0.15);
   --down-wash: rgba(134, 168, 234, 0.15);
-  --seq-1: #39486a;
-  --seq-2: #53709f;
-  --seq-3: #7093c9;
-  --seq-4: #9cbcf0;
+  --seq-1: #5f79ad;
+  --seq-2: #7b95c8;
+  --seq-3: #9ab2e0;
+  --seq-4: #c3d4f3;
   --focus: #86a8ea;
 }
 
@@ -119,10 +120,10 @@
     --up-wash: rgba(232, 131, 74, 0.15);
     --down-wash: rgba(134, 168, 234, 0.15);
     /* Dark surface: the ramp runs dim→bright as the quartile rises. */
-    --seq-1: #39486a;
-    --seq-2: #53709f;
-    --seq-3: #7093c9;
-    --seq-4: #9cbcf0;
+    --seq-1: #5f79ad;
+    --seq-2: #7b95c8;
+    --seq-3: #9ab2e0;
+    --seq-4: #c3d4f3;
     --focus: #86a8ea;
   }
 }
@@ -428,13 +429,6 @@ main {
   font-weight: 500;
 }
 
-.result-species {
-  font-size: 0.64rem;
-  color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-left: 0.4rem;
-}
 
 .result-effect {
   font-family: var(--mono);

@@ -35,6 +35,18 @@ export function shortLabel(studyId) {
 }
 
 /**
+ * One contrast's 95% interval and the direction it alone supports. Shared by
+ * every per-contrast chart so the forest plot and the tissue panels cannot
+ * disagree about what a contrast says.
+ */
+export function contrastInterval(row) {
+  const half = 1.96 * (row.standard_error ?? 0);
+  const low = row.effect_size - half;
+  const high = row.effect_size + half;
+  return { low, high, dir: low > 0 ? "increases" : high < 0 ? "decreases" : "no_evidence" };
+}
+
+/**
  * @param {object} props
  * @param {Array<{study_id:string,effect_size:number,standard_error:number,tissue:string}>} props.contrasts
  * @param {{g:number,ci_low:number,ci_high:number,k:number}|null} props.pooled
@@ -47,25 +59,15 @@ export default function ForestPlot({ contrasts, pooled, symbol }) {
     if (!host.current || !contrasts?.length) return undefined;
     const c = css();
 
-    const rows = contrasts.map((row) => {
-      const half = 1.96 * (row.standard_error ?? 0);
-      return {
-        ...row,
-        label: shortLabel(row.study_id),
-        low: row.effect_size - half,
-        high: row.effect_size + half,
-        // Colour by this contrast's own interval, not by the pooled direction.
-        // A forest plot whose rows are all tinted by the pooled verdict hides
-        // the disagreement that produced it — and for CDKN2A the disagreement
-        // is the finding: six up, eight down.
-        dir:
-          row.effect_size - half > 0
-            ? "increases"
-            : row.effect_size + half < 0
-              ? "decreases"
-              : "no_evidence",
-      };
-    });
+    // Colour by each contrast's own interval, not by the pooled direction. A
+    // forest plot whose rows are all tinted by the pooled verdict hides the
+    // disagreement that produced it — and for CDKN2A the disagreement is the
+    // finding: six up, eight down.
+    const rows = contrasts.map((row) => ({
+      ...row,
+      label: shortLabel(row.study_id),
+      ...contrastInterval(row),
+    }));
 
     const values = [
       ...rows.flatMap((r) => [r.low, r.high]),
