@@ -68,3 +68,15 @@ def test_confidence_interval_brackets_the_slope():
     y = 0.3 + 0.9 * x + np.sin(np.arange(60))  # some structured scatter
     fit = deming_regression(x, y)
     assert fit.slope_ci_low < fit.slope < fit.slope_ci_high
+
+
+def test_a_degenerate_cloud_raises_rather_than_inventing_a_slope():
+    """With no covariance the line has no defined orientation.
+
+    The first version returned slope 0 with a zero-width interval here — a
+    confident answer to a question the data cannot answer.
+    """
+    import pytest
+
+    with pytest.raises(ValueError, match="no linear relationship"):
+        deming_regression([1.0, 1.0, 1.0, 1.0], [0.0, 1.0, 2.0, 3.0])

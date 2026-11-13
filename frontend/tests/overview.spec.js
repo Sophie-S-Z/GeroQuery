@@ -34,7 +34,7 @@ test.describe("overview (landing)", () => {
 
   test("a finding row navigates into its view", async ({ page }) => {
     await page.goto("/");
-    const row = page.locator(".findings button", { hasText: "moves the whole corpus" });
+    const row = page.locator(".findings button", { hasText: "pulls hardest on the evidence" });
     await expect(row).toBeVisible({ timeout: 30_000 });
     await row.click();
     await expect(page).toHaveURL(/view=panel/);

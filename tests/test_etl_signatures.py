@@ -561,6 +561,8 @@ def test_cross_species_pairs_by_ortholog_group_and_counts_concordance():
             "species": species,
             "symbol": symbol,
             "g": g,
+            # Mouse estimates twice as noisy as human: the error ratio is 4.
+            "se": 0.2 if species == "mouse" else 0.1,
             "k": k,
             "verdict": verdict,
             "ortholog_group": group,
@@ -593,6 +595,18 @@ def test_cross_species_pairs_by_ortholog_group_and_counts_concordance():
     assert deming["slope_ci_low"] <= deming["slope"] <= deming["slope_ci_high"]
     groups = {p["ortholog_group"] for p in result["pairs"]}
     assert groups == {"UP", "DOWN", "MIX"}
+    # The Deming error ratio comes from the measured SEs, not an assumed 1. The
+    # first version assumed 1 and shipped a slope of 3.13 where the data's own
+    # ratio (3.63) gives 0.31.
+    assert deming["delta"] == 4.0
+    # Each pair carries its quadrant, so the browser reads it instead of
+    # re-deriving the rule.
+    assert {p["ortholog_group"]: p["quadrant"] for p in result["pairs"]} == {
+        "UP": "both_up",
+        "DOWN": "both_down",
+        "MIX": "unresolved",
+    }
+    assert -1 <= result["correlation"] <= 1
 
 
 def test_the_committed_cross_species_is_internally_consistent():
@@ -654,7 +668,7 @@ def test_the_committed_influence_is_internally_consistent():
     ranking = json.loads((data / "influence_corpus.json").read_text())
     assert {r["study_id"] for r in ranking} == set(contrasts["study_id"].unique())
     assert all(
-        a["total_abs_shift"] >= b["total_abs_shift"]
+        a["mean_abs_shift"] >= b["mean_abs_shift"]
         for a, b in zip(ranking, ranking[1:], strict=False)
     )
 

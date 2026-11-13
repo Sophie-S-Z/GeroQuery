@@ -8,15 +8,15 @@ import { shortLabel } from "./ForestPlot.jsx";
  * (§4.5). The view with no equivalent in any comparable tool, because no
  * comparable tool re-derives its own numbers.
  *
- * Because the panel is near-balanced — every gene is measured in very nearly the
- * same contrasts — a contrast's leave-one-out shift, summed across all ~42k
- * pooled genes, is a statement about the *panel itself*: drop this one contrast
- * and the corpus moves by this much, in total, across this many genes. That is
- * provenance made measurable, which is this repo's entire argument.
+ * Each bar is a contrast's mean leave-one-out shift over the genes it measures:
+ * drop this one contrast and the pooled estimates that depend on it move this
+ * far on average. The mean, not the total, because coverage varies twentyfold
+ * between arrays and a total mostly ranks array size. That is provenance made
+ * measurable, which is this repo's entire argument.
  *
  * The bar is pure magnitude, so it is a single ink mark, not a colour scale;
  * identity (accession, tissue, platform, n) rides in the labels and the table
- * beside it. Everything shown is computed in Python (`corpus_influence`) and
+ * beside it. Everything shown is computed in Python (`add_influence`) and
  * shipped in `influence_corpus.json`.
  *
  * @param {object} props
@@ -42,51 +42,66 @@ export default function CorpusInfluence({ ranking, byStudy }) {
       };
     });
 
-    const chart = Plot.plot({
-      marginLeft: 150,
-      marginRight: 18,
-      marginTop: 8,
-      marginBottom: 36,
-      width: 760,
-      height: rows.length * 19 + 54,
-      style: { background: "transparent", color: c.inkFaint, fontFamily: c.mono, fontSize: "10px" },
-      x: {
-        label: "total leave-one-out shift, summed over every pooled gene →",
-        labelAnchor: "center",
-        labelOffset: 32,
-        grid: true,
-        nice: true,
-      },
-      y: { label: null, domain: rows.map((r) => r.accession) },
-      marks: [
-        Plot.ruleX([0], { stroke: c.rule, strokeWidth: 1 }),
-        Plot.barX(rows, {
-          y: "accession",
-          x: "total_abs_shift",
-          fill: c.ink,
-          inset: 2,
-          title: (d) =>
-            `${d.accession}\n${d.tissue}${d.species ? ` · ${d.species}` : ""}` +
-            `${d.n ? ` · n = ${d.n}` : ""}\n` +
-            `total shift ${d.total_abs_shift.toFixed(1)} across ${d.n_genes.toLocaleString()} genes\n` +
-            `mean shift per gene ${d.mean_abs_shift.toFixed(4)}`,
-        }),
-        // The tissue, direct-labelled at the bar end — identity in text, not a
-        // second colour encoding on a magnitude bar.
-        Plot.text(rows, {
-          y: "accession",
-          x: "total_abs_shift",
-          text: "tissue",
-          textAnchor: "start",
-          dx: 5,
-          fill: c.inkFaint,
-          fontSize: 9,
-        }),
-      ],
+    // One panel per species on a shared x scale. A mouse gene is pooled from
+    // fewer, noisier contrasts than a human one, so dropping a mouse contrast
+    // moves it further by construction: bars compare only within a species.
+    const max = Math.max(...rows.map((r) => r.mean_abs_shift));
+    const node = host.current;
+    const panels = [...new Set(rows.map((r) => r.species))].sort().map((species) => {
+      const here = rows.filter((r) => r.species === species);
+      const chart = Plot.plot({
+        marginLeft: 150,
+        marginRight: 18,
+        marginTop: 8,
+        marginBottom: 36,
+        width: 760,
+        height: here.length * 19 + 54,
+        style: { background: "transparent", color: c.inkFaint, fontFamily: c.mono, fontSize: "10px" },
+        x: {
+          domain: [0, max],
+          label: "mean leave-one-out shift per gene measured →",
+          labelAnchor: "center",
+          labelOffset: 32,
+          grid: true,
+          nice: true,
+        },
+        y: { label: null, domain: here.map((r) => r.accession) },
+        marks: [
+          Plot.ruleX([0], { stroke: c.rule, strokeWidth: 1 }),
+          Plot.barX(here, {
+            y: "accession",
+            x: "mean_abs_shift",
+            fill: c.ink,
+            inset: 2,
+            title: (d) =>
+              `${d.accession}\n${d.tissue}${d.n ? ` · n = ${d.n}` : ""}\n` +
+              `mean shift per gene ${d.mean_abs_shift.toFixed(4)} across ${d.n_genes.toLocaleString()} genes\n` +
+              `total ${d.total_abs_shift.toFixed(1)}`,
+          }),
+          // The tissue, direct-labelled at the bar end — identity in text, not a
+          // second colour encoding on a magnitude bar.
+          Plot.text(here, {
+            y: "accession",
+            x: "mean_abs_shift",
+            text: "tissue",
+            textAnchor: "start",
+            dx: 5,
+            fill: c.inkFaint,
+            fontSize: 9,
+          }),
+        ],
+      });
+      const figure = document.createElement("figure");
+      figure.className = "facet";
+      const caption = document.createElement("figcaption");
+      caption.className = "facet-title";
+      caption.textContent = `${species || "unspecified"} · ${here.length} contrasts`;
+      figure.append(caption, chart);
+      return figure;
     });
 
-    host.current.replaceChildren(chart);
-    return () => chart.remove();
+    node.replaceChildren(...panels);
+    return () => node.replaceChildren();
   }, [ranking, byStudy]);
 
   if (!ranking?.length) return null;

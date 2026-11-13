@@ -8,7 +8,7 @@ async function influenceJson() {
 }
 
 test.describe("corpus influence (§4.5)", () => {
-  test("ranks every contrast by how much it moves the whole corpus", async ({ page }) => {
+  test("ranks every contrast by how hard it pulls on the genes it measures", async ({ page }) => {
     const problems = watchForErrors(page);
     await page.goto("/?view=panel");
     await expect(page.locator(".panel-title", { hasText: "bends the corpus" })).toBeVisible({
@@ -23,8 +23,9 @@ test.describe("corpus influence (§4.5)", () => {
     const labels = await axisLabels(chart);
     expect(labels.length).toBe(ranking.length);
 
-    // Ranked: the shipped file is sorted by total_abs_shift descending.
-    const shifts = ranking.map((r) => r.total_abs_shift);
+    // Ranked by the mean shift per gene measured, not the total, which mostly
+    // ranks array size (coverage runs 1,007 to 20,897 genes).
+    const shifts = ranking.map((r) => r.mean_abs_shift);
     for (let i = 1; i < shifts.length; i++) expect(shifts[i]).toBeLessThanOrEqual(shifts[i - 1]);
 
     expect(problems).toEqual([]);
@@ -39,8 +40,8 @@ test.describe("corpus influence (§4.5)", () => {
     const ranking = await influenceJson();
     const top = ranking[0];
     // Every chart needs a table; the study table is it, carrying the shift column.
-    await expect(page.locator("th", { hasText: "corpus shift" })).toBeVisible();
-    // The table prints the top contrast's shift to one decimal.
-    await expect(page.locator("tbody")).toContainText(top.total_abs_shift.toFixed(1));
+    await expect(page.locator("th", { hasText: "mean shift" })).toBeVisible();
+    // The table prints the top contrast's mean shift to three decimals.
+    await expect(page.locator("tbody")).toContainText(top.mean_abs_shift.toFixed(3));
   });
 });

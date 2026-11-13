@@ -99,7 +99,9 @@ export default function Overview({ onNavigate, onPick }) {
       title: "Human and mouse rarely resolve the same gene",
       body: `Of ${fmtInt(crossspecies.n_pairs)} orthologs measured in both species, ${
         crossspecies.quadrants.both_up + crossspecies.quadrants.both_down
-      } have a direction in both at once — and none of them disagree.`,
+      } have a direction in both at once, and ${
+        crossspecies.quadrants.discordant
+      } of those disagree.`,
     },
     crosslayer?.available && {
       view: "mortality",
@@ -110,14 +112,15 @@ export default function Overview({ onNavigate, onPick }) {
         crosslayer.clocks.filter((c) => c.c_clock < c.c_dysregulation).length
       } of ${crosslayer.clocks.length} DNA-methylation clocks.`,
     },
-    top && {
+    top &&
+      topStudy && {
       view: "panel",
-      title: "One contrast moves the whole corpus",
-      body: `Dropping ${top.study_id.replace(/^GEO:/, "")}${
-        topStudy ? ` (${topStudy.species} ${topStudy.tissue})` : ""
-      } shifts the pooled estimate of ${fmtInt(top.n_genes)} genes — more than any other of the ${
-        influence.length
-      } contrasts.`,
+      title: "One contrast pulls hardest on the evidence",
+      body: `Dropping ${top.study_id.replace(/^GEO:/, "")} (${topStudy.species} ${
+        topStudy.tissue
+      }) moves the pooled estimate of the ${fmtInt(top.n_genes)} genes it measures by ${top.mean_abs_shift.toFixed(
+        3,
+      )} on average — more than any other ${topStudy.species} contrast.`,
     },
   ].filter(Boolean);
 
@@ -194,8 +197,11 @@ export default function Overview({ onNavigate, onPick }) {
           study would land. A corpus-wide adaptive-shrinkage prior gives each gene a local false
           sign rate — the probability its direction is wrong. Cross-species agreement uses a Deming
           (errors-in-both-variables) fit; the mortality result is a survey-weighted Cox model with a
-          design-based sandwich variance, plus weighted Kaplan-Meier curves and restricted mean
-          survival time. Every one of these is computed in Python by the estimator the API serves
+          design-based sandwich variance
+          {crosslayer?.survival_curves
+            ? ", plus weighted Kaplan-Meier curves and restricted mean survival time"
+            : ""}
+          . Every one of these is computed in Python by the estimator the API serves
           and shipped in the Parquet/JSON; this page renders them and never re-derives them, so the
           website, the API and the MCP tool cannot disagree about what a gene&rsquo;s answer is.
         </p>

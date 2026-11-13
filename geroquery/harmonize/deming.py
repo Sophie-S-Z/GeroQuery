@@ -3,13 +3,16 @@
 The cross-species scatter (§4.2 of ``VISUAL_AND_STATISTICAL_PLAN``) plots human
 pooled effect against mouse pooled effect, one point per ortholog group. Both
 axes are Hedges' g and both carry measurement error, so the fitted line must be
-Deming/orthogonal, not ordinary least squares: OLS is biased toward a flat slope
-when the predictor is noisy, which here would understate cross-species
-conservation and make the understatement look like a result.
+Deming, not ordinary least squares: OLS is biased toward a flat slope when the
+predictor is noisy, which here would understate cross-species conservation and
+make the understatement look like a result.
 
-``delta`` is the ratio of the error variance in y to the error variance in x.
-``delta = 1`` is orthogonal / total-least-squares regression, the default and
-the right choice when both axes are on the same scale (both are Hedges' g).
+``delta`` is the ratio of the error variance in y to the error variance in x,
+and it has to be *measured*. Sharing a unit is not sharing an error: both axes
+are Hedges' g, yet mouse pooled estimates carry 3.6× the error variance of
+human ones, and assuming ``delta = 1`` (orthogonal regression, the default here)
+turned a cross-species slope of 0.31 into 3.13. Callers with standard errors
+should pass their ratio.
 
 Only the estimator lives here; the exporter computes the fit once over the
 corpus and ships slope/intercept/CI in ``crossspecies.json`` so the browser
@@ -42,9 +45,9 @@ def _slope_intercept(x: np.ndarray, y: np.ndarray, delta: float) -> tuple[float,
     syy = float(np.sum((y - ybar) ** 2))
     sxy = float(np.sum((x - xbar) * (y - ybar)))
     if sxy == 0.0:
-        # No linear relationship to orient the line; slope is undefined. Report
-        # a flat line through the means rather than dividing by zero.
-        return 0.0, ybar
+        # No covariance means the line has no defined orientation. Returning a
+        # flat line here would be a confident answer to an unanswerable question.
+        raise ValueError("no linear relationship: x and y have zero covariance.")
     # Standard Deming closed form (Deming 1943); delta = Var(e_y)/Var(e_x).
     term = syy - delta * sxx
     slope = (term + np.sqrt(term**2 + 4.0 * delta * sxy**2)) / (2.0 * sxy)

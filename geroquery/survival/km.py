@@ -59,6 +59,8 @@ def _prepare(
     w = np.ones_like(t) if weight is None else np.asarray(weight, dtype=float)
     if not (t.shape == e.shape == w.shape) or t.ndim != 1:
         raise ValueError("time, event and weight must be 1-D and equal length.")
+    if t.size == 0:
+        raise ValueError("need at least one subject.")
     if np.any(t < 0):
         raise ValueError("times must be non-negative.")
     if np.any(w < 0):
@@ -128,6 +130,10 @@ def rmst(
     t, e, w = _prepare(time, event, weight)
     if tau <= 0:
         raise ValueError("tau must be positive.")
+    if tau > t.max():
+        # Past the last observation the curve is unknown; carrying its last
+        # value forward would report years nobody was followed for.
+        raise ValueError(f"tau={tau} is beyond the last follow-up time ({t.max():g}).")
 
     event_times, surv = _steps(t, e, w)
     # Breakpoints inside (0, tau): survival is 1 up to the first event time.
