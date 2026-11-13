@@ -35,9 +35,6 @@ from .pyaging_clocks import PyagingClock, load_pyaging_clocks
 
 CLINICAL_FEATURES = ("albumin", "creatinine", "glucose", "crp", "lymphocyte_pct", "rdw")
 
-# PhenoAge needs three markers beyond the resilience six. Kept as its own tuple
-# rather than widening CLINICAL_FEATURES, which the resilience path depends on.
-PHENOAGE_FEATURES: tuple[str, ...] = phenoage.REQUIRED_FEATURES
 EXPRESSION_FEATURES = ("ENSG00000147889", "ENSG00000124762", "ENSG00000113368", "ENSG00000130513")
 
 

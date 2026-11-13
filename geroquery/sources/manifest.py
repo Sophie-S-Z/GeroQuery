@@ -707,10 +707,6 @@ GEO_AGING_PANEL: dict[str, RemoteArtifact] = {
     )
 }
 
-# Series id per dataset, for the non-independence caveat above.
-GEO_SERIES_BY_ACCESSION: dict[str, str] = {row[0]: row[6] for row in _GEO_PANEL}
-GEO_PUBMED_BY_ACCESSION: dict[str, str | None] = {row[0]: row[7] for row in _GEO_PANEL}
-
 
 # --- GEO DNA-methylation series: the clock validation panel -----------------
 #

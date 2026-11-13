@@ -367,4 +367,4 @@ Recommendation: **optimize for the real tool.** A hiring manager at Gero cannot 
 | HTTP layer | `geroquery/api/app.py` |
 | Storage + versioning | `geroquery/store/store.py` |
 | Reference gene/tissue/lifespan data | `geroquery/idmap/data/*.json` |
-| Product spec | `docs/PRD_GeroQuery_Multi-Omic_Aging_Aggregator (1).md` |
+| Product spec | `docs/PRD_GeroQuery_Multi-Omic_Aging_Aggregator.md` |

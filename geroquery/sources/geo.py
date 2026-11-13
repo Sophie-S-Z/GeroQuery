@@ -155,11 +155,10 @@ CONTROL_LEVELS = frozenset(
 # splitting every contrast by it would halve already small groups.
 SEX_VARIABLES = frozenset({"gender", "sex"})
 
-# Recorded but neither split nor restricted. "individual" is sample identity;
-# "strain" and "other" cover background variation that pooling absorbs into the
-# within-group SD, which biases the effect size towards zero — a conservative
-# direction, and preferable to dropping the study.
-POOLED_VARIABLES = frozenset({"individual", "strain", "other", "age"})
+# Every other subset variable is pooled, neither split nor restricted — e.g.
+# "individual" (sample identity), "strain" and "other" (background variation
+# that pooling absorbs into the within-group SD, which biases the effect size
+# towards zero: a conservative direction, and preferable to dropping the study).
 
 
 @dataclass(frozen=True)
