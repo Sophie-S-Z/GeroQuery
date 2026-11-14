@@ -187,12 +187,13 @@ npm install
 npm run dev                         # http://localhost:5173
 ```
 
-**Seven views:**
+**Eight views:**
 
 | View | What it shows |
 |---|---|
 | **Overview** | The landing page: the honest headline (only 1,280 of 41,983 genes clear the *prediction* interval, against 3,707 for the confidence interval), a certainty funnel, corpus scope, and the strongest findings |
-| **Gene** | One gene's readout: pooled effect, interval, prediction interval, a forest plot of every contrast, a **leave-one-out audit strip** beside it, **tissue small-multiples**, and an AlphaFold structure out-link |
+| **Gene** | One gene's readout: pooled effect, interval, prediction interval, a forest plot of every contrast, a **leave-one-out audit strip** beside it, **tissue small-multiples**, a copyable citation carrying the data version, a contrasts CSV, and links to the same gene at AlphaFold, GenAge, GTEx and NCBI Gene |
+| **Gene list** | Paste a list (a hit list, a pathway, a candidate panel) and see each gene's verdict, interval and prediction interval, the list's resolution rate beside the rate for every gene, names it could not match (including spreadsheet-mangled dates like `1-Sep`), and a CSV. One click loads **GenAge's 307 curated human aging genes**: 297 are measured, and only 76 (26%) resolve a direction, against 14% of all human genes |
 | **Landscape** | The whole corpus binned by effect size, plus the strongest replicated effects (ranked by the shrunken estimate, not the raw one) |
 | **Certainty** | Every pooled estimate as effect against the local false sign rate — where the large effects are also the least trustworthy |
 | **Cross-species** | Human vs mouse pooled effect, one point per ortholog group, with a **Deming fit** (each species' measured error) and the honest concordance count |
@@ -559,6 +560,7 @@ testable with the layer below mocked.
 | [`docs/VISUAL_AND_STATISTICAL_PLAN.md`](docs/VISUAL_AND_STATISTICAL_PLAN.md) | What to build next in charts and statistics, and what **not** to build |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Where this goes next, and why |
 | [`docs/OVERVIEW.md`](docs/OVERVIEW.md) | Source table, architecture, use cases |
+| [`docs/LANDSCAPE_2026-11.md`](docs/LANDSCAPE_2026-11.md) | The field as of Nov 2026, where GeroQuery fits, what changed because of it, and the licence audit for commercial use |
 | [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md) | Cache-vs-federate contract and licences |
 | [`docs/DEPLOY.md`](docs/DEPLOY.md) | Putting the static site online, free |
 | [`docs/RESULTS_*.md`](docs/) | The four scientific results, in full |
@@ -574,4 +576,7 @@ Code: **MIT**.
 Bundled data are redistributable slices of real upstream releases; every upstream
 keeps its own licence, attributed per adapter and recorded in
 `geroquery/sources/manifest.py`. HAGR data is free for non-commercial use with
-attribution. See [`LICENSE`](LICENSE).
+attribution, which covers the GenAge comparison in `curated.json`: a commercial
+deployment must license it or drop it (see
+[`docs/LANDSCAPE_2026-11.md`](docs/LANDSCAPE_2026-11.md#commercial-use)). See
+[`LICENSE`](LICENSE).
