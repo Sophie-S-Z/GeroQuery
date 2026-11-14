@@ -360,8 +360,8 @@ def render_markdown(diff: PanelDiff, *, max_rows_per_kind: int = 25) -> str:
         f"{before.manifest_version} → {after.manifest_version} · data version "
         f"`{before.data_version[:12]}` → `{after.data_version[:12]}`",
         "",
-        f"Panel: {before.n_contrasts} → **{after.n_contrasts} contrasts** over "
-        f"{len(after.accessions)} GEO DataSets / {len(after.series)} Series. "
+        f"Panel: {before.n_contrasts} → **{after.n_contrasts} contrasts** from "
+        f"{len(after.series)} GEO Series. "
         f"Pooled estimates with k ≥ {MIN_CONTRASTS}: "
         f"{len(before.estimates)} → **{len(after.estimates)}**.",
         "",
@@ -415,7 +415,8 @@ def render_markdown(diff: PanelDiff, *, max_rows_per_kind: int = 25) -> str:
         "---",
         "",
         "**This PR must not be auto-merged.** The panel is rule-selected — datasets "
-        "enter because they satisfy the GEO DataSets query and the contrast rules, "
+        "enter because they satisfy the GEO DataSets query, the ARCHS4 sample rule and "
+        "the contrast rules, "
         "never because of their result. Review that the membership change above is "
         "explained by upstream, then merge. Do not hand-edit the panel.",
         "",

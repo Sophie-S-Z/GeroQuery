@@ -34,13 +34,17 @@ from ..exceptions import GeroQueryError
 
 # Applies to every signature answer. Kept here rather than in prose docs because
 # a tool response is often the only thing a caller ever reads.
+# No counts here: a caveat that names "32 contrasts" goes stale the day the
+# panel grows, and a stale caveat is a false statement an agent will repeat.
 SIGNATURE_CAVEATS: tuple[str, ...] = (
-    "Microarray-era GEO DataSets only; no RNA-seq.",
-    "Groups of 3-15 subjects; median 95% CI width 0.84 — detects large consistent "
-    "effects, cannot rule out moderate ones.",
-    "Half the human contrasts are skeletal muscle; one blood contrast (n=9).",
-    "32 contrasts come from 27 GEO Series, so some share subjects.",
-    "Cross-study processing heterogeneity is not corrected.",
+    "Two platforms are pooled: microarray GEO DataSets and ARCHS4 bulk RNA-seq; their "
+    "differences are absorbed by the between-study variance, not corrected.",
+    "Many groups are small (three per arm is the minimum), so an interval that spans "
+    "zero means the data cannot decide, not that there is no effect.",
+    "Tissue coverage is uneven; check the tissues behind a pooled estimate before "
+    "generalizing it.",
+    "Contrasts from one GEO Series (split arrays, several tissues or cell types from "
+    "the same animals) can share subjects; the pool assumes independence.",
 )
 
 # A pooled estimate whose interval contains zero is reported as no evidence,

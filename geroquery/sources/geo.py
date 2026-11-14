@@ -227,10 +227,10 @@ class AgeContrast:
     def study_id(self) -> str:
         """``GEO:GDS5216`` for a whole dataset, suffixed when it was stratified."""
         base = f"GEO:{self.accession}"
-        return f"{base}:{_slug(self.stratum)}" if self.stratum else base
+        return f"{base}:{slug(self.stratum)}" if self.stratum else base
 
 
-def _slug(text: str) -> str:
+def slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
 
@@ -521,7 +521,7 @@ def _format_age(years: float, species: str) -> str:
     return f"{years:.0f}y" if species == "human" else f"{years * 12:.0f}mo"
 
 
-def _age_range_label(descriptions: dict[str, list[str]], species: str) -> str:
+def age_range_label(descriptions: dict[str, list[str]], species: str) -> str:
     parts = []
     for group in ("young", "old"):
         values = [v for v in (age_in_years(d) for d in descriptions[group]) if v is not None]
@@ -644,7 +644,7 @@ def build_contrasts(header: GdsHeader) -> tuple[list[AgeContrast], list[str]]:
                 species=species,
                 tissue=_contrast_tissue(header, tuple(sorted(samples)), label),
                 sex=_sex_label(header, samples),
-                age_range=_age_range_label(labels, species),
+                age_range=age_range_label(labels, species),
                 young_samples=tuple(sorted(young)),
                 old_samples=tuple(sorted(old)),
                 restrictions=tuple(applied),

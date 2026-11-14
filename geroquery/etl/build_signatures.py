@@ -4,9 +4,11 @@ Run: ``GEROQUERY_ALLOW_NETWORK=1 python -m geroquery.etl.build_signatures``
 
 This is the module that removed the last generated layer from GeroQuery. It
 fetches the checksum-pinned GEO DataSets panel, derives a young-vs-old contrast
-per dataset under the rules in :mod:`geroquery.sources.geo`, estimates a Hedges'
-*g* per gene, resolves every probe to a canonical gene id, and writes the tables
-the store builds from. It also loads the five HAGR curated databases.
+per dataset under the rules in :mod:`geroquery.sources.geo`, adds the RNA-seq
+contrasts the ARCHS4 rule selects (:mod:`geroquery.sources.archs4`), estimates a
+Hedges' *g* per gene, resolves every gene key to a canonical id through one
+resolver, and writes the tables the store builds from. It also loads the five
+HAGR curated databases.
 
 Outputs in ``geroquery/sources/data/``:
 
@@ -14,7 +16,7 @@ Outputs in ``geroquery/sources/data/``:
     Every gene of every contrast. Git-ignored: it is reproducible from the
     manifest, and a committed copy would be a second, unverifiable one.
 
-``signatures_curated.csv``
+``signatures_curated.csv.gz``
     The rows whose gene carries a HAGR assertion, plus each such gene's
     cross-species ortholog. Committed, so tests and CI run offline. This is a
     *gene-restricted slice of the same real estimates*, not a different or
@@ -24,20 +26,31 @@ Outputs in ``geroquery/sources/data/``:
 ``studies.csv``, ``curated_knowledge.csv``, ``interventions.csv``
     Small enough to commit whole.
 
+``archs4_selection.csv``
+    The samples behind every ARCHS4 contrast. ARCHS4 replaces its file in
+    place, so this committed list is the durable record of what was measured.
+
 Runtime is dominated by parsing ~300 MB of gzipped SOFT, not by the network.
 """
 
 from __future__ import annotations
 
 import argparse
+import functools
+import hashlib
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import replace
 from pathlib import Path
 
 import pandas as pd
 
+from .. import config
 from ..config import SOURCES_DATA
+from ..exceptions import NetworkDisabledError
 from ..harmonize.differential import contrast_effects
 from ..idmap.bulk import resolve_bulk
-from ..sources import geo, hagr
+from ..sources import archs4, geo, hagr
 from ..sources.fetch import fetch_artifact
 from ..sources.manifest import (
     GEO_AGING_PANEL,
@@ -51,10 +64,12 @@ from ..sources.manifest import (
 OMIC_LAYER = "transcriptome"
 
 FULL_SIGNATURES = "signatures_full.csv"
-CURATED_SIGNATURES = "signatures_curated.csv"
+# Gzipped: with the RNA-seq contrasts the slice is ~340k rows, 50 MB as text.
+CURATED_SIGNATURES = "signatures_curated.csv.gz"
 STUDIES = "studies.csv"
 CURATED_KNOWLEDGE = "curated_knowledge.csv"
 INTERVENTIONS = "interventions.csv"
+ARCHS4_SELECTION = "archs4_selection.csv"
 
 SIGNATURE_COLUMNS = [
     "gene_id",
@@ -160,6 +175,170 @@ def contrast_frames(
         pd.concat(signature_parts, ignore_index=True) if signature_parts else pd.DataFrame()
     )
     return signatures, pd.DataFrame(study_rows), skipped
+
+
+@functools.cache
+def _archs4_release(species: str):
+    """One open ARCHS4 file per species per process (each worker opens its own)."""
+    return archs4.open_release(species)
+
+
+@functools.cache
+def _archs4_keys(species: str) -> pd.Series:
+    return archs4.gene_keys(_archs4_release(species))
+
+
+def _archs4_fresh() -> None:
+    """Drop the cached handles, so a new build never reuses an old connection."""
+    _archs4_release.cache_clear()
+    _archs4_keys.cache_clear()
+
+
+def _archs4_effects(job: tuple[str, list[str], list[str], list[int]]) -> pd.DataFrame:
+    """Hedges' g per gene for one ARCHS4 contrast; runs in a worker process.
+
+    Each result is cached under a key of the release, the expression filter and
+    the exact sample lists, so an interrupted hour-long build resumes instead
+    of starting over, and a changed rule or release can never reuse a stale one.
+    """
+    species, young, old, columns = job
+    key = repr((archs4.VERSION, archs4.MIN_CPM, species, young, old))
+    path = (
+        Path(config.CACHE_HOME)
+        / "archs4"
+        / f"{hashlib.sha256(key.encode()).hexdigest()[:24]}.parquet"
+    )
+    if path.exists():
+        return pd.read_parquet(path)
+    counts = archs4.read_counts(_archs4_release(species), columns, young + old)
+    counts = counts[archs4.expressed(counts, min(len(young), len(old)))]
+    effects = contrast_effects(
+        archs4.log_cpm(counts), young, old, genes=_archs4_keys(species), already_log=True
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    effects.to_parquet(path)
+    return effects
+
+
+def archs4_frames(
+    *,
+    exclude_series: set[str],
+    allow_network: bool | None = None,
+    quiet: bool = False,
+    workers: int = 6,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Estimate every contrast the ARCHS4 selection rule admits.
+
+    Returns ``(signatures, studies, selection)`` in the shapes
+    :func:`contrast_frames` uses, plus the per-contrast sample lists.
+    ``exclude_series`` holds the DataSets panel's series, so no experiment is
+    pooled twice.
+
+    Reading is latency-bound, not bandwidth-bound: a sample scattered through
+    the 64 GB file costs many round trips through its chunk index, and h5py
+    serializes reads within one process. ``workers`` processes, each with its
+    own connection and block cache, divide the wall time accordingly. They are
+    spawned, not forked: a forked worker inherits the parent's million-row
+    metadata table and its open connection, and eight copies of the first
+    exhaust memory. Each worker is also replaced after a few contrasts, because
+    h5py's caches grow as it reads across the file. Results are collected in
+    contrast order, so the output does not depend on scheduling.
+    """
+    if not (config.ALLOW_NETWORK if allow_network is None else allow_network):
+        raise NetworkDisabledError(
+            "ARCHS4 is read remotely. Set GEROQUERY_ALLOW_NETWORK=1, or pass --no-archs4 "
+            "to build the DataSets panel alone."
+        )
+    _archs4_fresh()  # never reuse a handle across builds or tests
+    parts: list[pd.DataFrame] = []
+    study_rows: list[dict] = []
+    selection: list[dict] = []
+    taken: set[str] = set()
+    for species in ("human", "mouse"):
+        meta = archs4.read_metadata(_archs4_release(species))
+        contrasts = archs4.select_contrasts(meta, species, exclude_series=exclude_series)
+        column = {accession: i for i, accession in enumerate(meta["geo_accession"])}
+        del meta  # a million rows the workers never need
+        jobs = [
+            (
+                species,
+                list(c.young_samples),
+                list(c.old_samples),
+                [column[a] for a in c.young_samples + c.old_samples],
+            )
+            for c in contrasts
+        ]
+        if workers > 1 and len(jobs) > 1:
+            context = multiprocessing.get_context("spawn")
+            # Recycled every few contrasts: h5py's index and metadata caches grow
+            # as a worker reads across the file, and a fresh process returns it.
+            with ProcessPoolExecutor(workers, mp_context=context, max_tasks_per_child=8) as pool:
+                estimated = list(pool.map(_archs4_effects, jobs))
+        else:
+            estimated = [_archs4_effects(job) for job in jobs]
+        for index, (contrast, effects) in enumerate(zip(contrasts, estimated, strict=True), 1):
+            if contrast.study_id in taken:
+                # One series can hold both species (GSE193665 profiles human and
+                # mouse myoblasts); the second keeps its own id.
+                label = f"species={species}"
+                contrast = replace(
+                    contrast,
+                    stratum=f"{contrast.stratum} / {label}" if contrast.stratum else label,
+                )
+            taken.add(contrast.study_id)
+            young, old = list(contrast.young_samples), list(contrast.old_samples)
+            _log(
+                f"[{index:3d}/{len(contrasts)}] {contrast.study_id} {species} "
+                f"{len(young)}v{len(old)} -> {len(effects)} genes",
+                quiet=quiet,
+            )
+            frame = effects.reset_index(names="gene_key")
+            frame["study_id"] = contrast.study_id
+            frame["omic_layer"] = OMIC_LAYER
+            frame["species"] = species
+            frame["tissue"] = contrast.tissue
+            frame["sex"] = contrast.sex
+            frame["age_range"] = contrast.age_range
+            frame["source"] = "ARCHS4"
+            parts.append(frame)
+            study_rows.append(
+                {
+                    "study_id": contrast.study_id,
+                    "source": "ARCHS4",
+                    "omic_layer": OMIC_LAYER,
+                    "species": species,
+                    "tissue": contrast.tissue,
+                    "sample_size": len(young) + len(old),
+                    "processing_method": (
+                        "ARCHS4 uniform RNA-seq gene counts; log2 CPM, genes with "
+                        f">={archs4.MIN_CPM:g} CPM in as many samples as the smaller arm; "
+                        "MaxMean symbol collapse; Hedges' g"
+                    ),
+                    "license": archs4.LICENSE,
+                    "url": f"https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc={contrast.series}",
+                    "version": f"ARCHS4 {archs4.VERSION} ({archs4.RELEASED})",
+                    "series_id": contrast.series,
+                    "platform": "RNA-seq",
+                    "pubmed_id": None,
+                    "n_young": len(young),
+                    "n_old": len(old),
+                    "age_range": contrast.age_range,
+                    "sex": contrast.sex,
+                    "restrictions": contrast.stratum or "",
+                }
+            )
+            selection.append(
+                {
+                    "study_id": contrast.study_id,
+                    "species": species,
+                    "series_id": contrast.series,
+                    "stratum": contrast.stratum,
+                    "young_samples": " ".join(young),
+                    "old_samples": " ".join(old),
+                }
+            )
+    signatures = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
+    return signatures, pd.DataFrame(study_rows), pd.DataFrame(selection)
 
 
 def resolve_gene_ids(
@@ -290,6 +469,7 @@ def build_all(
     *,
     allow_network: bool | None = None,
     quiet: bool = False,
+    include_archs4: bool = True,
 ) -> dict[str, object]:
     """Run the whole signature + curated-knowledge ETL and write every table."""
     data_dir = data_dir or SOURCES_DATA
@@ -299,6 +479,17 @@ def build_all(
     raw, studies, skipped = contrast_frames(allow_network=allow_network, quiet=quiet)
     if raw.empty:
         raise RuntimeError("The GEO panel produced no signatures; refusing to write empty tables.")
+    n_datasets_contrasts = len(studies)
+    if include_archs4:
+        _log("Estimating ARCHS4 age contrasts...", quiet=quiet)
+        a_raw, a_studies, selection = archs4_frames(
+            exclude_series=set(studies["series_id"].dropna()),
+            allow_network=allow_network,
+            quiet=quiet,
+        )
+        raw = pd.concat([raw, a_raw], ignore_index=True)
+        studies = pd.concat([studies, a_studies], ignore_index=True)
+        selection.to_csv(data_dir / ARCHS4_SELECTION, index=False)
 
     _log("Resolving gene identifiers...", quiet=quiet)
     signatures, id_stats, symbols = resolve_gene_ids(raw, allow_network=allow_network, quiet=quiet)
@@ -328,6 +519,7 @@ def build_all(
         "checksums_verified_on": VERIFIED_ON,
         "datasets": len(GEO_AGING_PANEL),
         "contrasts": len(studies),
+        "archs4_contrasts": len(studies) - n_datasets_contrasts,
         "series": int(studies["series_id"].nunique()),
         "signature_rows": len(signatures),
         "genes": int(signatures["gene_id"].nunique()),
@@ -350,9 +542,20 @@ def main(argv: list[str] | None = None) -> int:
         help="use only already-verified cached artifacts; fail rather than download",
     )
     parser.add_argument("--quiet", action="store_true", help="suppress per-dataset progress")
+    parser.add_argument(
+        "--no-archs4",
+        action="store_true",
+        help="build the GEO DataSets panel alone (ARCHS4 is read remotely and takes about an hour)",
+    )
     args = parser.parse_args(argv)
 
-    summary = build_all(allow_network=not args.offline, quiet=args.quiet)
+    # ARCHS4 is read remotely and never cached, so an offline build is a
+    # DataSets-only build.
+    summary = build_all(
+        allow_network=not args.offline,
+        quiet=args.quiet,
+        include_archs4=not (args.no_archs4 or args.offline),
+    )
     print()
     for key, value in summary.items():
         print(f"{key}: {value}")

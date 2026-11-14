@@ -1,5 +1,7 @@
 """M2 sources — adapter contract and registry."""
 
+import gzip
+
 from geroquery.sources import (
     CuratedKnowledgeSource,
     InterventionSource,
@@ -15,10 +17,10 @@ def test_local_signature_adapter_reads_the_committed_slice():
     source = LocalSignatureSource(prefer_full=False)
     assert source.mode() == "curated_slice"
     sigs = source.signatures()
-    assert len(sigs) == 40585
+    assert len(sigs) == 343808
     assert {s.species for s in sigs} == {"human", "mouse"}
     assert all(s.effect_size is not None and s.standard_error is not None for s in sigs)
-    assert all(s.source == "GEO" for s in sigs)
+    assert {s.source for s in sigs} == {"GEO", "ARCHS4"}
 
 
 ONE_ROW = (
@@ -27,7 +29,8 @@ ONE_ROW = (
 
 
 def test_signature_adapter_prefers_the_full_panel_when_it_has_been_built(tmp_path):
-    (tmp_path / "signatures_curated.csv").write_text(ONE_ROW)
+    with gzip.open(tmp_path / "signatures_curated.csv.gz", "wt") as fh:
+        fh.write(ONE_ROW)
     assert LocalSignatureSource(tmp_path).mode() == "curated_slice"
     (tmp_path / "signatures_full.csv").write_text(ONE_ROW)
     assert LocalSignatureSource(tmp_path).mode() == "full"
