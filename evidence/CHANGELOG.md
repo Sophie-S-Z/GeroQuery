@@ -8,6 +8,45 @@ must not break.
 
 ---
 
+## 2026-11-14 — baseline reset: contrasts that share subjects now count once
+
+**No new data.** Same 276 contrasts, same pins, same data version. What changed
+is the unit of independence.
+
+106 of the 276 contrasts come from a GEO Series that yields more than one: the
+two halves of a split array, or several tissues and cell types from the same
+animals. They were pooled as independent studies, so one experiment with four
+tissues counted four times. Each Series is now combined into one estimate before
+pooling: the inverse-variance mean of its contrasts, with the standard error of
+perfectly correlated estimates (Borenstein et al., ch. 24, rho = 1), because the
+true correlation is unknown and one is its conservative bound. `k` now counts
+independent Series, `n_contrasts` the contrasts, and a gene needs three
+independent Series to be pooled.
+
+| | Contrasts as independent | Series as independent |
+|---|---|---|
+| Pooled estimates | 61,221 | **60,225** |
+| Interval excludes zero | 11,456 | **9,072** |
+| Prediction interval excludes zero | 669 | **758** |
+| Genes replicating on arrays and RNA-seq / contradicting | 577 / 74 | **548 / 50** |
+
+**2,941 claims retracted and 579 created** among the estimates in both
+snapshots; 996 genes left the pool because their contrasts came from fewer than
+three Series. Retractions are the expected direction: shared subjects had been
+counted as replication. The 579 new claims, and the rise in the
+prediction-interval count, have one cause. Contrasts from one Series that
+differ (by tissue, say) were inflating the between-study variance, and every
+interval with it; counting each experiment once removes that inflation. The
+median interval widened by 4%.
+
+As on 2026-08-06, this is a change of method, not of evidence, so it is not
+published as a diff: the snapshot records estimator
+`hartung_knapp_modified_by_series` and `diff_snapshots` refuses to compare
+across estimators. CDKN2A remains null (35 Series) and CDKN1A still rises on both
+platforms.
+
+---
+
 ## 2026-11-14 — the RNA-seq era: 244 rule-selected contrasts from ARCHS4
 
 **The panel grew from 32 to 276 contrasts (203 GEO Series), and from 485,906 to
