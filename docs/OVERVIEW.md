@@ -176,9 +176,9 @@ All support `format=json|csv|parquet`; list endpoints support `limit`/`offset`.
 1. **Two platforms.** 32 microarray contrasts (GEO DataSets, 2003–2015) and 244
    RNA-seq contrasts (ARCHS4, rule-selected). Their difference is absorbed by the
    between-study variance, not corrected; each gene is also pooled per platform,
-   and of 3,419 genes the arrays resolve, RNA-seq alone agrees on 17%.
+   and of 3,340 genes the arrays resolve, RNA-seq alone agrees on 16%.
 2. **Small groups** — median 12 samples per contrast (6–256); **median 95% CI
-   width 0.43**. Moderate effects are detectable; small ones are not. A null
+   width 0.48**. Moderate effects are detectable; small ones are not. A null
    means "not detected by this instrument".
 3. **Uneven coverage.** 205 of 276 contrasts are mouse; skeletal muscle is still
    the largest human tissue (17 of 55 human contrasts).
@@ -188,9 +188,12 @@ All support `format=json|csv|parquet`; list endpoints support `limit`/`offset`.
    (unrecognised attributes exclude, tumour series are dropped whole) and its
    sample lists are committed for audit, but it can only be as good as what
    submitters recorded.
-6. **Contrasts can share subjects.** 106 of 276 come from a Series that yields
-   more than one (split arrays; several tissues or cell types from the same
-   animals). `series_id` exposes this; the pooling does not yet account for it.
+6. **Contrasts that share subjects are combined, conservatively.** 106 of 276
+   come from a Series that yields more than one (split arrays; several tissues or
+   cell types from the same animals). Each Series becomes one estimate before
+   pooling, treated as perfectly correlated because the true correlation is
+   unknown, so intervals are if anything slightly too wide and within-Series
+   tissue differences are averaged rather than modelled.
 7. **Sex is `unspecified` for 158 of 276 contrasts** — never recorded. That is
    deliberately distinct from `both`.
 8. **~22% of microarray probe rows dropped** at identifier resolution,

@@ -81,14 +81,15 @@ All published as found, including the nulls.
 
 ### 1 · CDKN2A/p16 does not replicate
 
-The most-cited transcriptional marker of aging: pooled *g* = **+0.11**, 95% CI
-[−0.12, +0.34], k = 36 — seventeen contrasts up, nineteen down. It is null on
-the 14 microarray contrasts alone and on the 22 RNA-seq contrasts alone: two
-independent technologies agree there is nothing to see.
+The most-cited transcriptional marker of aging: pooled *g* = **+0.12**, 95% CI
+[−0.11, +0.35], from 36 contrasts in 35 independent GEO Series — seventeen
+contrasts up, nineteen down. It is null on the 14 microarray Series alone and on
+the 21 RNA-seq Series alone: two independent technologies agree there is nothing
+to see.
 
 The same pipeline *does* find p21/CDKN1A rising with age on both platforms
-independently (+1.07 on arrays, +0.34 on RNA-seq, +0.51 pooled over 47
-contrasts) and IGF1 falling (−0.32). **So the estimator works and the p16 null is
+independently (+1.07 on arrays, +0.36 on RNA-seq, +0.53 pooled over 43
+Series) and IGF1 falling (−0.30). **So the estimator works and the p16 null is
 a result, not a bug** — a pair of tests pins both halves, because that pair is
 what stops a null being dismissed as a broken estimator.
 → [`docs/RESULTS_GEO_SIGNATURES.md`](docs/RESULTS_GEO_SIGNATURES.md)
@@ -193,9 +194,9 @@ npm run dev                         # http://localhost:5173
 
 | View | What it shows |
 |---|---|
-| **Overview** | The landing page: the honest headline (only 669 of 61,221 gene estimates clear the *prediction* interval, against 11,456 for the confidence interval), a certainty funnel, corpus scope, and the strongest findings — including the 577 genes that replicate across arrays and RNA-seq |
+| **Overview** | The landing page: the honest headline (only 758 of 60,225 gene estimates clear the *prediction* interval, against 9,072 for the confidence interval), a certainty funnel, corpus scope, and the strongest findings — including the 548 genes that replicate across arrays and RNA-seq |
 | **Gene** | One gene's readout: pooled effect, interval, prediction interval, a forest plot of every contrast, a **leave-one-out audit strip** beside it, **tissue small-multiples**, the estimate from **arrays alone and RNA-seq alone**, a copyable citation carrying the data version, a contrasts CSV, and links to the same gene at AlphaFold, GenAge, GTEx and NCBI Gene |
-| **Gene list** | Paste a list (a hit list, a pathway, a candidate panel) and see each gene's verdict, interval and prediction interval, the list's resolution rate beside the rate for every gene, names it could not match (including spreadsheet-mangled dates like `1-Sep`), and a CSV. One click loads **GenAge's 307 curated human aging genes**: all are measured, and only 73 (24%) resolve a direction, against 14% of all human genes |
+| **Gene list** | Paste a list (a hit list, a pathway, a candidate panel) and see each gene's verdict, interval and prediction interval, the list's resolution rate beside the rate for every gene, names it could not match (including spreadsheet-mangled dates like `1-Sep`), and a CSV. One click loads **GenAge's 307 curated human aging genes**: all are measured, and only 70 (23%) resolve a direction, against 13% of all human genes |
 | **Landscape** | The whole corpus binned by effect size, plus the strongest replicated effects (ranked by the shrunken estimate, not the raw one) |
 | **Certainty** | Every pooled estimate as effect against the local false sign rate — where the large effects are also the least trustworthy |
 | **Cross-species** | Human vs mouse pooled effect, one point per ortholog group, with a **Deming fit** (each species' measured error) and the honest concordance count |
@@ -469,19 +470,22 @@ Full cache-vs-federate and licence table:
 - **Two platforms, pooled together and apart.** Microarray DataSets (2003–2015)
   and ARCHS4 RNA-seq differ in what they can measure; the random-effects variance
   absorbs the difference rather than correcting it. Each gene page shows both
-  platforms pooled separately, and they often disagree: of 3,419 genes the arrays
-  resolve, RNA-seq alone agrees on 17%.
+  platforms pooled separately, and they often disagree: of 3,340 genes the arrays
+  resolve, RNA-seq alone agrees on 16%.
 - **Small groups** — a median of 12 samples per contrast (6 to 256), median CI
-  width 0.43. Moderate effects are now detectable; small ones are not. A null
+  width 0.48. Moderate effects are now detectable; small ones are not. A null
   means "not detected by this instrument", never "absent".
 - **Tissue coverage is uneven** — 205 of 276 contrasts are mouse; skeletal muscle
   is still the largest human tissue (17 of 55 human contrasts).
 - **`omic_layer` reads `transcriptome` for every row.** The schema is multi-omic;
   the data is one layer deep.
-- **Contrasts can share subjects** — 106 of 276 come from a Series that yields
-  more than one (split arrays, several tissues or cell types from the same
-  animals). `series_id` is carried on every study row so this is checkable; the
-  pooling does not yet account for it.
+- **Contrasts that share subjects are combined, conservatively.** 106 of 276
+  come from a Series that yields more than one (split arrays, several tissues or
+  cell types from the same animals). Each Series is combined into one estimate
+  before pooling and treated as perfectly correlated, because the true
+  correlation is unknown; that is the conservative bound, so intervals are if
+  anything slightly too wide, and tissue differences within one Series are
+  averaged rather than modelled.
 - Sex is `unspecified` for 158 of 276 contrasts; ~22% of microarray probe rows
   drop at identifier resolution.
 

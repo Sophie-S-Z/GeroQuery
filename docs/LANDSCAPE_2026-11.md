@@ -58,8 +58,8 @@ view brings the same question to people who do not script.
 
 Of GenAge's 307 human aging genes, **all 307 are measured** in the panel now
 that it includes RNA-seq (ten were missing from the microarray-only panel, among
-them TERC, an RNA gene). **73 (24%) have a pooled direction with age**, against
-14% of all 26,647 human genes. **Only 3 (1%) clear the prediction interval**,
+them TERC, an RNA gene). **70 (23%) have a pooled direction with age**, against
+13% of all 26,584 human genes. **Only 5 (2%) clear the prediction interval**,
 against 2%. A curated aging gene is nearly twice as likely to resolve as a
 random one, three in four still do not, and almost none is consistent enough
 across studies that a new one would be expected to see it.
@@ -93,11 +93,12 @@ a server, which is the property a company's unpublished target list needs.
 ## What to build next, in order
 
 1. ~~**Widen the panel.**~~ **Done (2026-11-14):** 244 rule-selected RNA-seq
-   contrasts from ARCHS4 took the panel from 32 to 276 contrasts and halved the
-   median interval width; see `evidence/CHANGELOG.md`.
-2. **Account for shared subjects.** 106 of 276 contrasts share a Series with
-   another; nested random effects by series is the correctness fix the larger
-   panel now needs most.
+   contrasts from ARCHS4 took the panel from 32 to 276 contrasts and narrowed
+   the median interval width from 0.84 to 0.48; see `evidence/CHANGELOG.md`.
+2. ~~**Account for shared subjects.**~~ **Done (2026-11-14):** contrasts are
+   combined per GEO Series (rho = 1, the conservative bound) before pooling, so
+   k counts independent Series. A three-level model that estimates the
+   within-Series correlation instead of bounding it is the refinement.
 3. **A single-cell layer** from CELLxGENE Census / Tabula Muris Senis, kept as a
    separate pool per cell type (cross-dataset comparison there needs batch
    correction; it must not be pooled with bulk).
