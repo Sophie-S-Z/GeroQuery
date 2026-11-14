@@ -17,6 +17,22 @@ import { css } from "../lib/theme.js";
  * Every number was computed in Python (`weighted_kaplan_meier`, `rmst`) and
  * shipped in crosslayer.json; this draws it.
  */
+// About one line of 10px text on the 0–100% axis.
+const LABEL_GAP = 0.035;
+
+/** End-of-curve labels, highest first, nudged down so none overprints another. */
+function endLabels(quartiles) {
+  const ends = quartiles
+    .map((q) => {
+      const g = q.curve.grid;
+      const s = q.curve.survival;
+      return { t: g[g.length - 1], y: s[s.length - 1], label: `Q${q.quartile}`, q: q.quartile };
+    })
+    .sort((a, b) => b.y - a.y);
+  for (let i = 1; i < ends.length; i++) ends[i].y = Math.min(ends[i].y, ends[i - 1].y - LABEL_GAP);
+  return ends;
+}
+
 export default function SurvivalCurves({ survival }) {
   const host = useRef(null);
   const quartiles = survival?.quartiles ?? [];
@@ -60,22 +76,17 @@ export default function SurvivalCurves({ survival }) {
           curve: "step-after",
         }),
         // Direct labels at the right end — four series, so label each (§5).
-        Plot.text(
-          quartiles.map((q) => {
-            const g = q.curve.grid;
-            const s = q.curve.survival;
-            return { t: g[g.length - 1], s: s[s.length - 1], label: `Q${q.quartile}`, q: q.quartile };
-          }),
-          {
-            x: "t",
-            y: "s",
-            text: "label",
-            textAnchor: "start",
-            dx: 6,
-            fill: (d) => colour(d.q),
-            fontSize: 10,
-          },
-        ),
+        // Curves can finish at nearly the same survival, so labels are
+        // stacked at least LABEL_GAP apart; only the text moves, not the line.
+        Plot.text(endLabels(quartiles), {
+          x: "t",
+          y: "y",
+          text: "label",
+          textAnchor: "start",
+          dx: 6,
+          fill: (d) => colour(d.q),
+          fontSize: 10,
+        }),
         Plot.tip(
           points,
           Plot.pointer({

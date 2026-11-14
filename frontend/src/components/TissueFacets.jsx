@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as Plot from "@observablehq/plot";
 import { css } from "../lib/theme.js";
-import { contrastInterval, shortLabel } from "./ForestPlot.jsx";
+import { contrastInterval, withShortLabels } from "./ForestPlot.jsx";
 
 /**
  * Tissue small-multiples for one gene (§4.6).
@@ -29,9 +29,8 @@ export default function TissueFacets({ contrasts, pooled, symbol }) {
     const c = css();
     const colour = { increases: c.up, decreases: c.down, no_evidence: c.null_ };
 
-    const rows = contrasts.map((row) => ({
+    const rows = withShortLabels(contrasts).map((row) => ({
       ...row,
-      label: shortLabel(row.study_id),
       tissue: row.tissue ?? "unspecified",
       ...contrastInterval(row),
     }));

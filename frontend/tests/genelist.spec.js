@@ -32,7 +32,11 @@ test.describe("gene list", () => {
     await expect(lede).toContainText(`against ${pct(curated.background.rate_resolved)}`);
     await expect(lede).toContainText(`${curated.n_pi_excludes_zero} clear the prediction interval`);
     await expect(page.locator(".list-table tbody tr")).toHaveCount(curated.n_measured);
-    await expect(page.locator(".missing-list")).toHaveText(curated.not_measured.join(" "));
+    if (curated.not_measured.length) {
+      await expect(page.locator(".missing-list")).toHaveText(curated.not_measured.join(" "));
+    } else {
+      await expect(page.locator(".missing-list")).toHaveCount(0);
+    }
     expect(page.url()).toContain("genes=");
     expect(problems).toEqual([]);
   });

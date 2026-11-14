@@ -8,12 +8,20 @@ import {
   VERDICT_LABEL,
   VERDICT_SUB,
   fmtEffect,
+  fmtInt,
   fmtInterval,
   fmtP,
 } from "../lib/format.js";
 
+// The sources pooled apart in the exporter (`PLATFORMS` in build_frontend_data).
+const PLATFORMS = [
+  ["microarray", "array"],
+  ["RNA-seq", "rnaseq"],
+];
+
 const CONTRAST_COLUMNS = [
   "study_id",
+  "source",
   "tissue",
   "age_range",
   "sex",
@@ -72,7 +80,7 @@ function useDebounced(value, delay = 160) {
   return debounced;
 }
 
-function QueryRail({ symbol, onPick }) {
+function QueryRail({ symbol, onPick, nPooled }) {
   const [term, setTerm] = useState("");
   const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
@@ -122,7 +130,8 @@ function QueryRail({ symbol, onPick }) {
         }}
       />
       <p className="rail-hint">
-        Symbol or alias. 41,983 genes have three or more contrasts and can be pooled.{" "}
+        Symbol or alias.{" "}
+        {nPooled ? `${fmtInt(nPooled)} gene estimates have three or more contrasts to pool. ` : ""}
         <span className="keyboard-only">
           Press <span className="kbd">/</span> to search from any view.
         </span>
@@ -222,7 +231,7 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
 
   return (
     <div className="split">
-      <QueryRail symbol={symbol} onPick={onPick} />
+      <QueryRail symbol={symbol} onPick={onPick} nPooled={meta?.n_pooled} />
 
       <div>
         {error ? <p className="error">{error}</p> : null}
@@ -242,8 +251,9 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
               {symbol} is not in this panel, or has fewer than three contrasts in {species}.
             </p>
             <p className="note" style={{ maxWidth: "42ch", margin: "0.8rem auto 0" }}>
-              That is different from finding no effect. The panel is 32 contrasts from 27 GEO
-              Series; a gene absent from it was never measured here.
+              That is different from finding no effect.
+              {meta ? ` The panel is ${fmtInt(meta.n_studies)} contrasts from ${fmtInt(meta.n_series)} GEO Series;` : ""}{" "}
+              a gene absent from it was never measured here.
             </p>
           </div>
         ) : null}
@@ -327,6 +337,46 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                 variance is not estimable and an interval would be a shape, not a summary.
               </p>
             )}
+
+            {here?.k_array != null && here?.k_rnaseq != null ? (
+              <div className="panel">
+                <h2 className="panel-title">Arrays and RNA-seq, pooled apart</h2>
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Platform</th>
+                        <th className="num">g</th>
+                        <th className="num">95% CI</th>
+                        <th className="num">k</th>
+                        <th>Verdict</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {PLATFORMS.map(([name, tag]) => (
+                        <tr key={tag}>
+                          <td>{name}</td>
+                          <td className="num">{fmtEffect(here[`g_${tag}`])}</td>
+                          <td className="num">
+                            {fmtInterval(here[`ci_low_${tag}`], here[`ci_high_${tag}`])}
+                          </td>
+                          <td className="num">{here[`k_${tag}`]}</td>
+                          <td className={here[`verdict_${tag}`] === "no_evidence" ? "null" : ""}>
+                            <i className="dot" data-verdict={here[`verdict_${tag}`]} />
+                            {VERDICT_LABEL[here[`verdict_${tag}`]]}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="note" style={{ marginTop: "0.7rem" }}>
+                  The same estimator on each platform&rsquo;s contrasts alone. They share no samples,
+                  labs or measurement technology, so agreement is independent replication, and
+                  disagreement is a reason to doubt the pooled answer above.
+                </p>
+              </div>
+            ) : null}
 
             <div className="panel">
               <h2 className="panel-title">Per-study evidence</h2>

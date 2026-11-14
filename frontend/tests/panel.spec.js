@@ -8,7 +8,9 @@ async function influenceJson() {
 }
 
 test.describe("corpus influence (§4.5)", () => {
-  test("ranks every contrast by how hard it pulls on the genes it measures", async ({ page }) => {
+  test("ranks the contrasts by how hard they pull, and accounts for every one", async ({
+    page,
+  }) => {
     const problems = watchForErrors(page);
     await page.goto("/?view=panel");
     await expect(page.locator(".panel-title", { hasText: "bends the corpus" })).toBeVisible({
@@ -18,10 +20,22 @@ test.describe("corpus influence (§4.5)", () => {
     const ranking = await influenceJson();
     expect(ranking.length).toBeGreaterThan(1);
 
-    // One bar per contrast, and the axis is ranked most-influential first.
-    const chart = page.locator(".panel:has(h2:text-is('Which contrast bends the corpus')) .chart");
-    const labels = await axisLabels(chart);
-    expect(labels.length).toBe(ranking.length);
+    // The head of each species' ranking is drawn (at most 20 bars), and each
+    // caption states the full count so the cut is visible, never silent.
+    const studies = JSON.parse(
+      await readFile(new URL("../dist/data/studies.json", import.meta.url), "utf8"),
+    );
+    const species = Object.fromEntries(studies.map((s) => [s.study_id, s.species]));
+    const perSpecies = {};
+    for (const r of ranking) perSpecies[species[r.study_id]] = (perSpecies[species[r.study_id]] ?? 0) + 1;
+    const panel = page.locator(".panel:has(h2:text-is('Which contrast bends the corpus'))");
+    const labels = await axisLabels(panel.locator(".chart"));
+    expect(labels.length).toBe(
+      Object.values(perSpecies).reduce((sum, n) => sum + Math.min(20, n), 0),
+    );
+    for (const [name, n] of Object.entries(perSpecies)) {
+      await expect(panel.locator(".facet-title", { hasText: name })).toContainText(String(n));
+    }
 
     // Ranked by the mean shift per gene measured, not the total, which mostly
     // ranks array size (coverage runs 1,007 to 20,897 genes).

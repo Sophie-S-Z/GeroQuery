@@ -150,7 +150,8 @@ test.describe("influence and decomposition", () => {
    * tissue imbalance, so no contrast may be silently dropped from the panels.
    */
   test("the tissue panels decompose every contrast, lean panels included", async ({ page }) => {
-    await page.goto("/?gene=CDKN2A&species=human&view=gene");
+    // IGF1 has tissues measured by a single contrast; CDKN2A no longer does.
+    await page.goto("/?gene=IGF1&species=human&view=gene");
     await waitForGene(page);
 
     const facets = page.locator(".facet");

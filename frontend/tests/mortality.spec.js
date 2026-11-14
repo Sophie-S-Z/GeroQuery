@@ -2,6 +2,13 @@ import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { axisLabels, watchForErrors } from "./helpers.js";
 
+/**
+ * The hazard-ratio table, one row per clock. Scoped to its panel: with the
+ * full cohort the page also carries the survival curves' at-risk table.
+ */
+const clockRows = (page) =>
+  page.locator(".panel", { hasText: "Does either add anything over the other?" }).locator("tbody tr");
+
 test.describe("mortality result", () => {
   test("every clock gets its own row, in the chart and in the table", async ({ page }) => {
     const problems = watchForErrors(page);
@@ -13,7 +20,7 @@ test.describe("mortality result", () => {
     const labels = await axisLabels(chart);
     expect(new Set(labels).size).toBe(labels.length);
 
-    const rows = page.locator("table tbody tr");
+    const rows = clockRows(page);
     const clocks = await rows.locator("td:first-child").allTextContents();
     expect(clocks.length).toBe(labels.length);
 
@@ -52,7 +59,7 @@ test.describe("mortality result", () => {
 
   test("hazard ratios are shown with their intervals, never bare", async ({ page }) => {
     await page.goto("/?view=mortality");
-    const rows = page.locator("table tbody tr");
+    const rows = clockRows(page);
     await expect(rows.first()).toBeVisible({ timeout: 30_000 });
 
     for (const row of await rows.all()) {
@@ -66,7 +73,7 @@ test.describe("mortality result", () => {
 
   test("the reported hazard ratios are the weighted ones, and say so", async ({ page }) => {
     await page.goto("/?view=mortality");
-    await expect(page.locator("table tbody tr").first()).toBeVisible({ timeout: 30_000 });
+    await expect(clockRows(page).first()).toBeVisible({ timeout: 30_000 });
 
     const data = await page.evaluate(() =>
       fetch("/data/crosslayer.json").then((r) => r.json()),
@@ -82,7 +89,7 @@ test.describe("mortality result", () => {
 
     // Column 3 is the weighted HR and column 5 the unweighted one; a build that
     // wired them the other way round would still render plausibly.
-    const first = page.locator("table tbody tr").first();
+    const first = clockRows(page).first();
     const cells = await first.locator("td").allTextContents();
     expect(Number(cells[2])).toBeCloseTo(data.clocks[0].hr, 3);
     expect(Number(cells[4])).toBeCloseTo(data.clocks[0].hr_sample, 3);

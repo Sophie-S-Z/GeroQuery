@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as Plot from "@observablehq/plot";
 import { css } from "../lib/theme.js";
-import { shortLabel } from "./ForestPlot.jsx";
+import { shortLabel, withShortLabels } from "./ForestPlot.jsx";
 
 /**
  * The leave-one-out strip — the forest plot's audit companion (§4.4).
@@ -35,9 +35,8 @@ export default function LeaveOneOut({ contrasts, pooled, symbol }) {
     if (!host.current || !usable.length || !pooled) return undefined;
     const c = css();
 
-    const rows = usable.map((row) => ({
+    const rows = withShortLabels(usable).map((row) => ({
       ...row,
-      label: shortLabel(row.study_id),
       // Signed shift: full pooled minus the estimate without this contrast.
       // Reported in Python; recomputed here only as a display fallback.
       shift: row.loo_shift ?? pooled.g - row.loo_g,
