@@ -156,7 +156,7 @@ export default function GeneList({ genes, species, onUpdate, onPick }) {
   const download = () =>
     downloadCsv(
       `geroquery-gene-list-${species}-${meta?.data_version ?? "data"}.csv`,
-      ["symbol", "species", "verdict", "g", "ci_low", "ci_high", "pi_low", "pi_high", "k", "lfsr", "genage_evidence"],
+      ["symbol", "species", "verdict", "g", "ci_low", "ci_high", "pi_low", "pi_high", "k", "n_contrasts", "lfsr", "genage_evidence"],
       result.found.map((row) => ({ ...row, genage_evidence: evidence.get(row.symbol) })),
     );
 
@@ -304,7 +304,7 @@ export default function GeneList({ genes, species, onUpdate, onPick }) {
                         <th className="num" title="95% prediction interval: where one more study would land">
                           next study
                         </th>
-                        <th className="num">k</th>
+                        <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
                         <th className="num" title="local false sign rate: the probability the direction is wrong">
                           P(wrong sign)
                         </th>

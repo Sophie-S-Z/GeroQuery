@@ -9,12 +9,13 @@ def test_query_signatures_filters(store):
     sigs = store.query_signatures(
         gene_id="ENSG00000147889", species="human", omic_layer="transcriptome"
     )
-    # 14 of the panel's 16 human contrasts carry a CDKN2A probe. Pinned rather
-    # than bounded: the panel is fixed by the manifest, so a change here means
-    # the manifest, the contrast rules, or the probe annotation moved.
-    assert len(sigs) == 14
+    # 36 human contrasts measure CDKN2A: 14 arrays and 22 RNA-seq. Pinned rather
+    # than bounded: the panel is fixed by the manifest and the ARCHS4 pin, so a
+    # change here means a pin, the contrast rules, or the annotation moved.
+    assert len(sigs) == 36
+    assert {s.source for s in sigs} == {"GEO", "ARCHS4"}
     assert all(s.species == "human" and s.omic_layer == "transcriptome" for s in sigs)
-    # Deliberately not "all up". On real data CDKN2A splits 6 up / 8 down; see
+    # Deliberately not "all up". On real data CDKN2A splits 17 up / 19 down; see
     # test_api.test_p16_does_not_replicate_across_the_real_panel.
     assert {s.direction for s in sigs} == {"up", "down"}
 
@@ -75,12 +76,15 @@ def test_is_built_latches_after_the_first_check(store):
 
 def test_studies_and_provenance(store):
     studies = store.list_studies()
-    assert len(studies) == 32  # 32 contrasts over 31 GEO DataSets
-    one = store.get_study(studies[0].study_id)
-    assert one is not None
-    assert one.source == "GEO"
-    assert one.url.startswith("https://www.ncbi.nlm.nih.gov/")
-    assert one.version.startswith("GEO DataSets, curated ")
+    # 32 contrasts over 31 GEO DataSets, plus 244 rule-selected ARCHS4 contrasts.
+    assert len(studies) == 276
+    by_source = {s.source: s for s in studies}
+    assert set(by_source) == {"GEO", "ARCHS4"}
+    for study in by_source.values():
+        assert store.get_study(study.study_id) is not None
+        assert study.url.startswith("https://www.ncbi.nlm.nih.gov/")
+    assert by_source["GEO"].version.startswith("GEO DataSets, curated ")
+    assert by_source["ARCHS4"].version.startswith("ARCHS4 ")
 
 
 def test_studies_carry_the_series_id_that_exposes_shared_subjects(store):
@@ -90,7 +94,7 @@ def test_studies_carry_the_series_id_that_exposes_shared_subjects(store):
     studies = store.list_studies()
     assert all(s.series_id for s in studies)
     series = [s.series_id for s in studies]
-    assert len(set(series)) == 27 < len(series)
+    assert len(set(series)) == 203 < len(series)
     shared = {s for s in series if series.count(s) > 1}
     assert "GSE362" in shared  # GDS287 / GDS288: HG-U133A and HG-U133B, same men
 
@@ -158,8 +162,11 @@ def test_real_and_synthetic_clinical_are_separate_datasets(store):
 def test_version_is_reproducible(tmp_path):
     """Two independent builds from the same fixtures produce the same version
     and identical query results."""
-    s1 = GeroStore(data_home=tmp_path / "a").build()
-    s2 = GeroStore(data_home=tmp_path / "b").build()
+    # Pinned to the committed slice, like the shared fixture: a developer's
+    # full table would make this test depend on their download cache.
+    pinned = {"prefer_full_clinical": False, "prefer_full_signatures": False}
+    s1 = GeroStore(data_home=tmp_path / "a").build(**pinned)
+    s2 = GeroStore(data_home=tmp_path / "b").build(**pinned)
     assert s1.version() == s2.version()
     q1 = s1.query_signatures(gene_id="ENSG00000113368")
     q2 = s2.query_signatures(gene_id="ENSG00000113368")
@@ -215,11 +222,15 @@ def test_concurrent_signature_queries_each_get_their_own_results(store):
     """
     import concurrent.futures
 
-    expected = {sp: store.query_signatures(species=sp) for sp in ("human", "mouse")}
+    # One gene per species (CDKN2A and its mouse ortholog): small answers keep
+    # the test fast, and a shared handle would still hand one query the other's
+    # rows.
+    gene = {"human": "ENSG00000147889", "mouse": "ENSMUSG00000044303"}
+    expected = {sp: store.query_signatures(gene_id=g, species=sp) for sp, g in gene.items()}
     assert all(expected.values()), "fixture needs rows for both species"
 
     def ask(species):
-        rows = store.query_signatures(species=species)
+        rows = store.query_signatures(gene_id=gene[species], species=species)
         return species, [r.species for r in rows]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:

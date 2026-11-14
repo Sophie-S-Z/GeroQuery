@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import * as Plot from "@observablehq/plot";
-import { json } from "../lib/db.js";
+import { DATA_BASE, json } from "../lib/db.js";
 import { css } from "../lib/theme.js";
 import { fmtInt, fmtPct } from "../lib/format.js";
+import { shortLabel } from "./ForestPlot.jsx";
 
 /**
  * The orientation view — what this corpus is, and the one honest headline the
@@ -18,6 +19,13 @@ import { fmtInt, fmtPct } from "../lib/format.js";
  * includes genes that rise *and* genes that fall with age, so it is drawn in ink,
  * never in a polarity colour.
  */
+// The shipped artifacts a researcher would want to load themselves.
+const DATA_FILES = [
+  ["pooled.parquet", "every pooled estimate"],
+  ["studies.json", "every contrast’s provenance"],
+  ["meta.json", "corpus counts and data version"],
+];
+
 export default function Overview({ onNavigate, onPick }) {
   const host = useRef(null);
   const [meta, setMeta] = useState(null);
@@ -95,7 +103,23 @@ export default function Overview({ onNavigate, onPick }) {
   const top = influence?.[0];
   const topStudy = top && studies?.find((s) => s.study_id === top.study_id);
 
+  const platforms = meta.platforms;
+  // Open the species with the most replicated genes; the title counts both.
+  const [replicatedSpecies, replicatedGenes] =
+    Object.entries(platforms?.replicated ?? {}).sort((a, b) => b[1].length - a[1].length)[0] ??
+    [];
+
   const findings = [
+    platforms?.n_replicated > 0 && {
+      view: "list",
+      patch: { genes: replicatedGenes.join(","), species: replicatedSpecies },
+      title: `${fmtInt(platforms.n_replicated)} genes replicate across arrays and RNA-seq`,
+      body: `Pooled apart, ${fmtInt(platforms.n_both)} genes have enough contrasts on both platforms. ${fmtInt(
+        platforms.n_replicated,
+      )} change in the same direction on each, with no samples, labs or technology in common; ${fmtInt(
+        platforms.n_discordant,
+      )} contradict. Opens the ${fmtInt(replicatedGenes.length)} ${replicatedSpecies} genes.`,
+    },
     curated?.available && {
       view: "list",
       patch: { genes: curated.genes.map((g) => g.symbol).join(","), species: curated.species },
@@ -128,7 +152,7 @@ export default function Overview({ onNavigate, onPick }) {
       topStudy && {
       view: "panel",
       title: "One contrast pulls hardest on the evidence",
-      body: `Dropping ${top.study_id.replace(/^GEO:/, "")} (${topStudy.species} ${
+      body: `Dropping ${shortLabel(top.study_id)} (${topStudy.species} ${
         topStudy.tissue
       }) moves the pooled estimate of the ${fmtInt(top.n_genes)} genes it measures by ${top.mean_abs_shift.toFixed(
         3,
@@ -203,17 +227,21 @@ export default function Overview({ onNavigate, onPick }) {
       <section className="panel">
         <h2 className="panel-title">How the numbers are made</h2>
         <p className="note" style={{ maxWidth: "74ch" }}>
-          Per-study effects are standardized to Hedges&rsquo; g and pooled by random-effects
-          meta-analysis (DerSimonian-Laird with a Hartung-Knapp-Sidik-Jonkman interval, never
-          narrower than the conventional one), with a 95% prediction interval for where the next
-          study would land. A corpus-wide adaptive-shrinkage prior gives each gene a local false
+          Per-study effects are standardized to Hedges&rsquo; g. Contrasts from one GEO Series
+          share subjects (several tissues from the same animals, or two halves of one array), so
+          each Series is first combined into a single estimate, treated as perfectly correlated
+          &mdash; the conservative bound &mdash; and only independent Series are pooled. The pool
+          is a random-effects meta-analysis (DerSimonian-Laird with a Hartung-Knapp-Sidik-Jonkman
+          interval, never narrower than the conventional one), with a 95% prediction interval for
+          where the next study would land. A corpus-wide adaptive-shrinkage prior gives each gene a local false
           sign rate — the probability its direction is wrong. Cross-species agreement uses a Deming
           (errors-in-both-variables) fit; the mortality result is a survey-weighted Cox model with a
           design-based sandwich variance
           {crosslayer?.survival_curves
             ? ", plus weighted Kaplan-Meier curves and restricted mean survival time"
             : ""}
-          . Every one of these is computed in Python by the estimator the API serves
+          . Microarray and RNA-seq contrasts are also pooled apart, so agreement between the two
+          platforms reads as independent replication. Every one of these is computed in Python by the estimator the API serves
           and shipped in the Parquet/JSON; this page renders them and never re-derives them, so the
           website, the API and the MCP tool cannot disagree about what a gene&rsquo;s answer is.
         </p>
@@ -232,6 +260,19 @@ export default function Overview({ onNavigate, onPick }) {
           The API (<span className="mono">uvicorn geroquery.api.app:app</span>) and the MCP server (
           <span className="mono">geroquery-mcp</span>) serve the same estimators. Full instructions
           are in <span className="mono">docs/OVERVIEW.md</span>.
+        </p>
+        <p className="note" style={{ maxWidth: "74ch" }}>
+          Every number on this page is a public file, free to reuse with attribution:{" "}
+          {DATA_FILES.map(([file, what], i) => (
+            <span key={file}>
+              {i ? ", " : ""}
+              <a className="structure-link mono" href={`${DATA_BASE}/${file}`} download>
+                {file}
+              </a>{" "}
+              ({what})
+            </span>
+          ))}
+          .
         </p>
       </section>
     </div>

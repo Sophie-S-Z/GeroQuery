@@ -56,11 +56,13 @@ view brings the same question to people who do not script.
 
 ## The result it surfaced
 
-Of GenAge's 307 human aging genes, **297 are measured** in the panel (10 are
-not, among them TERC, an RNA gene). **76 (26%) have a pooled direction with
-age**, against 14% of all 20,850 human genes. **28 (9%) clear the prediction
-interval**, against 5%. A curated aging gene is nearly twice as likely to
-resolve as a random one, and three in four still do not.
+Of GenAge's 307 human aging genes, **all 307 are measured** in the panel now
+that it includes RNA-seq (ten were missing from the microarray-only panel, among
+them TERC, an RNA gene). **70 (23%) have a pooled direction with age**, against
+13% of all 26,584 human genes. **Only 5 (2%) clear the prediction interval**,
+against 2%. A curated aging gene is nearly twice as likely to resolve as a
+random one, three in four still do not, and almost none is consistent enough
+across studies that a new one would be expected to see it.
 
 Read it carefully. GenAge admits genes for many reasons ("mammal", "model",
 "cell", "putative", "upstream"), most of which make no claim about expression
@@ -79,6 +81,7 @@ deployment needs this audit first:
 | NCBI GEO | 33 | US public domain; attribute. NCBI notes that submitters may assert their own rights in some records | Usable; keep attribution, and check any series whose submitter asserted rights |
 | NHANES (NCHS) | 15 | US public domain | Usable |
 | HAGR (GenAge, CellAge, LongevityMap, DrugAge, GenDR) | 7 | Free for **non-commercial** use, attribution required | **Must be licensed or removed** in a paid product. That covers the GenAge comparison, the overview finding built on it, and the GenAge links/evidence column |
+| ARCHS4 (processed RNA-seq counts) | 2 files, pinned by release + size | The licence of the processed files is not stated; the underlying GEO/SRA samples are public | Confirm terms with the Ma'ayan Laboratory before a paid product ships the ARCHS4 contrasts |
 | Clocks (via biolearn / pyaging) | — | Per clock. Some widely used clocks are distributed by their developers under academic or non-commercial terms | Check each clock's terms before selling clock output |
 
 A model consistent with those terms: the static site, API and MCP server stay
@@ -89,17 +92,20 @@ a server, which is the property a company's unpublished target list needs.
 
 ## What to build next, in order
 
-1. **Widen the panel before adding features.** A gene resolves only when enough
-   studies agree, and 32 contrasts leave 86% of human genes unresolved. Adding GEO
-   series through the existing living-evidence workflow raises every number on
-   the site at once.
-2. **A single-cell layer** from CELLxGENE Census / Tabula Muris Senis, kept as a
+1. ~~**Widen the panel.**~~ **Done (2026-11-14):** 244 rule-selected RNA-seq
+   contrasts from ARCHS4 took the panel from 32 to 276 contrasts and narrowed
+   the median interval width from 0.84 to 0.48; see `evidence/CHANGELOG.md`.
+2. ~~**Account for shared subjects.**~~ **Done (2026-11-14):** contrasts are
+   combined per GEO Series (rho = 1, the conservative bound) before pooling, so
+   k counts independent Series. A three-level model that estimates the
+   within-Series correlation instead of bounding it is the refinement.
+3. **A single-cell layer** from CELLxGENE Census / Tabula Muris Senis, kept as a
    separate pool per cell type (cross-dataset comparison there needs batch
    correction; it must not be pooled with bulk).
-3. **Open Genes as a pinned snapshot**: its API returns JSON per symbol
+4. **Open Genes as a pinned snapshot**: its API returns JSON per symbol
    (`open-genes.com/api/gene/{symbol}`), so it can be checksum-pinned like HAGR,
    which would make its links verifiable.
-4. The deferred **Schoenfeld proportional-hazards diagnostic** for the mortality
+5. The deferred **Schoenfeld proportional-hazards diagnostic** for the mortality
    layer, and the **Vite 5→8** upgrade.
 
 ## Sources

@@ -11,6 +11,7 @@ where a row came from.
 from __future__ import annotations
 
 import csv
+import gzip
 from pathlib import Path
 
 from ..config import SOURCES_DATA
@@ -23,15 +24,16 @@ from .manifest import GEO_LICENSE
 # committed copy would be an unverifiable second one.
 FULL_SIGNATURES = "signatures_full.csv"
 
-# Committed. The same real estimates, restricted to genes carrying a HAGR
-# assertion, so tests and CI run without a 313 MB download.
-CURATED_SIGNATURES = "signatures_curated.csv"
+# Committed, gzipped. The same real estimates, restricted to genes carrying a
+# HAGR assertion, so tests and CI run without rebuilding the panel.
+CURATED_SIGNATURES = "signatures_curated.csv.gz"
 
 
 def _read_csv(path: Path) -> list[dict]:
     if not path.exists():
         return []
-    with open(path, newline="") as fh:
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", newline="") as fh:
         return list(csv.DictReader(fh))
 
 
@@ -50,7 +52,7 @@ class LocalSignatureSource(SourceAdapter):
             federated=False,
             cacheable=True,
             notes=(
-                "GEO DataSets aging panel: young-vs-old Hedges' g per gene, "
+                "GEO DataSets and ARCHS4 aging panel: young-vs-old Hedges' g per gene, "
                 f"served from {self.signature_path().name}."
             ),
         )

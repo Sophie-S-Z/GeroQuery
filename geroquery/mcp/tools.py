@@ -34,13 +34,19 @@ from ..exceptions import GeroQueryError
 
 # Applies to every signature answer. Kept here rather than in prose docs because
 # a tool response is often the only thing a caller ever reads.
+# No counts here: a caveat that names "32 contrasts" goes stale the day the
+# panel grows, and a stale caveat is a false statement an agent will repeat.
 SIGNATURE_CAVEATS: tuple[str, ...] = (
-    "Microarray-era GEO DataSets only; no RNA-seq.",
-    "Groups of 3-15 subjects; median 95% CI width 0.84 — detects large consistent "
-    "effects, cannot rule out moderate ones.",
-    "Half the human contrasts are skeletal muscle; one blood contrast (n=9).",
-    "32 contrasts come from 27 GEO Series, so some share subjects.",
-    "Cross-study processing heterogeneity is not corrected.",
+    "Two platforms are pooled: microarray GEO DataSets and ARCHS4 bulk RNA-seq; their "
+    "differences are absorbed by the between-study variance, not corrected.",
+    "Many groups are small (three per arm is the minimum), so an interval that spans "
+    "zero means the data cannot decide, not that there is no effect.",
+    "Tissue coverage is uneven; check the tissues behind a pooled estimate before "
+    "generalizing it.",
+    "Contrasts from one GEO Series (split arrays, several tissues or cell types from "
+    "the same animals) share subjects, so each Series is combined into one estimate, "
+    "treated as perfectly correlated (a conservative bound), before pooling; n_studies "
+    "counts those independent Series.",
 )
 
 # A pooled estimate whose interval contains zero is reported as no evidence,
@@ -88,7 +94,9 @@ def _summarize(meta: dict) -> dict:
             "level": 0.95,
             "means": "where the true effect of the next study is expected to fall",
         },
+        # Independent GEO Series pooled, and the contrasts collapsed into them.
         "n_studies": meta.get("n_studies"),
+        "n_contrasts": meta.get("n_contrasts"),
         "heterogeneity_i2": meta.get("heterogeneity_i2"),
         "p_value": meta.get("p_value"),
     }
@@ -233,9 +241,10 @@ def list_studies(service: GeroService | None = None) -> dict[str, Any]:
     """Every contrast in the panel, with full provenance.
 
     The panel is rule-selected, not hand-picked: every GEO DataSet declaring an
-    ``age`` subset variable that survives the contrast rules. That is what keeps
-    selection bias out, and it is why this tool exists — a caller can audit the
-    corpus rather than trust it.
+    ``age`` subset variable that survives the contrast rules, plus every ARCHS4
+    RNA-seq series the sample rule admits. That is what keeps selection bias
+    out, and it is why this tool exists — a caller can audit the corpus rather
+    than trust it.
     """
     svc = service or get_service()
     studies = svc.studies()
@@ -245,7 +254,10 @@ def list_studies(service: GeroService | None = None) -> dict[str, Any]:
             "GEO DataSets query: age[Subset Variable Type] AND gds[Filter] AND "
             "(Homo sapiens[Organism] OR Mus musculus[Organism]); then an adult "
             "young-vs-old split restricted to the control arm of every other "
-            "subset variable, with at least three samples per group."
+            "subset variable, with at least three samples per group. Plus ARCHS4 "
+            "bulk RNA-seq samples recording an age in the same bands, grouped "
+            "within a series so that every other recorded attribute is held at a "
+            "control level; series profiling any tumour are excluded."
         ),
         "studies": studies,
         "data_version": svc.version(),

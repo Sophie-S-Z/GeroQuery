@@ -66,3 +66,12 @@ test.describe("overview (landing)", () => {
     await expect(page.locator("#gene-search")).toBeFocused();
   });
 });
+
+test("every data download link resolves to a shipped file", async ({ page, request }) => {
+  await page.goto("/");
+  const links = page.locator("a[download]");
+  await expect(links.first()).toBeVisible({ timeout: 30_000 });
+  for (const href of await links.evaluateAll((as) => as.map((a) => a.getAttribute("href")))) {
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+});

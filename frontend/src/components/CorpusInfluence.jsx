@@ -1,10 +1,14 @@
 import { useEffect, useRef } from "react";
 import * as Plot from "@observablehq/plot";
 import { css } from "../lib/theme.js";
-import { shortLabel } from "./ForestPlot.jsx";
+import { withShortLabels } from "./ForestPlot.jsx";
+
+// Bars per species. Past a few dozen a bar chart stops being read and starts
+// being scrolled; the table below carries the rest.
+const TOP = 20;
 
 /**
- * Corpus influence — which of the panel's 32 contrasts bends the whole answer
+ * Corpus influence — which of the panel's contrasts bends the whole answer
  * (§4.5). The view with no equivalent in any comparable tool, because no
  * comparable tool re-derives its own numbers.
  *
@@ -30,12 +34,11 @@ export default function CorpusInfluence({ ranking, byStudy }) {
     if (!host.current || !ranking?.length) return undefined;
     const c = css();
 
-    const rows = ranking.map((r) => {
+    const rows = withShortLabels(ranking).map((r) => {
       const meta = byStudy[r.study_id] ?? {};
       return {
         ...r,
-        // Compact, still-unique label (two contrasts can share a GDS accession).
-        accession: shortLabel(r.study_id),
+        accession: r.label,
         tissue: meta.tissue ?? "—",
         species: meta.species ?? "",
         n: meta.sample_size,
@@ -48,10 +51,14 @@ export default function CorpusInfluence({ ranking, byStudy }) {
     const max = Math.max(...rows.map((r) => r.mean_abs_shift));
     const node = host.current;
     const panels = [...new Set(rows.map((r) => r.species))].sort().map((species) => {
-      const here = rows.filter((r) => r.species === species);
+      // The ranking arrives sorted by mean shift; the chart shows the head of
+      // it and the provenance table below lists every contrast's shift.
+      const all = rows.filter((r) => r.species === species);
+      const here = all.slice(0, TOP);
       const chart = Plot.plot({
         marginLeft: 150,
-        marginRight: 18,
+        // Room for the tissue label written past the longest bar.
+        marginRight: 96,
         marginTop: 8,
         marginBottom: 36,
         width: 760,
@@ -95,7 +102,10 @@ export default function CorpusInfluence({ ranking, byStudy }) {
       figure.className = "facet";
       const caption = document.createElement("figcaption");
       caption.className = "facet-title";
-      caption.textContent = `${species || "unspecified"} · ${here.length} contrasts`;
+      caption.textContent =
+        here.length < all.length
+          ? `${species || "unspecified"} · top ${here.length} of ${all.length} contrasts`
+          : `${species || "unspecified"} · ${all.length} contrasts`;
       figure.append(caption, chart);
       return figure;
     });

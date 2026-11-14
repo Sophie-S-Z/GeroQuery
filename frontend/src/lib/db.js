@@ -1,5 +1,5 @@
 /**
- * Data layer — two Parquet files, read in the browser, no backend.
+ * Data layer — Parquet read in the browser, no backend.
  *
  * The first cut of this used DuckDB-WASM so that queries could range-request
  * individual row groups. That was the wrong trade and Cloudflare Pages' 25 MiB
@@ -23,7 +23,7 @@
 import { parquetReadObjects } from "hyparquet";
 
 /** Base URL for the data directory, honouring a non-root deploy. */
-const DATA_BASE = `${import.meta.env.BASE_URL ?? "/"}data`.replace(/\/{2,}/g, "/");
+export const DATA_BASE = `${import.meta.env.BASE_URL ?? "/"}data`.replace(/\/{2,}/g, "/");
 
 const cache = new Map();
 
@@ -87,7 +87,27 @@ function table(name) {
 }
 
 const pooledTable = () => table("pooled.parquet");
-const contrastsTable = () => table("contrasts.parquet");
+
+/**
+ * The per-study table is split into 64 files by gene symbol, so a forest plot
+ * fetches about a sixty-fourth of ~4 million rows instead of all of them.
+ *
+ * 32-bit FNV-1a of the upper-cased symbol, modulo 64 — the same five lines as
+ * `contrast_shard` in geroquery/etl/build_frontend_data.py, whose test pins the
+ * constants. If the two ever disagreed a gene would load with no forest plot,
+ * which the gene-view tests would catch.
+ */
+const CONTRAST_SHARDS = 64;
+
+function shardOf(symbol) {
+  let hash = 0x811c9dc5;
+  for (const byte of new TextEncoder().encode(symbol.toUpperCase())) {
+    hash = Math.imul(hash ^ byte, 0x01000193) >>> 0;
+  }
+  return String(hash % CONTRAST_SHARDS).padStart(2, "0");
+}
+
+const contrastsTable = (symbol) => table(`contrasts/${shardOf(symbol)}.parquet`);
 
 /**
  * Static JSON fetched whole — all of these are a few KB — and memoized like the
@@ -154,7 +174,7 @@ export async function pooledForSymbols(symbols, species) {
 /** Per-study contrasts behind a pooled estimate. This is the forest plot. */
 export async function contrastsForSymbol(symbol, species) {
   const needle = symbol.toUpperCase();
-  const rows = await contrastsTable();
+  const rows = await contrastsTable(symbol);
   return rows
     .filter((row) => row.symbol?.toUpperCase() === needle && row.species === species)
     .sort((a, b) => a.effect_size - b.effect_size);

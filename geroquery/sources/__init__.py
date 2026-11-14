@@ -1,6 +1,7 @@
 """M2 sources — source adapters (public surface)."""
 
 from . import nhanes, nhanes_dnam
+from .archs4 import Archs4Source
 from .base import Capabilities, FederatedStub, License, SourceAdapter
 from .federated import FEDERATED_ADAPTERS
 from .fetch import fetch_all, fetch_artifact, is_cached
@@ -22,6 +23,7 @@ def all_adapters() -> list[SourceAdapter]:
     return [
         LocalSignatureSource(),
         GeoDataSetsSource(),
+        Archs4Source(),
         HagrSource(),
         CuratedKnowledgeSource(),
         InterventionSource(),
@@ -39,6 +41,7 @@ __all__ = [
     "FederatedStub",
     "LocalSignatureSource",
     "GeoDataSetsSource",
+    "Archs4Source",
     "HagrSource",
     "CuratedKnowledgeSource",
     "InterventionSource",

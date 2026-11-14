@@ -15,7 +15,7 @@ instant.
 
 **Every statistic in the output is computed here, in Python.** The browser does
 no meta-analysis: it reads pooled effects that this module already pooled, using
-the same :func:`geroquery.harmonize.random_effects` the API serves. That is a
+the same :func:`geroquery.harmonize.pool_series` the API serves. That is a
 deliberate architectural line. Re-implementing DerSimonian-Laird in JavaScript
 would create two estimators for one quantity, and they would drift — the repo
 already keeps `test_matrix_hedges_g_matches_scalar_implementation` around
@@ -29,21 +29,24 @@ Outputs land in ``frontend/public/data/``:
     One row per gene per species: the pooled effect, its interval, k, I-squared.
     Sorted by symbol so the search path prunes.
 
-``contrasts.parquet``
-    Every per-study effect size, sorted by gene_id so a symbol lookup scans a
-    contiguous run.
+``contrasts/NN.parquet``
+    Every per-study effect size, in :data:`CONTRAST_SHARDS` files keyed by a
+    hash of the gene symbol (:func:`contrast_shard`, mirrored in
+    ``frontend/src/lib/db.js``). A forest plot needs one gene, so the browser
+    fetches one shard: with the RNA-seq contrasts the whole table is ~4 million
+    rows, past Cloudflare Pages' 25 MiB file limit and far past what a page
+    should download to draw one chart.
 
-Both are written with **snappy** rather than zstd: the browser reader
+All are written with **snappy** rather than zstd: the browser reader
 (hyparquet) has snappy built in, and zstd would mean shipping a second
-decompressor to save a few hundred kilobytes on a file that is already under
-five megabytes.
+decompressor to save little on files this size.
 
 ``studies.json`` · ``crosslayer.json`` · ``meta.json``
     Small enough to fetch whole.
 
 ``meta.json`` records whether the store was built from the full signature table
 or the committed curated slice, and the front end displays it. A number derived
-from the 40,585-row slice must never be presented as the 485,905-row result —
+from the committed slice must never be presented as the full-panel result —
 same contract as ``NhanesClinicalSource.clinical_frame`` returning its mode.
 """
 
@@ -51,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from datetime import date
 from pathlib import Path
 from typing import cast, overload
@@ -59,8 +63,8 @@ import numpy as np
 import pandas as pd
 
 from .. import __version__
-from ..harmonize import random_effects
-from ..harmonize.meta import BOUND_DECIMALS, report_bound
+from ..harmonize import MIN_SERIES, pool_series
+from ..harmonize.meta import report_bound
 from ..sources.manifest import MANIFEST, MANIFEST_VERSION, VERIFIED_ON
 from ..store import GeroStore
 
@@ -70,12 +74,41 @@ DEFAULT_OUT = Path(__file__).resolve().parents[2] / "frontend" / "public" / "dat
 
 # Row count of the committed curated slice. Used only to label the build mode;
 # a developer who has run `make data` gets the full table and CI does not.
-CURATED_SLICE_ROWS = 40_585
+CURATED_SLICE_ROWS = 343_808
 
-# Genes pooled from fewer contrasts than this get no pooled row. With one or two
-# contrasts the between-study variance is not estimable, so the interval would
-# be a shape rather than a summary.
-MIN_CONTRASTS = 3
+CONTRAST_DIR = "contrasts"
+CONTRAST_SHARDS = 64
+
+
+def contrast_shard(symbol: str) -> int:
+    """32-bit FNV-1a of the upper-cased symbol, modulo :data:`CONTRAST_SHARDS`.
+
+    Upper-cased so a human and a mouse ortholog (``CDKN2A``, ``Cdkn2a``) share a
+    shard. ``shardOf`` in ``frontend/src/lib/db.js`` is the same five lines; a
+    gene whose two halves disagreed would load with no forest plot.
+    """
+    h = 0x811C9DC5
+    for byte in symbol.upper().encode("utf-8"):
+        h = ((h ^ byte) * 0x01000193) & 0xFFFFFFFF
+    return h % CONTRAST_SHARDS
+
+
+def write_contrasts(contrasts: pd.DataFrame, out_dir: Path) -> None:
+    """Write the per-study table as symbol shards, replacing any earlier layout."""
+    target = out_dir / CONTRAST_DIR
+    if target.exists():
+        shutil.rmtree(target)
+    target.mkdir(parents=True)
+    (out_dir / "contrasts.parquet").unlink(missing_ok=True)  # the old single file
+    for shard, part in contrasts.groupby(contrasts["symbol"].map(contrast_shard)):
+        part.to_parquet(target / f"{shard:02d}.parquet", index=False, compression="snappy")
+
+
+def read_contrasts(out_dir: Path) -> pd.DataFrame:
+    """Every shard, concatenated back into one table."""
+    shards = sorted((out_dir / CONTRAST_DIR).glob("*.parquet"))
+    return pd.concat([pd.read_parquet(p) for p in shards], ignore_index=True)
+
 
 # Every interval bound the export ships. Named once so the rounding rule below
 # and the test that enforces it read from the same list: the first fix for bug
@@ -108,19 +141,46 @@ def _bound(value: float | None) -> float | None:
 
 
 def _pool(frame: pd.DataFrame) -> pd.DataFrame:
-    """Pool every (gene, species) group with enough contrasts.
+    """Pool every (gene, species) group with enough contrasts, plus the corpus posterior.
 
     Uses the same estimator the API serves, so the site and the API cannot
     disagree about what a gene's effect is.
+    """
+    return _add_corpus_posterior(_pool_rows(frame))
+
+
+def attach_series(contrasts: pd.DataFrame, studies: list[dict]) -> pd.DataFrame:
+    """Add each contrast's GEO Series, the unit the pool treats as independent.
+
+    Refuses rather than guesses: a contrast whose Series is unknown would be
+    pooled as independent of every other, which is the error this column fixes.
+    """
+    series = {s["study_id"]: s.get("series_id") or None for s in studies}
+    out = contrasts.assign(series_id=contrasts["study_id"].map(series))
+    missing = out.loc[out["series_id"].isna(), "study_id"].unique()
+    if len(missing):
+        raise ValueError(f"No GEO Series recorded for {len(missing)} studies, e.g. {missing[:3]}")
+    return out
+
+
+def _pool_rows(frame: pd.DataFrame) -> pd.DataFrame:
+    """The random-effects pool per (gene, species), without the posterior.
+
+    Pooled over GEO Series (:func:`~geroquery.harmonize.pool_series`): ``k`` is
+    the number of independent Series, ``n_contrasts`` the number of contrasts.
     """
     rows = []
     grouped = frame.dropna(subset=["effect_size", "standard_error"]).groupby(
         ["gene_id", "species"], observed=True
     )
     for (gene_id, species), group in grouped:
-        if len(group) < MIN_CONTRASTS:
+        if group["series_id"].nunique() < MIN_SERIES:
             continue
-        pooled = random_effects(group["effect_size"].tolist(), group["standard_error"].tolist())
+        pooled = pool_series(
+            group["effect_size"].tolist(),
+            group["standard_error"].tolist(),
+            group["series_id"].tolist(),
+        )
         # Round first, then judge — see _bound. Every interval bound goes
         # through it, including the prediction interval, which is drawn on the
         # forest plot and printed in the readout and so has exactly the same
@@ -140,10 +200,11 @@ def _pool(frame: pd.DataFrame) -> pd.DataFrame:
                 # rounds to 0.0000 reads as a contradiction; both are simply at
                 # the threshold, and saying so at the same precision is what
                 # makes them agree. The interval remains authoritative.
-                "p_value": round(pooled.p_value, BOUND_DECIMALS),
+                "p_value": pooled.reported_p_value,
                 "i2": round(pooled.i2, 1),
                 "tau2": round(pooled.tau2, 4),
                 "k": int(pooled.n_studies),
+                "n_contrasts": len(group),
                 # The DerSimonian-Laird interval, so the page can show what a
                 # conventional tool would have reported, and the prediction
                 # interval, which is where the next study would land.
@@ -160,7 +221,68 @@ def _pool(frame: pd.DataFrame) -> pd.DataFrame:
                 "n_tissues": int(group["tissue"].nunique()),
             }
         )
-    return _add_corpus_posterior(pd.DataFrame(rows))
+    return pd.DataFrame(rows)
+
+
+# Each source is one measurement technology, and pooling each alone gives two
+# replications that share no samples, labs, platforms or eras.
+PLATFORMS = {"GEO": "array", "ARCHS4": "rnaseq"}
+_PLATFORM_FIELDS = ("g", "ci_low", "ci_high", "k", "verdict")
+
+
+def by_platform(contrasts: pd.DataFrame) -> pd.DataFrame:
+    """Each gene pooled from one platform's contrasts alone, one column set per platform.
+
+    ``g_array``, ``ci_low_array`` ... ``verdict_rnaseq``; null where a platform
+    has fewer than :data:`MIN_SERIES` Series for the gene. Same estimator
+    as the main pool, so a platform's column is exactly what the corpus would
+    say if it were that platform's evidence alone.
+    """
+    parts = []
+    for source, tag in PLATFORMS.items():
+        alone = _pool_rows(contrasts[contrasts["source"] == source])
+        if alone.empty:
+            continue
+        fields = alone.set_index(["gene_id", "species"])[list(_PLATFORM_FIELDS)]
+        fields["k"] = fields["k"].astype("Int64")
+        parts.append(fields.add_suffix(f"_{tag}"))
+    if not parts:
+        return pd.DataFrame(columns=["gene_id", "species"])
+    return pd.concat(parts, axis=1).reset_index()
+
+
+def _with_platforms(pooled: pd.DataFrame, contrasts: pd.DataFrame) -> pd.DataFrame:
+    """Attach the per-platform columns, replacing any from an earlier pass."""
+    stale = [c for c in pooled.columns if c.endswith(("_array", "_rnaseq"))]
+    return pooled.drop(columns=stale).merge(
+        by_platform(contrasts), on=["gene_id", "species"], how="left"
+    )
+
+
+def platform_headline(pooled: pd.DataFrame) -> dict:
+    """Genes pooled on both platforms, and how many agree or contradict.
+
+    Replicated: both platform intervals exclude zero in the same direction.
+    Discordant: both exclude zero, in opposite directions.
+    """
+    if "verdict_rnaseq" not in pooled or "verdict_array" not in pooled:
+        return {"n_both": 0, "n_replicated": 0, "n_discordant": 0}
+    both = pooled["k_array"].notna() & pooled["k_rnaseq"].notna()
+    array, rnaseq = pooled["verdict_array"], pooled["verdict_rnaseq"]
+    resolved = both & (array != "no_evidence") & (rnaseq != "no_evidence")
+    replicated = resolved & (array == rnaseq)
+    out: dict = {
+        "n_both": int(both.sum()),
+        "n_replicated": int(replicated.sum()),
+        "n_discordant": int((resolved & (array != rnaseq)).sum()),
+    }
+    if "symbol" in pooled:
+        # The replicated genes themselves, so a reader can open them as a list.
+        out["replicated"] = {
+            str(species): sorted(group["symbol"])
+            for species, group in pooled[replicated].groupby("species")
+        }
+    return out
 
 
 def _add_corpus_posterior(pooled: pd.DataFrame) -> pd.DataFrame:
@@ -261,7 +383,7 @@ def add_influence(contrasts: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
     """
     from collections import defaultdict
 
-    from ..harmonize.influence import MIN_CONTRASTS, leave_one_out
+    from ..harmonize.influence import leave_one_out
 
     contrasts = contrasts.copy()
     contrasts["loo_g"] = np.nan
@@ -274,9 +396,13 @@ def add_influence(contrasts: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
 
     usable = contrasts.dropna(subset=["effect_size", "standard_error"])
     for _key, group in usable.groupby(["gene_id", "species"], observed=True):
-        if len(group) < MIN_CONTRASTS:
+        if group["series_id"].nunique() < MIN_SERIES:
             continue
-        loo = leave_one_out(group["effect_size"].tolist(), group["standard_error"].tolist())
+        loo = leave_one_out(
+            group["effect_size"].tolist(),
+            group["standard_error"].tolist(),
+            group["series_id"].tolist(),
+        )
         contrasts.loc[group.index, "loo_g"] = np.round(loo.estimates, 4) + 0.0
         contrasts.loc[group.index, "loo_shift"] = np.round(loo.shifts, 4) + 0.0
         for study, shift, cook in zip(group["study_id"], loo.shifts, loo.cooks, strict=True):
@@ -729,25 +855,24 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     contrasts = pd.read_parquet(store.sig_dir)
     for column in ("species", "omic_layer"):
         contrasts[column] = contrasts[column].astype(str)
+    studies = [s.to_dict() for s in store.list_studies()]
+    contrasts = attach_series(contrasts, studies)
 
     pooled = _pool(contrasts)
     symbols = _symbols(sorted(pooled["gene_id"].unique()))
     pooled["symbol"] = pooled["gene_id"].map(symbols).fillna(pooled["gene_id"])
-    pooled = _annotate_pooled(pooled)
+    pooled = _with_platforms(_annotate_pooled(pooled), contrasts)
     # Sorted by symbol: the search path scans this file, and a sorted column
     # lets DuckDB's row-group statistics skip almost all of it.
     pooled = pooled.sort_values(["symbol", "species"]).reset_index(drop=True)
     pooled.to_parquet(out_dir / "pooled.parquet", index=False, compression="snappy")
 
-    # Sorted by gene_id: a forest plot reads one contiguous run of row groups
-    # instead of touching every one.
     contrasts = contrasts.sort_values(["gene_id", "study_id"]).reset_index(drop=True)
     contrasts["symbol"] = contrasts["gene_id"].map(symbols).fillna(contrasts["gene_id"])
     contrasts, influence_ranking = add_influence(contrasts)
-    contrasts.to_parquet(out_dir / "contrasts.parquet", index=False, compression="snappy")
+    write_contrasts(contrasts, out_dir)
     (out_dir / "influence_corpus.json").write_text(json.dumps(influence_ranking), encoding="utf-8")
 
-    studies = [s.to_dict() for s in store.list_studies()]
     (out_dir / "studies.json").write_text(json.dumps(studies), encoding="utf-8")
 
     (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
@@ -772,15 +897,17 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
         "n_tissues": int(contrasts["tissue"].nunique()),
         "species": sorted(contrasts["species"].unique()),
         # The mode contract, carried onto the page. A masthead that says
-        # "485,905" when the store held the 40,585-row slice would be exactly
+        # the full count when the store held the curated slice would be exactly
         # the self-inflicted wound test_masthead_counts_are_computed_not_typed
         # exists to prevent.
         "signature_mode": "full" if n_rows > CURATED_SLICE_ROWS else "curated_slice",
-        "min_contrasts_for_pooling": MIN_CONTRASTS,
+        "min_series_for_pooling": MIN_SERIES,
         "crosslayer_available": crosslayer.get("available", False),
         # The honest headline (§4.7): the prediction interval, not the looser
         # confidence interval, is where the next study would land.
         "prediction_interval": prediction_interval_headline(pooled),
+        # Arrays alone and RNA-seq alone, as two independent replications.
+        "platforms": platform_headline(pooled),
     }
     (out_dir / "meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
 
@@ -791,32 +918,37 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
 def enrich(out_dir: Path | None = None) -> dict:
     """Add the derived fields to the *already-built* artifacts, without a rebuild.
 
-    The committed Parquet is the full-corpus build (485,905 contrasts); this
-    environment can only rebuild the 40,585-row curated slice, so a plain
+    The committed Parquet is the full-corpus build; an environment without the
+    full signature table can only rebuild the curated slice, so a plain
     ``build`` here would shrink the shipped data. Every field this adds —
     ``ortholog_group`` and ``uniprot`` on the pooled table, ``loo_g`` / ``loo_shift``
     on the contrasts, the corpus-influence ranking, and the prediction-interval
     headline — is a pure function of the committed inputs, so it can be layered
-    onto the shipped artifact in place. A full ``build`` produces the same fields
+    onto the shipped artifact in place, as are the per-platform pools. A full
+    ``build`` produces the same fields
     natively, so the two paths cannot drift.
     """
     out_dir = out_dir or DEFAULT_OUT
     pooled = pd.read_parquet(out_dir / "pooled.parquet")
-    contrasts = pd.read_parquet(out_dir / "contrasts.parquet")
+    studies = json.loads((out_dir / "studies.json").read_text(encoding="utf-8"))
+    contrasts = attach_series(
+        read_contrasts(out_dir).drop(columns="series_id", errors="ignore"), studies
+    )
 
-    pooled = _annotate_pooled(pooled)
+    pooled = _with_platforms(_annotate_pooled(pooled), contrasts)
     pooled.to_parquet(out_dir / "pooled.parquet", index=False, compression="snappy")
     (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
     curated = _curated_payload(pooled)
     (out_dir / "curated.json").write_text(json.dumps(curated), encoding="utf-8")
 
     contrasts, influence_ranking = add_influence(contrasts)
-    contrasts.to_parquet(out_dir / "contrasts.parquet", index=False, compression="snappy")
+    write_contrasts(contrasts, out_dir)
     (out_dir / "influence_corpus.json").write_text(json.dumps(influence_ranking), encoding="utf-8")
 
     meta_path = out_dir / "meta.json"
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
     meta["prediction_interval"] = prediction_interval_headline(pooled)
+    meta["platforms"] = platform_headline(pooled)
     meta_path.write_text(json.dumps(meta, indent=1), encoding="utf-8")
 
     return {

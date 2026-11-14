@@ -295,3 +295,84 @@ def test_verdict_still_reads_a_genuinely_negative_interval():
         n_studies=4,
     )
     assert pooled.verdict == "decreases"
+
+
+@pytest.mark.parametrize(
+    ("p", "ci_high", "expected_p"),
+    [
+        # Interval excludes zero (bound rounds to -0.0001) but p rounds onto the
+        # threshold: the shipped p must stay below it, as at full precision.
+        (0.04996, -0.00006, 0.0499),
+        # Interval reaches zero once rounded, while p rounds just under: the
+        # shipped p must not claim what the shipped interval does not.
+        (0.04994, -0.00004, 0.05),
+        # Away from the threshold nothing is nudged.
+        (0.0123456, -0.2, 0.0123),
+        (0.5, 0.3, 0.5),
+    ],
+)
+def test_the_reported_p_value_always_agrees_with_the_reported_interval(p, ci_high, expected_p):
+    from geroquery.harmonize.meta import PooledEffect
+
+    pooled = PooledEffect(
+        pooled_effect=-0.5,
+        standard_error=0.2,
+        ci_low=-1.0,
+        ci_high=ci_high,
+        p_value=p,
+        tau2=0.0,
+        i2=0.0,
+        q=0.0,
+        n_studies=5,
+    )
+    assert pooled.reported_p_value == expected_p
+    assert (pooled.reported_p_value < 0.05) == (pooled.verdict != "no_evidence")
+
+
+# ---- contrasts that share a GEO Series share subjects ---------------------
+
+
+def test_by_series_collapses_shared_subjects_as_perfectly_correlated():
+    from geroquery.harmonize.meta import by_series
+
+    y, se = by_series([0.4, 0.8, -0.2], [0.2, 0.2, 0.5], ["A", "A", "B"])
+    # Inverse-variance mean within A; its SE does not shrink, because a second
+    # tissue from the same animals is not a second sample of animals (rho = 1).
+    assert y == pytest.approx([0.6, -0.2])
+    assert se == pytest.approx([0.2, 0.5])
+
+
+def test_repeating_a_contrast_inside_its_series_adds_no_information():
+    """The bug this fixes: two contrasts on the same subjects used to count as
+    two independent studies, so duplicating one narrowed the interval."""
+    from geroquery.harmonize.meta import pool_series
+
+    effects, ses = [0.5, 0.1, 0.9, 0.3], [0.2, 0.25, 0.3, 0.2]
+    series = ["S1", "S2", "S3", "S4"]
+    once = pool_series(effects, ses, series)
+    twice = pool_series(effects + [0.5], ses + [0.2], series + ["S1"])
+    assert twice.pooled_effect == pytest.approx(once.pooled_effect)
+    assert twice.ci_low == pytest.approx(once.ci_low)
+    assert twice.n_studies == once.n_studies == 4
+
+    naive = random_effects(effects + [0.5], ses + [0.2])
+    assert naive.ci_high - naive.ci_low < once.ci_high - once.ci_low
+
+
+def test_independent_series_pool_exactly_as_before():
+    from geroquery.harmonize.meta import pool_series
+
+    effects, ses = [0.5, 0.1, 0.9], [0.2, 0.25, 0.3]
+    assert pool_series(effects, ses, ["a", "b", "c"]) == random_effects(effects, ses)
+
+
+def test_leave_one_out_drops_a_contrast_from_its_series_not_the_series():
+    from geroquery.harmonize import leave_one_out
+    from geroquery.harmonize.meta import pool_series
+
+    effects, ses = [0.6, 0.2, -0.1, 0.4], [0.2, 0.2, 0.3, 0.25]
+    series = ["A", "A", "B", "C"]
+    loo = leave_one_out(effects, ses, series)
+    without_first = pool_series(effects[1:], ses[1:], series[1:])
+    assert loo.estimates[0] == pytest.approx(without_first.pooled_effect)
+    assert loo.full_effect == pytest.approx(pool_series(effects, ses, series).pooled_effect)

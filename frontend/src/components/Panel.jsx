@@ -68,10 +68,10 @@ export default function Panel() {
           <h2 className="panel-title">Which contrast bends the corpus</h2>
           <p className="note" style={{ marginBottom: "0.8rem" }}>
             Each bar is how far the pooled estimate moves, on average, when that one contrast is
-            dropped from a gene it measures. A contrast covers only the genes its array measures —
+            dropped from a gene it measures. A contrast covers only the genes its platform measures —
             between {Math.min(...influence.map((r) => r.n_genes)).toLocaleString()} and{" "}
             {Math.max(...influence.map((r) => r.n_genes)).toLocaleString()} here — so the average,
-            not the total, is shown: a total would mostly rank array size. The species are drawn apart
+            not the total, is shown: a total would mostly rank platform coverage. The species are drawn apart
             because a mouse gene is pooled from fewer, noisier contrasts, so dropping one moves it
             further by construction — compare contrasts within a species. This is a question about
             the panel itself, and nothing in a curated database can answer it.
@@ -90,8 +90,19 @@ export default function Panel() {
         <p className="note">
           Every GEO DataSet declaring an age subset variable, then an adult young-versus-old split
           restricted to the control arm of every other subset variable, with at least three samples
-          per group. Whatever passes, ships. The panel changes by changing a rule, never by
-          preferring a result.
+          per group.
+        </p>
+        <p className="note">
+          Then every bulk RNA-seq sample in ARCHS4 (one uniform alignment of all public GEO RNA-seq)
+          whose characteristics record an age in the same young or old band. Within a series,
+          samples are grouped by tissue, cell type and every other recorded attribute, so the two
+          arms differ only in age; treatments, genotypes, diets and diseases must sit at their
+          control level, any unrecognised attribute excludes the sample, and a series that profiles
+          any tumour is left out whole. At least three samples per group.
+        </p>
+        <p className="note">
+          Whatever passes, ships. The panel changes by changing a rule, never by preferring a
+          result.
         </p>
       </div>
 
@@ -101,10 +112,11 @@ export default function Panel() {
         </h2>
         {shared > 0 ? (
           <p className="note" style={{ marginBottom: "0.8rem" }}>
-            <strong>{shared} contrasts share a Series with another.</strong> GEO sometimes publishes
-            one experiment as two DataSets — the halves of a split array — so those pairs share
-            subjects. A random-effects pool assumes its inputs are independent; the Series column is
-            here so that assumption can be checked rather than taken on faith.
+            <strong>{shared} contrasts share a Series with another.</strong> One experiment can yield
+            several contrasts — the two halves of a split array, or several tissues and cell types
+            from the same animals — and those share subjects. Each Series is therefore combined
+            into one estimate before pooling, so a gene&rsquo;s k counts independent Series, not
+            contrasts; the Series column shows which contrasts were combined.
           </p>
         ) : null}
         <div className="table-scroll">

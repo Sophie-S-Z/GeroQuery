@@ -31,7 +31,26 @@ export function shortLabel(studyId) {
     // Initials for all but the last word: hematopoietic_stem_cell_hsc -> h.s.c.hsc
     .map((word, index, all) => (index === all.length - 1 ? word : word[0]))
     .join(".");
-  return `${accession} ${compact.length > 14 ? `${compact.slice(0, 13)}…` : compact}`;
+  // Capped so accession + qualifier fit an 18-character axis margin; repeats
+  // are numbered by withShortLabels, so the cap never costs uniqueness.
+  return `${accession} ${compact.length > 8 ? `${compact.slice(0, 7)}…` : compact}`;
+}
+
+/**
+ * Rows with a `label` that is unique within one chart.
+ *
+ * Abbreviation can still collide — `tissue_liver_genotype_wild_type` and
+ * `tissue_lung_genotype_wild_type` both compact to `t.l.g.w.type` — and Plot
+ * would draw the two as one row. Repeats are numbered instead.
+ */
+export function withShortLabels(rows) {
+  const seen = new Map();
+  return rows.map((row) => {
+    const base = shortLabel(row.study_id);
+    const n = (seen.get(base) ?? 0) + 1;
+    seen.set(base, n);
+    return { ...row, label: n === 1 ? base : `${base} ·${n}` };
+  });
 }
 
 /**
@@ -63,11 +82,7 @@ export default function ForestPlot({ contrasts, pooled, symbol }) {
     // forest plot whose rows are all tinted by the pooled verdict hides the
     // disagreement that produced it — and for CDKN2A the disagreement is the
     // finding: six up, eight down.
-    const rows = contrasts.map((row) => ({
-      ...row,
-      label: shortLabel(row.study_id),
-      ...contrastInterval(row),
-    }));
+    const rows = withShortLabels(contrasts).map((row) => ({ ...row, ...contrastInterval(row) }));
 
     const values = [
       ...rows.flatMap((r) => [r.low, r.high]),
@@ -150,7 +165,7 @@ export default function ForestPlot({ contrasts, pooled, symbol }) {
             (d.pi_low != null
               ? `next study [${d.pi_low}, ${d.pi_high}]  95% prediction interval\n`
               : "") +
-            `k = ${d.k} contrasts`,
+            `k = ${d.k} independent Series, ${d.n_contrasts} contrasts`,
         }),
       );
     }

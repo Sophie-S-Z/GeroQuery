@@ -133,7 +133,7 @@ export default function Landscape({ species, direction, onPick, onSpecies, onDir
                 <th className="num">shrunk</th>
                 <th className="num">95% CI</th>
                 <th className="num">lfsr</th>
-                <th className="num">k</th>
+                <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
                 <th className="num">I²</th>
                 <th className="num">tissues</th>
               </tr>

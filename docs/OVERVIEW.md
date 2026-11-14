@@ -173,22 +173,31 @@ All support `format=json|csv|parquet`; list endpoints support `limit`/`offset`.
 
 ### 4.1 About the gene signatures
 
-1. **Microarray-era only.** GEO stopped curating DataSets ~2016. No RNA-seq.
-2. **Small groups** — 3–15 per study. **Median 95% CI width 0.84.** Moderate
-   effects are undetectable; a null means "not detected by this instrument".
-3. **Lopsided tissue coverage.** Half the human contrasts are skeletal muscle;
-   one blood contrast (n=9); no brain-region resolution.
+1. **Two platforms.** 32 microarray contrasts (GEO DataSets, 2003–2015) and 244
+   RNA-seq contrasts (ARCHS4, rule-selected). Their difference is absorbed by the
+   between-study variance, not corrected; each gene is also pooled per platform,
+   and of 3,340 genes the arrays resolve, RNA-seq alone agrees on 16%.
+2. **Small groups** — median 12 samples per contrast (6–256); **median 95% CI
+   width 0.48**. Moderate effects are detectable; small ones are not. A null
+   means "not detected by this instrument".
+3. **Uneven coverage.** 205 of 276 contrasts are mouse; skeletal muscle is still
+   the largest human tissue (17 of 55 human contrasts).
 4. **`omic_layer` is `transcriptome` everywhere.** No proteome, no methylome. The
    multi-omic schema is real; the multi-omic *data* is one layer deep.
-5. **Cross-study processing heterogeneity is uncorrected** — 12 platforms, three
-   decades of normalization practice.
-6. **32 contrasts come from 27 Series.** Paired array halves share subjects; the
-   random-effects pool assumes independence. `series_id` exposes this; the pooling
-   does not yet account for it.
-7. **Sex is `unspecified` for 24 of 32 contrasts** — GEO never recorded it. That
-   is deliberately distinct from `both`.
-8. **~22% of probe rows dropped** at identifier resolution, concentrated on the
-   oldest platforms.
+5. **ARCHS4 selection reads free-text sample annotations.** The rule is strict
+   (unrecognised attributes exclude, tumour series are dropped whole) and its
+   sample lists are committed for audit, but it can only be as good as what
+   submitters recorded.
+6. **Contrasts that share subjects are combined, conservatively.** 106 of 276
+   come from a Series that yields more than one (split arrays; several tissues or
+   cell types from the same animals). Each Series becomes one estimate before
+   pooling, treated as perfectly correlated because the true correlation is
+   unknown, so intervals are if anything slightly too wide and within-Series
+   tissue differences are averaged rather than modelled.
+7. **Sex is `unspecified` for 158 of 276 contrasts** — never recorded. That is
+   deliberately distinct from `both`.
+8. **~22% of microarray probe rows dropped** at identifier resolution,
+   concentrated on the oldest platforms.
 9. **Age bands are conventions** (human 40/60 y, mouse 8/18 mo), not measurements.
 
 ### 4.2 About the clinical / resilience layer

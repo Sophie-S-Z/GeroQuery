@@ -666,9 +666,8 @@ def render_about() -> None:
         f"<tr><td>Clocks registered</td><td class='num'>{len(svc.list_clocks())}</td></tr>"
         f"</tbody></table>"
         f"<div class='gq-note' style='margin-top:.9rem'>{len(studies)} contrasts come from "
-        f"{len(series)} Series: GEO splits some experiments across two array halves, so a "
-        "few share subjects. The pooling assumes independence and does not yet account "
-        "for that.</div>"
+        f"{len(series)} Series. Contrasts from one Series share subjects, so each Series is "
+        "combined into one estimate before pooling.</div>"
     )
 
     st.markdown(

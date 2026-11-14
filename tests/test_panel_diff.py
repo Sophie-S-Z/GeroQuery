@@ -21,11 +21,11 @@ from geroquery.etl.panel_diff import (
     CHANGE_ORDER,
     EFFECT_MOVE_THRESHOLD,
     ESTIMATOR,
-    MIN_CONTRASTS,
     Snapshot,
     diff_snapshots,
     render_markdown,
 )
+from geroquery.harmonize import MIN_SERIES
 
 WORKFLOW = ".github/workflows/living-evidence.yml"
 
@@ -102,7 +102,7 @@ def test_a_gene_losing_contrasts_is_reported_not_silently_dropped():
 def test_the_effect_move_threshold_is_the_documented_one():
     """Pinned so the noise floor cannot drift without someone deciding to."""
     assert EFFECT_MOVE_THRESHOLD == pytest.approx(0.10)
-    assert MIN_CONTRASTS == 3
+    assert MIN_SERIES == 3
 
 
 # --- panel membership --------------------------------------------------------

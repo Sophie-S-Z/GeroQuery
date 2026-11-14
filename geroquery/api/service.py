@@ -7,6 +7,7 @@ The HTTP layer (app.py) stays thin and just translates request/response.
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Sequence
 
 import pandas as pd
@@ -19,8 +20,8 @@ from ..exceptions import (
     ResilienceInputError,
     UnknownSpeciesError,
 )
-from ..harmonize import random_effects
-from ..harmonize.meta import BOUND_DECIMALS, report_bound
+from ..harmonize import pool_series
+from ..harmonize.meta import report_bound
 from ..idmap import get_resolver
 from ..knowledge import HALLMARKS, REFERENCES
 from ..models import GeneCard, MetaSignature
@@ -60,6 +61,20 @@ class GeroService:
 
     # ---- version / provenance -------------------------------------------
 
+    @functools.cached_property
+    def _series(self) -> dict[str, str]:
+        """study_id -> GEO Series: contrasts sharing one share subjects.
+
+        A study without a Series would be pooled as independent of every other,
+        which is the error the Series exists to prevent, so it is refused.
+        """
+        series: dict[str, str] = {}
+        for study in self.store.list_studies():
+            if not study.series_id:
+                raise ValueError(f"No GEO Series recorded for {study.study_id}.")
+            series[study.study_id] = study.series_id
+        return series
+
     def version(self) -> dict:
         return {"code_version": __version__, "data_version": self.store.version()}
 
@@ -73,7 +88,11 @@ class GeroService:
             groups.setdefault((s.gene_id, s.omic_layer, s.species), []).append(s)
         metas = []
         for (gene_id, omic, species), sigs in sorted(groups.items()):
-            pooled = random_effects([s.effect_size for s in sigs], [s.standard_error for s in sigs])
+            pooled = pool_series(
+                [s.effect_size for s in sigs],
+                [s.standard_error for s in sigs],
+                [self._series[s.study_id] for s in sigs],
+            )
             metas.append(
                 MetaSignature(
                     gene_id=gene_id,
@@ -88,7 +107,7 @@ class GeroService:
                     # payload and the published site from disagreeing.
                     ci_low=pooled.reported_ci_low,
                     ci_high=pooled.reported_ci_high,
-                    p_value=round(pooled.p_value, BOUND_DECIMALS),
+                    p_value=pooled.reported_p_value,
                     heterogeneity_i2=round(pooled.i2, 2),
                     tau2=round(pooled.tau2, 4),
                     n_studies=pooled.n_studies,
@@ -98,6 +117,7 @@ class GeroService:
                     pi_low=report_bound(pooled.pi_low) if pooled.pi_low is not None else None,
                     pi_high=report_bound(pooled.pi_high) if pooled.pi_high is not None else None,
                     verdict=pooled.verdict,
+                    n_contrasts=len(sigs),
                 )
             )
         return metas

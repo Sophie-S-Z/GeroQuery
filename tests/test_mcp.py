@@ -121,7 +121,7 @@ def test_every_gene_answer_carries_caveats_and_a_data_version():
     limitations travel with the number rather than living in a doc."""
     result = tools.gene_aging_signature("CDKN2A")
     assert result["caveats"]
-    assert any("muscle" in c for c in result["caveats"])
+    assert any("Tissue coverage" in c for c in result["caveats"])
     assert any("CI" in c or "interval" in c for c in result["caveats"])
     assert result["data_version"]["data_version"]
 

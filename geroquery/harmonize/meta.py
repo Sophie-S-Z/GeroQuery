@@ -93,6 +93,8 @@ class PooledEffect:
     # Prediction interval. None below k == 3, where it is not estimable.
     pi_low: float | None = None
     pi_high: float | None = None
+    # The level the interval was built at; the p-value is judged against it.
+    alpha: float = 0.05
 
     @property
     def direction(self) -> str:
@@ -107,6 +109,22 @@ class PooledEffect:
     def reported_ci_high(self) -> float:
         """``ci_high`` at the precision every caller actually ships."""
         return report_bound(self.ci_high)
+
+    @property
+    def reported_p_value(self) -> float:
+        """``p_value`` at the shipped precision, never contradicting the verdict.
+
+        Rounded on its own, a p of 0.04996 ships as 0.0500 beside an upper bound
+        that ships as -0.0001: the interval excludes zero and the p-value says it
+        does not. At full precision the two agree (same pivot), so where
+        rounding alone carries p across alpha it is held on the verdict's side:
+        one unit of the last place below alpha, or alpha itself. The interval is
+        the authority, as everywhere in this module.
+        """
+        p = round(self.p_value, BOUND_DECIMALS)
+        if self.verdict != "no_evidence":
+            return min(p, round(self.alpha - 10.0**-BOUND_DECIMALS, BOUND_DECIMALS))
+        return max(p, self.alpha)
 
     @property
     def verdict(self) -> str:
@@ -227,4 +245,60 @@ def random_effects(
         ci_high_hk=hk_high,
         pi_low=pi_low,
         pi_high=pi_high,
+        alpha=alpha,
     )
+
+
+# --- contrasts that share subjects ------------------------------------------
+
+# A pooled estimate needs this many *independent* series. Below three the
+# between-study variance is not estimable and an interval would be a shape, not
+# a summary; counting contrasts instead of series let one experiment with three
+# tissues pass the gate on its own.
+MIN_SERIES = 3
+
+
+def by_series(
+    effects: Sequence[float], standard_errors: Sequence[float], series: Sequence[str]
+) -> tuple[list[float], list[float]]:
+    """Collapse the contrasts of each GEO Series into one effect.
+
+    Contrasts from one Series (split array halves, several tissues or cell types
+    from the same animals) share subjects, so pooling them as independent
+    studies overstates the evidence. Each Series becomes its inverse-variance
+    mean, with the standard error of a mean of *perfectly* correlated estimates
+    (Borenstein et al., *Introduction to Meta-Analysis*, ch. 24, rho = 1): a
+    second tissue from the same animals adds no precision. The true within-series
+    correlation is not known and is below one, so this is the conservative bound.
+    Series keep the order in which they first appear.
+    """
+    y = np.asarray(effects, dtype=float)
+    se = np.asarray(standard_errors, dtype=float)
+    groups: dict[str, list[int]] = {}
+    for i, key in enumerate(series):
+        groups.setdefault(key, []).append(i)
+    out_y, out_se = [], []
+    for members in groups.values():
+        if len(members) == 1:  # passed through exactly: no shared subjects, no change
+            out_y.append(float(y[members[0]]))
+            out_se.append(float(se[members[0]]))
+            continue
+        w = 1.0 / se[members] ** 2
+        out_y.append(float(np.sum(w * y[members]) / np.sum(w)))
+        out_se.append(float(np.sum(w * se[members]) / np.sum(w)))
+    return out_y, out_se
+
+
+def pool_series(
+    effects: Sequence[float],
+    standard_errors: Sequence[float],
+    series: Sequence[str],
+    ci: float = 0.95,
+) -> PooledEffect:
+    """:func:`random_effects` over independent Series; ``n_studies`` counts Series.
+
+    The one pooling entry point for contrast data: the export, the API, the MCP
+    tool, the evidence snapshot and leave-one-out all call this, so none of them
+    can count shared subjects twice while another does not.
+    """
+    return random_effects(*by_series(effects, standard_errors, series), ci=ci)

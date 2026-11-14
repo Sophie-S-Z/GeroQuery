@@ -21,7 +21,7 @@ system already ingests it.
 
 | Source | Status | Adapter role | Access | Format | Cache vs Federate | Licence |
 |---|---|---|---|---|---|---|
-| **NCBI GEO DataSets** | **live** | gene aging signatures — 31 datasets, 32 young-vs-old contrasts, 485,905 effect sizes | FTP SOFT, SHA-256 pinned | SOFT (gz) | Cache harmonized extracts | Public, attribute |
+| **NCBI GEO DataSets** | **live** | gene aging signatures — 31 datasets, 32 young-vs-old contrasts, 485,906 effect sizes | FTP SOFT, SHA-256 pinned | SOFT (gz) | Cache harmonized extracts | Public, attribute |
 | NHANES | **live** | clinical markers (clocks/resilience), 2017-2018, n=4,895 | CDC download, SHA-256 pinned | XPT | Cache | US public domain |
 | mygene.info | **live** | gene ID harmonization | REST (batch) | JSON | Cache mappings | Public |
 | GTEx (open) | **live** | tissue expression (median TPM + UBERON), **no age brackets** | Portal API v2 | JSON | Cache summaries; federate detail | Open summary |
@@ -35,8 +35,8 @@ system already ingests it.
 | pyaging | **live** | 173 published clocks (metadata-registered) | Hugging Face | — | Lazy artifacts | Library terms |
 | UBERON / Cell Ontology | **bundled** | tissue/cell harmonization | OBO/OLS extract | JSON | Cache | Open |
 | AnAge | **bundled** | maximum lifespan -> fractional age | flat file | JSON | Cache | HAGR |
-| recount3 | **stub** | uniform RNA-seq (human+mouse) — the highest-value next source | R/Bioconductor (ETL) | RSE | Federate / cache extracts | Public |
-| ARCHS4 | **stub** | uniform RNA-seq counts, no R bridge needed | HDF5 | HDF5 | Cache slices | Public |
+| recount3 | **stub** | uniform RNA-seq (human+mouse); overlaps ARCHS4, which is live | R/Bioconductor (ETL) | RSE | Federate / cache extracts | Public |
+| **ARCHS4** | **live** | gene aging signatures — 244 rule-selected RNA-seq contrasts (39 human, 205 mouse) from release 2.7, 3,519,842 effect sizes | HTTP range reads of the 64/51 GB HDF5; pinned by release string + byte size; sample lists committed | HDF5 | Cache per-contrast effects | Processed-file licence not stated — confirm before commercial use; underlying GEO/SRA samples public |
 | GTEx (protected) | **stub** | raw genotype-linked; donor age lives here | dbGaP | — | **Federate/link only** | Controlled |
 | CELLxGENE Census | **stub** | single-cell (stretch) | `cellxgene_census` | SOMA/AnnData | Federate | CC-BY |
 | Human Protein Atlas | **planned** | protein aging views | programmatic/TSV | TSV/JSON | Cache | CC-BY-SA |
