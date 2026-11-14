@@ -124,6 +124,9 @@ class MetaSignature:
     pi_low: float | None = None
     pi_high: float | None = None
     verdict: str = "no_evidence"
+    # ``n_studies`` counts independent GEO Series, the unit the pool treats as
+    # independent; this counts the contrasts collapsed into them.
+    n_contrasts: int = 0
 
     def to_dict(self) -> dict:
         return _clean(asdict(self))

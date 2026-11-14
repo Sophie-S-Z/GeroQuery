@@ -31,7 +31,7 @@ def test_p16_does_not_replicate_across_the_real_panel(client):
     """Pins the actual finding rather than the expected one.
 
     CDKN2A/p16 is the most-cited transcriptional marker of aging, and across
-    these 32 real GEO contrasts its pooled effect is indistinguishable from
+    this panel's real GEO contrasts its pooled effect is indistinguishable from
     zero. The synthetic slice this replaced had p16 planted at g=+1.20, so the
     old version of this test asserted every direction was "up" and passed. See
     docs/RESULTS_GEO_SIGNATURES.md for why arrays are a poor instrument for this
@@ -44,6 +44,15 @@ def test_p16_does_not_replicate_across_the_real_panel(client):
     assert (
         pooled["ci_low"] < 0 < pooled["ci_high"]
     ), "CDKN2A now has a CI excluding zero; the panel or the pipeline changed."
+
+
+def test_pooled_k_counts_independent_series_not_contrasts(client):
+    """CDKN2A's human contrasts include several from one Series (two tissues of
+    the same donors), so the independent count must be smaller than the
+    contrast count, and both must be reported."""
+    body = client.get("/v1/gene/CDKN2A/signature").json()
+    pooled = next(m for m in body["meta_signatures"] if m["species"] == "human")
+    assert 3 <= pooled["n_studies"] < pooled["n_contrasts"]
 
 
 def test_p21_does_replicate_across_the_real_panel(client):

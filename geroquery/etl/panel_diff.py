@@ -42,9 +42,10 @@ from typing import Any
 
 import pandas as pd
 
-from ..harmonize import random_effects
+from ..harmonize import MIN_SERIES, pool_series
 from ..sources.manifest import MANIFEST_VERSION, VERIFIED_ON
 from ..store import GeroStore
+from .build_frontend_data import attach_series
 
 # Process exit codes. "The evidence moved" and "something broke" must never
 # share one, because the workflow branches on it: exit 1 promotes the candidate
@@ -54,16 +55,15 @@ EXIT_UNCHANGED = 0
 EXIT_CHANGED = 1
 EXIT_ERROR = 2
 
-# Genes pooled from fewer contrasts than this are omitted from the snapshot.
-# Not a significance filter: with one or two contrasts the random-effects
+# Genes pooled from fewer than MIN_SERIES independent Series are omitted from
+# the snapshot. Not a significance filter: below three the random-effects
 # between-study variance is not estimable, so the interval is not a summary of
 # anything and comparing it across rebuilds would report noise as news.
-MIN_CONTRASTS = 3
 
 # Identifies the interval a snapshot's estimates were computed with. Bump it
 # whenever the estimator changes, and reset the baseline in the same commit —
 # diffing across estimators reports a change of method as a change of evidence.
-ESTIMATOR = "hartung_knapp_modified"
+ESTIMATOR = "hartung_knapp_modified_by_series"
 
 # A pooled effect must move by at least this much (in Hedges' g) before it is
 # reported as a magnitude change. Below it, the movement is rebuild jitter and
@@ -125,7 +125,7 @@ class Snapshot:
             "accessions": self.accessions,
             "series": self.series,
             "n_contrasts": self.n_contrasts,
-            "min_contrasts": MIN_CONTRASTS,
+            "min_series": MIN_SERIES,
             "n_estimates": len(self.estimates),
             "estimator": self.estimator,
             "estimates": self.estimates,
@@ -178,7 +178,7 @@ class Snapshot:
 
 
 def take_snapshot(store: GeroStore | None = None, *, today: str | None = None) -> Snapshot:
-    """Pool every gene with at least :data:`MIN_CONTRASTS` contrasts.
+    """Pool every gene measured in at least :data:`MIN_SERIES` independent Series.
 
     Reads the partitioned Parquet directly rather than looping the service one
     gene at a time: the panel carries ~46,000 genes, and a per-gene round trip
@@ -205,15 +205,21 @@ def take_snapshot(store: GeroStore | None = None, *, today: str | None = None) -
                 f"{store.sig_dir}. Read the dataset root, not the parquet files."
             )
     frame = frame.dropna(subset=["effect_size", "standard_error"])
+    studies = store.list_studies()
+    frame = attach_series(frame, [s.to_dict() for s in studies])
     frame["species"] = frame["species"].astype(str)
     frame["omic_layer"] = frame["omic_layer"].astype(str)
 
     estimates: dict[str, dict[str, Any]] = {}
     grouped = frame.groupby(["gene_id", "species", "omic_layer"], observed=True)
     for (gene_id, species, omic_layer), rows in grouped:
-        if len(rows) < MIN_CONTRASTS:
+        if rows["series_id"].nunique() < MIN_SERIES:
             continue
-        pooled = random_effects(rows["effect_size"].tolist(), rows["standard_error"].tolist())
+        pooled = pool_series(
+            rows["effect_size"].tolist(),
+            rows["standard_error"].tolist(),
+            rows["series_id"].tolist(),
+        )
         estimates[f"{gene_id}|{species}|{omic_layer}"] = {
             "gene_id": gene_id,
             "species": species,
@@ -225,7 +231,6 @@ def take_snapshot(store: GeroStore | None = None, *, today: str | None = None) -
             "i2": round(pooled.i2, 1),
         }
 
-    studies = store.list_studies()
     return Snapshot(
         taken_on=today or date.today().isoformat(),
         manifest_version=MANIFEST_VERSION,
@@ -362,7 +367,7 @@ def render_markdown(diff: PanelDiff, *, max_rows_per_kind: int = 25) -> str:
         "",
         f"Panel: {before.n_contrasts} → **{after.n_contrasts} contrasts** from "
         f"{len(after.series)} GEO Series. "
-        f"Pooled estimates with k ≥ {MIN_CONTRASTS}: "
+        f"Pooled estimates (k ≥ {MIN_SERIES} Series): "
         f"{len(before.estimates)} → **{len(after.estimates)}**.",
         "",
     ]

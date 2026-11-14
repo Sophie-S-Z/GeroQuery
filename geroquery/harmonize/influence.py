@@ -7,7 +7,7 @@ the exporter (:func:`geroquery.etl.build_frontend_data.add_influence`) builds by
 aggregating these per-gene fits for every contrast across the genes it measures.
 
 Nothing here re-derives the pool. Every leave-one-out estimate is
-:func:`geroquery.harmonize.random_effects` on the k-1 subset — the same
+:func:`geroquery.harmonize.pool_series` with one contrast removed — the same
 estimator the API and the static export already serve — so the strip cannot
 disagree with the forest plot it sits beside. The browser only renders these
 numbers (the standing repo rule); they are computed once in the ETL.
@@ -20,12 +20,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .meta import random_effects
-
-# A gene needs at least this many contrasts for a leave-one-out to make sense:
-# with k contrasts each subset has k-1, and below three the remaining pool is
-# not a random-effects fit. Matches the exporter's MIN_CONTRASTS pooling gate.
-MIN_CONTRASTS = 3
+from .meta import pool_series
 
 
 @dataclass(frozen=True)
@@ -44,13 +39,22 @@ class LeaveOneOut:
     baujat_influence: np.ndarray  # y: standardised influence on the pooled estimate
 
 
-def leave_one_out(effects: Sequence[float], standard_errors: Sequence[float]) -> LeaveOneOut:
-    """Recompute the pool with each study removed, and the influence it carries.
+def leave_one_out(
+    effects: Sequence[float],
+    standard_errors: Sequence[float],
+    series: Sequence[str] | None = None,
+) -> LeaveOneOut:
+    """Recompute the pool with each contrast removed, and the influence it carries.
 
     Parameters
     ----------
     effects, standard_errors:
         Per-contrast effect sizes and SEs (same length, k >= 2).
+    series:
+        The GEO Series of each contrast. Removing a contrast removes it from its
+        Series, which is re-collapsed (:func:`~geroquery.harmonize.meta.by_series`)
+        — the same pool the forest plot's diamond comes from. Omitted, every
+        contrast is its own Series.
     """
     y = np.asarray(effects, dtype=float)
     se = np.asarray(standard_errors, dtype=float)
@@ -60,7 +64,8 @@ def leave_one_out(effects: Sequence[float], standard_errors: Sequence[float]) ->
     if k < 2:
         raise ValueError("Leave-one-out needs at least two studies.")
 
-    full = random_effects(y.tolist(), se.tolist())
+    labels = np.asarray(series if series is not None else [str(i) for i in range(k)])
+    full = pool_series(y.tolist(), se.tolist(), labels.tolist())
     full_effect = full.pooled_effect
     se_full = full.standard_error
 
@@ -68,7 +73,7 @@ def leave_one_out(effects: Sequence[float], standard_errors: Sequence[float]) ->
     se_without = np.empty(k, dtype=float)
     for i in range(k):
         keep = np.arange(k) != i
-        sub = random_effects(y[keep].tolist(), se[keep].tolist())
+        sub = pool_series(y[keep].tolist(), se[keep].tolist(), labels[keep].tolist())
         estimates[i] = sub.pooled_effect
         se_without[i] = sub.standard_error
 

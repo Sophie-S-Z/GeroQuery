@@ -264,6 +264,11 @@ def test_build_all_refuses_to_write_empty_tables(tmp_path, monkeypatch):
         build_signatures.build_all(tmp_path, allow_network=False, quiet=True)
 
 
+def _independent(frame: pd.DataFrame) -> pd.DataFrame:
+    """Planted contrasts that share no subjects: each is its own GEO Series."""
+    return frame.assign(series_id=[f"S{i}" for i in range(len(frame))])
+
+
 def test_the_exported_verdict_agrees_with_the_exported_interval():
     """A reader recomputing the verdict from the numbers on the page must get
     the printed one.
@@ -318,7 +323,7 @@ def test_the_exported_verdict_agrees_with_the_exported_interval():
             }
         )
 
-    pooled = _pool(pd.DataFrame(rows))
+    pooled = _pool(_independent(pd.DataFrame(rows)))
     assert (pooled["gene_id"] == "PI").any(), "the prediction-bound fixture did not pool"
 
     for _, row in pooled.iterrows():
@@ -383,7 +388,7 @@ def test_the_exported_p_value_never_contradicts_the_exported_verdict():
             }
         )
 
-    pooled = _pool(pd.DataFrame(rows)).set_index("gene_id")
+    pooled = _pool(_independent(pd.DataFrame(rows))).set_index("gene_id")
     assert {"DISPERSED", "TIGHT"} <= set(pooled.index)
 
     for gene_id, row in pooled.iterrows():
@@ -486,7 +491,8 @@ def test_leave_one_out_columns_match_an_independent_pool_and_feed_the_corpus_ran
             )
     contrasts = pd.DataFrame(rows)
 
-    enriched, ranking = add_influence(contrasts)
+    # Each study is its own Series here: every contrast is independent.
+    enriched, ranking = add_influence(contrasts.assign(series_id=contrasts["study_id"]))
 
     # Every contrast of G0 gets a loo_g equal to a from-scratch pool of the rest.
     g0 = enriched[enriched["gene_id"] == "G0"].reset_index(drop=True)
@@ -537,7 +543,7 @@ def test_prediction_interval_headline_counts_the_honest_number():
                 "tissue": "blood",
             }
         )
-    pooled = _pool(pd.DataFrame(rows))
+    pooled = _pool(_independent(pd.DataFrame(rows)))
     headline = prediction_interval_headline(pooled)
 
     assert headline["n_with_pi"] == 2
@@ -644,7 +650,7 @@ def test_the_committed_influence_is_internally_consistent():
     """
 
     from geroquery.etl.build_frontend_data import CONTRAST_DIR, read_contrasts
-    from geroquery.harmonize import random_effects
+    from geroquery.harmonize import pool_series
 
     data = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data"
     if not (data / CONTRAST_DIR).exists():  # pragma: no cover
@@ -654,7 +660,7 @@ def test_the_committed_influence_is_internally_consistent():
     if "loo_g" not in contrasts.columns:  # pragma: no cover
         pytest.skip("export predates the influence enrichment")
 
-    # loo_g on a real gene equals an independent pool of its other contrasts.
+    # loo_g on a real gene equals the Series pool of its other contrasts.
     with_loo = contrasts[contrasts["loo_g"].notna()]
     counts = with_loo.groupby(["gene_id", "species"]).size()
     gene_id, species = counts[counts >= 5].index[0]
@@ -662,8 +668,10 @@ def test_the_committed_influence_is_internally_consistent():
         (contrasts["gene_id"] == gene_id) & (contrasts["species"] == species)
     ].reset_index(drop=True)
     others = group.drop(index=0)
-    expected = random_effects(
-        others["effect_size"].tolist(), others["standard_error"].tolist()
+    expected = pool_series(
+        others["effect_size"].tolist(),
+        others["standard_error"].tolist(),
+        others["series_id"].tolist(),
     ).pooled_effect
     assert abs(group.loc[0, "loo_g"] - round(expected, 4)) <= 1e-4
 
@@ -794,7 +802,7 @@ def test_each_platform_is_pooled_alone_and_agreement_is_counted():
         + rows("HALF", "GEO", null)
         + rows("HALF", "ARCHS4", up)
     )
-    platforms = by_platform(contrasts).set_index("gene_id")
+    platforms = by_platform(_independent(contrasts)).set_index("gene_id")
     assert platforms.loc["REPL", "k_array"] == 3 and platforms.loc["REPL", "k_rnaseq"] == 3
     assert platforms.loc["DISC", "verdict_rnaseq"] == "decreases"
     assert pd.isna(platforms.loc["ONE", "k_rnaseq"])
@@ -828,3 +836,39 @@ def test_contrast_shards_use_fnv1a_on_the_upper_cased_symbol():
     assert contrast_shard("foobar") == 0x9DE507A8 % 64  # fnv1a32("FOOBAR")
     assert contrast_shard("a") == 0xC40BF6CC % 64  # fnv1a32("A")
     assert contrast_shard("Cdkn2a") == contrast_shard("CDKN2A")
+
+
+def test_the_pool_counts_series_not_contrasts():
+    """Two contrasts from one Series share subjects: k counts the Series once,
+    and a gene measured in only two Series is not pooled however many contrasts
+    they hold."""
+    from geroquery.etl.build_frontend_data import _pool_rows
+
+    def row(gene, series, effect):
+        return {
+            "gene_id": gene,
+            "species": "human",
+            "series_id": series,
+            "effect_size": effect,
+            "standard_error": 0.2,
+            "tissue": "blood",
+        }
+
+    frame = pd.DataFrame(
+        [row("G", "A", 0.5), row("G", "A", 0.7), row("G", "B", 0.2), row("G", "C", 0.4)]
+        + [row("TWO", "A", 0.5), row("TWO", "A", 0.6), row("TWO", "B", 0.4)]
+    )
+    pooled = _pool_rows(frame).set_index("gene_id")
+    assert list(pooled.index) == ["G"]
+    assert pooled.loc["G", "k"] == 3 and pooled.loc["G", "n_contrasts"] == 4
+
+
+def test_the_committed_pool_never_has_more_series_than_contrasts():
+    data = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data"
+    pooled = pd.read_parquet(data / "pooled.parquet")
+    if "n_contrasts" not in pooled:
+        pytest.skip("export predates series-level pooling")
+    from geroquery.harmonize import MIN_SERIES
+
+    assert (pooled["k"] >= MIN_SERIES).all()
+    assert (pooled["k"] <= pooled["n_contrasts"]).all()

@@ -4,10 +4,13 @@ from .batch import batch_variance, remove_batch_effect
 from .deming import DemingFit, deming_regression
 from .effect_size import EffectSize, cohens_d, hedges_g
 from .influence import LeaveOneOut, leave_one_out
-from .meta import PooledEffect, random_effects
+from .meta import MIN_SERIES, PooledEffect, by_series, pool_series, random_effects
 from .shrinkage import Shrunk, adaptive_shrinkage
 
 __all__ = [
+    "MIN_SERIES",
+    "by_series",
+    "pool_series",
     "EffectSize",
     "cohens_d",
     "hedges_g",

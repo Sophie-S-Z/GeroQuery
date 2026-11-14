@@ -15,7 +15,7 @@ instant.
 
 **Every statistic in the output is computed here, in Python.** The browser does
 no meta-analysis: it reads pooled effects that this module already pooled, using
-the same :func:`geroquery.harmonize.random_effects` the API serves. That is a
+the same :func:`geroquery.harmonize.pool_series` the API serves. That is a
 deliberate architectural line. Re-implementing DerSimonian-Laird in JavaScript
 would create two estimators for one quantity, and they would drift — the repo
 already keeps `test_matrix_hedges_g_matches_scalar_implementation` around
@@ -63,7 +63,7 @@ import numpy as np
 import pandas as pd
 
 from .. import __version__
-from ..harmonize import random_effects
+from ..harmonize import MIN_SERIES, pool_series
 from ..harmonize.meta import report_bound
 from ..sources.manifest import MANIFEST, MANIFEST_VERSION, VERIFIED_ON
 from ..store import GeroStore
@@ -75,11 +75,6 @@ DEFAULT_OUT = Path(__file__).resolve().parents[2] / "frontend" / "public" / "dat
 # Row count of the committed curated slice. Used only to label the build mode;
 # a developer who has run `make data` gets the full table and CI does not.
 CURATED_SLICE_ROWS = 343_808
-
-# Genes pooled from fewer contrasts than this get no pooled row. With one or two
-# contrasts the between-study variance is not estimable, so the interval would
-# be a shape rather than a summary.
-MIN_CONTRASTS = 3
 
 CONTRAST_DIR = "contrasts"
 CONTRAST_SHARDS = 64
@@ -154,16 +149,38 @@ def _pool(frame: pd.DataFrame) -> pd.DataFrame:
     return _add_corpus_posterior(_pool_rows(frame))
 
 
+def attach_series(contrasts: pd.DataFrame, studies: list[dict]) -> pd.DataFrame:
+    """Add each contrast's GEO Series, the unit the pool treats as independent.
+
+    Refuses rather than guesses: a contrast whose Series is unknown would be
+    pooled as independent of every other, which is the error this column fixes.
+    """
+    series = {s["study_id"]: s.get("series_id") or None for s in studies}
+    out = contrasts.assign(series_id=contrasts["study_id"].map(series))
+    missing = out.loc[out["series_id"].isna(), "study_id"].unique()
+    if len(missing):
+        raise ValueError(f"No GEO Series recorded for {len(missing)} studies, e.g. {missing[:3]}")
+    return out
+
+
 def _pool_rows(frame: pd.DataFrame) -> pd.DataFrame:
-    """The random-effects pool per (gene, species), without the posterior."""
+    """The random-effects pool per (gene, species), without the posterior.
+
+    Pooled over GEO Series (:func:`~geroquery.harmonize.pool_series`): ``k`` is
+    the number of independent Series, ``n_contrasts`` the number of contrasts.
+    """
     rows = []
     grouped = frame.dropna(subset=["effect_size", "standard_error"]).groupby(
         ["gene_id", "species"], observed=True
     )
     for (gene_id, species), group in grouped:
-        if len(group) < MIN_CONTRASTS:
+        if group["series_id"].nunique() < MIN_SERIES:
             continue
-        pooled = random_effects(group["effect_size"].tolist(), group["standard_error"].tolist())
+        pooled = pool_series(
+            group["effect_size"].tolist(),
+            group["standard_error"].tolist(),
+            group["series_id"].tolist(),
+        )
         # Round first, then judge — see _bound. Every interval bound goes
         # through it, including the prediction interval, which is drawn on the
         # forest plot and printed in the readout and so has exactly the same
@@ -187,6 +204,7 @@ def _pool_rows(frame: pd.DataFrame) -> pd.DataFrame:
                 "i2": round(pooled.i2, 1),
                 "tau2": round(pooled.tau2, 4),
                 "k": int(pooled.n_studies),
+                "n_contrasts": len(group),
                 # The DerSimonian-Laird interval, so the page can show what a
                 # conventional tool would have reported, and the prediction
                 # interval, which is where the next study would land.
@@ -216,7 +234,7 @@ def by_platform(contrasts: pd.DataFrame) -> pd.DataFrame:
     """Each gene pooled from one platform's contrasts alone, one column set per platform.
 
     ``g_array``, ``ci_low_array`` ... ``verdict_rnaseq``; null where a platform
-    has fewer than :data:`MIN_CONTRASTS` contrasts for the gene. Same estimator
+    has fewer than :data:`MIN_SERIES` Series for the gene. Same estimator
     as the main pool, so a platform's column is exactly what the corpus would
     say if it were that platform's evidence alone.
     """
@@ -365,7 +383,7 @@ def add_influence(contrasts: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
     """
     from collections import defaultdict
 
-    from ..harmonize.influence import MIN_CONTRASTS, leave_one_out
+    from ..harmonize.influence import leave_one_out
 
     contrasts = contrasts.copy()
     contrasts["loo_g"] = np.nan
@@ -378,9 +396,13 @@ def add_influence(contrasts: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
 
     usable = contrasts.dropna(subset=["effect_size", "standard_error"])
     for _key, group in usable.groupby(["gene_id", "species"], observed=True):
-        if len(group) < MIN_CONTRASTS:
+        if group["series_id"].nunique() < MIN_SERIES:
             continue
-        loo = leave_one_out(group["effect_size"].tolist(), group["standard_error"].tolist())
+        loo = leave_one_out(
+            group["effect_size"].tolist(),
+            group["standard_error"].tolist(),
+            group["series_id"].tolist(),
+        )
         contrasts.loc[group.index, "loo_g"] = np.round(loo.estimates, 4) + 0.0
         contrasts.loc[group.index, "loo_shift"] = np.round(loo.shifts, 4) + 0.0
         for study, shift, cook in zip(group["study_id"], loo.shifts, loo.cooks, strict=True):
@@ -833,6 +855,8 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     contrasts = pd.read_parquet(store.sig_dir)
     for column in ("species", "omic_layer"):
         contrasts[column] = contrasts[column].astype(str)
+    studies = [s.to_dict() for s in store.list_studies()]
+    contrasts = attach_series(contrasts, studies)
 
     pooled = _pool(contrasts)
     symbols = _symbols(sorted(pooled["gene_id"].unique()))
@@ -849,7 +873,6 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     write_contrasts(contrasts, out_dir)
     (out_dir / "influence_corpus.json").write_text(json.dumps(influence_ranking), encoding="utf-8")
 
-    studies = [s.to_dict() for s in store.list_studies()]
     (out_dir / "studies.json").write_text(json.dumps(studies), encoding="utf-8")
 
     (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
@@ -878,7 +901,7 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
         # the self-inflicted wound test_masthead_counts_are_computed_not_typed
         # exists to prevent.
         "signature_mode": "full" if n_rows > CURATED_SLICE_ROWS else "curated_slice",
-        "min_contrasts_for_pooling": MIN_CONTRASTS,
+        "min_series_for_pooling": MIN_SERIES,
         "crosslayer_available": crosslayer.get("available", False),
         # The honest headline (§4.7): the prediction interval, not the looser
         # confidence interval, is where the next study would land.
@@ -907,7 +930,10 @@ def enrich(out_dir: Path | None = None) -> dict:
     """
     out_dir = out_dir or DEFAULT_OUT
     pooled = pd.read_parquet(out_dir / "pooled.parquet")
-    contrasts = read_contrasts(out_dir)
+    studies = json.loads((out_dir / "studies.json").read_text(encoding="utf-8"))
+    contrasts = attach_series(
+        read_contrasts(out_dir).drop(columns="series_id", errors="ignore"), studies
+    )
 
     pooled = _with_platforms(_annotate_pooled(pooled), contrasts)
     pooled.to_parquet(out_dir / "pooled.parquet", index=False, compression="snappy")

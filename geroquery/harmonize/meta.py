@@ -247,3 +247,58 @@ def random_effects(
         pi_high=pi_high,
         alpha=alpha,
     )
+
+
+# --- contrasts that share subjects ------------------------------------------
+
+# A pooled estimate needs this many *independent* series. Below three the
+# between-study variance is not estimable and an interval would be a shape, not
+# a summary; counting contrasts instead of series let one experiment with three
+# tissues pass the gate on its own.
+MIN_SERIES = 3
+
+
+def by_series(
+    effects: Sequence[float], standard_errors: Sequence[float], series: Sequence[str]
+) -> tuple[list[float], list[float]]:
+    """Collapse the contrasts of each GEO Series into one effect.
+
+    Contrasts from one Series (split array halves, several tissues or cell types
+    from the same animals) share subjects, so pooling them as independent
+    studies overstates the evidence. Each Series becomes its inverse-variance
+    mean, with the standard error of a mean of *perfectly* correlated estimates
+    (Borenstein et al., *Introduction to Meta-Analysis*, ch. 24, rho = 1): a
+    second tissue from the same animals adds no precision. The true within-series
+    correlation is not known and is below one, so this is the conservative bound.
+    Series keep the order in which they first appear.
+    """
+    y = np.asarray(effects, dtype=float)
+    se = np.asarray(standard_errors, dtype=float)
+    groups: dict[str, list[int]] = {}
+    for i, key in enumerate(series):
+        groups.setdefault(key, []).append(i)
+    out_y, out_se = [], []
+    for members in groups.values():
+        if len(members) == 1:  # passed through exactly: no shared subjects, no change
+            out_y.append(float(y[members[0]]))
+            out_se.append(float(se[members[0]]))
+            continue
+        w = 1.0 / se[members] ** 2
+        out_y.append(float(np.sum(w * y[members]) / np.sum(w)))
+        out_se.append(float(np.sum(w * se[members]) / np.sum(w)))
+    return out_y, out_se
+
+
+def pool_series(
+    effects: Sequence[float],
+    standard_errors: Sequence[float],
+    series: Sequence[str],
+    ci: float = 0.95,
+) -> PooledEffect:
+    """:func:`random_effects` over independent Series; ``n_studies`` counts Series.
+
+    The one pooling entry point for contrast data: the export, the API, the MCP
+    tool, the evidence snapshot and leave-one-out all call this, so none of them
+    can count shared subjects twice while another does not.
+    """
+    return random_effects(*by_series(effects, standard_errors, series), ci=ci)
