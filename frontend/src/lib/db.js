@@ -23,7 +23,7 @@
 import { parquetReadObjects } from "hyparquet";
 
 /** Base URL for the data directory, honouring a non-root deploy. */
-const DATA_BASE = `${import.meta.env.BASE_URL ?? "/"}data`.replace(/\/{2,}/g, "/");
+export const DATA_BASE = `${import.meta.env.BASE_URL ?? "/"}data`.replace(/\/{2,}/g, "/");
 
 const cache = new Map();
 

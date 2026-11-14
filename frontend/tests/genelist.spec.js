@@ -70,7 +70,7 @@ test.describe("gene list", () => {
     ]);
     expect(download.suggestedFilename()).toMatch(/^geroquery-gene-list-human-.+\.csv$/);
     const lines = (await readFile(await download.path(), "utf8")).trim().split("\n");
-    expect(lines[0]).toBe("symbol,species,verdict,g,ci_low,ci_high,pi_low,pi_high,k,lfsr,genage_evidence");
+    expect(lines[0]).toBe("symbol,species,verdict,g,ci_low,ci_high,pi_low,pi_high,k,n_contrasts,lfsr,genage_evidence");
     expect(lines).toHaveLength(4);
   });
 

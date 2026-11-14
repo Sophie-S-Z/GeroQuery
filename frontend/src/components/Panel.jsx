@@ -114,9 +114,9 @@ export default function Panel() {
           <p className="note" style={{ marginBottom: "0.8rem" }}>
             <strong>{shared} contrasts share a Series with another.</strong> One experiment can yield
             several contrasts — the two halves of a split array, or several tissues and cell types
-            from the same animals — and those share subjects. A random-effects pool assumes its
-            inputs are independent; the Series column is here so that assumption can be checked
-            rather than taken on faith.
+            from the same animals — and those share subjects. Each Series is therefore combined
+            into one estimate before pooling, so a gene&rsquo;s k counts independent Series, not
+            contrasts; the Series column shows which contrasts were combined.
           </p>
         ) : null}
         <div className="table-scroll">

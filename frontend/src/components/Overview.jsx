@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as Plot from "@observablehq/plot";
-import { json } from "../lib/db.js";
+import { DATA_BASE, json } from "../lib/db.js";
 import { css } from "../lib/theme.js";
 import { fmtInt, fmtPct } from "../lib/format.js";
 import { shortLabel } from "./ForestPlot.jsx";
@@ -19,6 +19,13 @@ import { shortLabel } from "./ForestPlot.jsx";
  * includes genes that rise *and* genes that fall with age, so it is drawn in ink,
  * never in a polarity colour.
  */
+// The shipped artifacts a researcher would want to load themselves.
+const DATA_FILES = [
+  ["pooled.parquet", "every pooled estimate"],
+  ["studies.json", "every contrast’s provenance"],
+  ["meta.json", "corpus counts and data version"],
+];
+
 export default function Overview({ onNavigate, onPick }) {
   const host = useRef(null);
   const [meta, setMeta] = useState(null);
@@ -220,10 +227,13 @@ export default function Overview({ onNavigate, onPick }) {
       <section className="panel">
         <h2 className="panel-title">How the numbers are made</h2>
         <p className="note" style={{ maxWidth: "74ch" }}>
-          Per-study effects are standardized to Hedges&rsquo; g and pooled by random-effects
-          meta-analysis (DerSimonian-Laird with a Hartung-Knapp-Sidik-Jonkman interval, never
-          narrower than the conventional one), with a 95% prediction interval for where the next
-          study would land. A corpus-wide adaptive-shrinkage prior gives each gene a local false
+          Per-study effects are standardized to Hedges&rsquo; g. Contrasts from one GEO Series
+          share subjects (several tissues from the same animals, or two halves of one array), so
+          each Series is first combined into a single estimate, treated as perfectly correlated
+          &mdash; the conservative bound &mdash; and only independent Series are pooled. The pool
+          is a random-effects meta-analysis (DerSimonian-Laird with a Hartung-Knapp-Sidik-Jonkman
+          interval, never narrower than the conventional one), with a 95% prediction interval for
+          where the next study would land. A corpus-wide adaptive-shrinkage prior gives each gene a local false
           sign rate — the probability its direction is wrong. Cross-species agreement uses a Deming
           (errors-in-both-variables) fit; the mortality result is a survey-weighted Cox model with a
           design-based sandwich variance
@@ -250,6 +260,19 @@ export default function Overview({ onNavigate, onPick }) {
           The API (<span className="mono">uvicorn geroquery.api.app:app</span>) and the MCP server (
           <span className="mono">geroquery-mcp</span>) serve the same estimators. Full instructions
           are in <span className="mono">docs/OVERVIEW.md</span>.
+        </p>
+        <p className="note" style={{ maxWidth: "74ch" }}>
+          Every number on this page is a public file, free to reuse with attribution:{" "}
+          {DATA_FILES.map(([file, what], i) => (
+            <span key={file}>
+              {i ? ", " : ""}
+              <a className="structure-link mono" href={`${DATA_BASE}/${file}`} download>
+                {file}
+              </a>{" "}
+              ({what})
+            </span>
+          ))}
+          .
         </p>
       </section>
     </div>

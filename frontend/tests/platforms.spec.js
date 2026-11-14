@@ -45,3 +45,16 @@ test.describe("cross-platform replication", () => {
     await expect(page.locator('.species-switch button[aria-pressed="true"]')).toHaveText(species);
   });
 });
+
+test("the readout counts independent Series and contrasts, as shipped", async ({ page }) => {
+  const rows = await pooledRows();
+  const gene = rows.find(
+    (r) => r.symbol === "CDKN2A" && r.species === "human" && r.n_contrasts != null,
+  );
+  test.skip(!gene, "export predates series-level pooling");
+  await page.goto("/?view=gene&gene=CDKN2A&species=human");
+  await waitForGene(page);
+  await expect(page.locator(".pooled-line")).toContainText(
+    `k = ${Number(gene.k)} series (${Number(gene.n_contrasts)} contrasts)`,
+  );
+});

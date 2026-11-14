@@ -216,7 +216,8 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
     const text =
       `${name} (${species}): pooled g = ${fmtEffect(here.g, 3)}, 95% CI ` +
       `${fmtInterval(here.ci_low, here.ci_high)}, 95% prediction interval ` +
-      `${fmtInterval(here.pi_low, here.pi_high)}, k = ${here.k}. GeroQuery, data version ` +
+      `${fmtInterval(here.pi_low, here.pi_high)}, k = ${here.k} GEO Series ` +
+      `(${here.n_contrasts} contrasts). GeroQuery, data version ` +
       `${meta?.data_version ?? "unknown"}. ${window.location.href} ` +
       `(accessed ${new Date().toISOString().slice(0, 10)}).`;
     navigator.clipboard?.writeText(text).then(() => setCopied(true), () => {});
@@ -317,7 +318,8 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                   g = {fmtEffect(here.g, 3)}{" "}
                   <span className="interval">{fmtInterval(here.ci_low, here.ci_high)}</span>{" "}
                   <span className="interval">
-                    · k = {here.k} · p = {fmtP(here.p_value)}
+                    · k = {here.k} series ({here.n_contrasts} contrasts) · p ={" "}
+                    {fmtP(here.p_value)}
                   </span>
                 </p>
                 {here.pi_low != null ? (
@@ -348,7 +350,7 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                         <th>Platform</th>
                         <th className="num">g</th>
                         <th className="num">95% CI</th>
-                        <th className="num">k</th>
+                        <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
                         <th>Verdict</th>
                       </tr>
                     </thead>
@@ -405,7 +407,7 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                         <th>Species</th>
                         <th className="num">g</th>
                         <th className="num">95% CI</th>
-                        <th className="num">k</th>
+                        <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
                         <th>Verdict</th>
                       </tr>
                     </thead>

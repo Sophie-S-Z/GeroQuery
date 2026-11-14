@@ -130,7 +130,7 @@ export default function Volcano({ species, onPick, onSpecies }) {
             `${d.symbol}\ng = ${d.g.toFixed(3)} [${d.ci_low.toFixed(2)}, ${d.ci_high.toFixed(2)}]\n` +
             `shrunk to ${(d.g_shrunk ?? d.g).toFixed(3)}\n` +
             `lfsr = ${d.lfsr.toFixed(4)} — chance the direction is wrong\n` +
-            `k = ${d.k} contrasts`,
+            `k = ${d.k} independent Series, ${d.n_contrasts} contrasts`,
         }),
         // Named points get a ring so they read above the cloud without a
         // second hue: identity here is position plus a label, not colour.
@@ -226,7 +226,7 @@ export default function Volcano({ species, onPick, onSpecies }) {
                 <th className="num">g</th>
                 <th className="num">shrunk</th>
                 <th className="num">lfsr</th>
-                <th className="num">k</th>
+                <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
               </tr>
             </thead>
             <tbody>

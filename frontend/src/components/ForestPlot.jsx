@@ -165,7 +165,7 @@ export default function ForestPlot({ contrasts, pooled, symbol }) {
             (d.pi_low != null
               ? `next study [${d.pi_low}, ${d.pi_high}]  95% prediction interval\n`
               : "") +
-            `k = ${d.k} contrasts`,
+            `k = ${d.k} independent Series, ${d.n_contrasts} contrasts`,
         }),
       );
     }
