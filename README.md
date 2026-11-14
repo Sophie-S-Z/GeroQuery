@@ -1,8 +1,8 @@
 # 🧬 GeroQuery
 
-**Type a gene. Get its measured relationship to aging across 32 published
-studies — with an interval wide enough to admit when the data cannot support a
-claim.**
+**Type a gene. Get its measured relationship to aging across 276 published
+contrasts from 203 GEO studies — with an interval wide enough to admit when the
+data cannot support a claim.**
 
 [![CI](https://github.com/Sophie-S-Z/GeroQuery/actions/workflows/ci.yml/badge.svg)](https://github.com/Sophie-S-Z/GeroQuery/actions)
 · License: MIT · Python ≥3.10
@@ -68,7 +68,7 @@ turns out to be the honest answer.
 
 | Layer | The question it answers | Backed by |
 |---|---|---|
-| **Gene signatures** | Does this gene change with age, and how sure can we be? | 31 checksum-pinned GEO DataSets → **485,905 effect sizes** over 46,091 genes |
+| **Gene signatures** | Does this gene change with age, and how sure can we be? | 31 checksum-pinned GEO DataSets + 244 rule-selected ARCHS4 RNA-seq contrasts → **4,005,748 effect sizes** over 71,639 genes |
 | **Aging clocks** | How old does this sample look biologically? | 240 clocks, validated against two real 450K methylation series |
 | **Resilience** | Is this population losing the ability to recover from perturbation? | Real NHANES, plus a planted-effect control |
 | **Survival** | Does any of it predict death? | NHANES 1999–2002 DNAm subsample, n=2,517, 1,350 deaths, 20 y follow-up, **survey-weighted to 75.8 M US adults aged 50+** |
@@ -81,14 +81,16 @@ All published as found, including the nulls.
 
 ### 1 · CDKN2A/p16 does not replicate
 
-The most-cited transcriptional marker of aging: pooled *g* = **+0.07**, 95% CI
-[−0.20, +0.35], k = 14, I² = 14%. Fourteen contrasts — six up, eight down — and
-they agree with each other that there is nothing to see.
+The most-cited transcriptional marker of aging: pooled *g* = **+0.11**, 95% CI
+[−0.12, +0.34], k = 36 — seventeen contrasts up, nineteen down. It is null on
+the 14 microarray contrasts alone and on the 22 RNA-seq contrasts alone: two
+independent technologies agree there is nothing to see.
 
-The same pipeline *does* find p21/CDKN1A (+1.07), IGF1 (−0.53), the
-metallothioneins and a coherent mitochondrial decline. **So the estimator works
-and the p16 null is a result, not a bug** — a pair of tests pins both halves,
-because that pair is what stops a null being dismissed as a broken estimator.
+The same pipeline *does* find p21/CDKN1A rising with age on both platforms
+independently (+1.07 on arrays, +0.34 on RNA-seq, +0.51 pooled over 47
+contrasts) and IGF1 falling (−0.32). **So the estimator works and the p16 null is
+a result, not a bug** — a pair of tests pins both halves, because that pair is
+what stops a null being dismissed as a broken estimator.
 → [`docs/RESULTS_GEO_SIGNATURES.md`](docs/RESULTS_GEO_SIGNATURES.md)
 
 ### 2 · Three published clocks add nothing over six routine blood tests
@@ -191,9 +193,9 @@ npm run dev                         # http://localhost:5173
 
 | View | What it shows |
 |---|---|
-| **Overview** | The landing page: the honest headline (only 1,280 of 41,983 genes clear the *prediction* interval, against 3,707 for the confidence interval), a certainty funnel, corpus scope, and the strongest findings |
-| **Gene** | One gene's readout: pooled effect, interval, prediction interval, a forest plot of every contrast, a **leave-one-out audit strip** beside it, **tissue small-multiples**, a copyable citation carrying the data version, a contrasts CSV, and links to the same gene at AlphaFold, GenAge, GTEx and NCBI Gene |
-| **Gene list** | Paste a list (a hit list, a pathway, a candidate panel) and see each gene's verdict, interval and prediction interval, the list's resolution rate beside the rate for every gene, names it could not match (including spreadsheet-mangled dates like `1-Sep`), and a CSV. One click loads **GenAge's 307 curated human aging genes**: 297 are measured, and only 76 (26%) resolve a direction, against 14% of all human genes |
+| **Overview** | The landing page: the honest headline (only 669 of 61,221 gene estimates clear the *prediction* interval, against 11,456 for the confidence interval), a certainty funnel, corpus scope, and the strongest findings — including the 577 genes that replicate across arrays and RNA-seq |
+| **Gene** | One gene's readout: pooled effect, interval, prediction interval, a forest plot of every contrast, a **leave-one-out audit strip** beside it, **tissue small-multiples**, the estimate from **arrays alone and RNA-seq alone**, a copyable citation carrying the data version, a contrasts CSV, and links to the same gene at AlphaFold, GenAge, GTEx and NCBI Gene |
+| **Gene list** | Paste a list (a hit list, a pathway, a candidate panel) and see each gene's verdict, interval and prediction interval, the list's resolution rate beside the rate for every gene, names it could not match (including spreadsheet-mangled dates like `1-Sep`), and a CSV. One click loads **GenAge's 307 curated human aging genes**: all are measured, and only 73 (24%) resolve a direction, against 14% of all human genes |
 | **Landscape** | The whole corpus binned by effect size, plus the strongest replicated effects (ranked by the shrunken estimate, not the raw one) |
 | **Certainty** | Every pooled estimate as effect against the local false sign rate — where the large effects are also the least trustworthy |
 | **Cross-species** | Human vs mouse pooled effect, one point per ortholog group, with a **Deming fit** (each species' measured error) and the honest concordance count |
@@ -247,6 +249,14 @@ Everything above runs on committed samples. To rebuild from the real upstreams:
 make data          # ~679 MB, ~30 min. Fetches + SHA-256 verifies every artifact,
                    # then rebuilds every table and the store.
 ```
+
+The ARCHS4 half of `make signatures` needs `pip install -e ".[archs4]"` and
+reads ~5,000 samples from the 64 GB and 51 GB ARCHS4 files over HTTP range
+requests — about an hour with the default six worker processes, then cached per
+contrast under `geroquery/_cache/archs4/`. `--no-archs4` builds the DataSets
+panel alone. The pin is the ARCHS4 release string plus the exact file size: if
+ARCHS4 publishes a new release the build stops and says so, rather than silently
+changing published numbers.
 
 **Network is off by default.** `GEROQUERY_ALLOW_NETWORK` gates it, so tests and
 CI are hermetic by construction rather than by convention. The `make` targets set
@@ -427,7 +437,7 @@ The first thing you should read, not a footnote.
 
 | Layer | Status |
 |---|---|
-| **Gene aging signatures** | **Real.** 31 checksum-pinned GEO DataSets → 32 young-vs-old contrasts from 27 independent Series → **485,905 Hedges' *g* estimates** over 46,091 genes, 10 tissues, human + mouse. A 40,585-row slice is committed so tests run offline |
+| **Gene aging signatures** | **Real.** 31 checksum-pinned GEO DataSets (32 contrasts) plus 244 contrasts rule-selected from ARCHS4 release 2.7 (uniformly re-aligned GEO RNA-seq) → 276 young-vs-old contrasts from 203 Series → **4,005,748 Hedges' *g* estimates** over 71,639 genes, human + mouse. A gzipped 343,808-row slice is committed so tests run offline; the ARCHS4 sample lists are committed in `archs4_selection.csv` |
 | **Aging clocks** | **Real, and validated.** 240 clocks from `biolearn` (63) and `pyaging` (173) plus the real Levine PhenoAge coefficients. **436 clock-dataset runs**; Horvath reproduces the authors' own published ages to r = 0.998, MAE 1.39 y |
 | **DNA methylation** | **Real.** GSE64495 (450K, n=106, ages 2.3–73.7) and GSE30870 (newborns vs nonagenarians), checksum-pinned |
 | **Clinical / resilience** | **Real.** NHANES 2017–2018, 4,895 complete cases aged 20–80, verified against pinned SHA-256 checksums |
@@ -456,22 +466,24 @@ Full cache-vs-federate and licence table:
 
 **Gene signatures**
 
-- **Microarray-era only.** GEO stopped curating DataSets around 2016, so there is
-  no RNA-seq. ARCHS4 is the highest-value next source.
-- **Small groups** — 3–15 samples per study, median CI width 0.84. This panel
-  detects large, consistent, cross-tissue effects and **cannot rule out moderate
-  ones.** A null means "not detected by this instrument", never "absent".
-- **Tissue coverage is lopsided** — half the human contrasts are skeletal muscle;
-  there is one blood contrast (n = 9).
+- **Two platforms, pooled together and apart.** Microarray DataSets (2003–2015)
+  and ARCHS4 RNA-seq differ in what they can measure; the random-effects variance
+  absorbs the difference rather than correcting it. Each gene page shows both
+  platforms pooled separately, and they often disagree: of 3,419 genes the arrays
+  resolve, RNA-seq alone agrees on 17%.
+- **Small groups** — a median of 12 samples per contrast (6 to 256), median CI
+  width 0.43. Moderate effects are now detectable; small ones are not. A null
+  means "not detected by this instrument", never "absent".
+- **Tissue coverage is uneven** — 205 of 276 contrasts are mouse; skeletal muscle
+  is still the largest human tissue (17 of 55 human contrasts).
 - **`omic_layer` reads `transcriptome` for every row.** The schema is multi-omic;
   the data is one layer deep.
-- **Cross-study processing heterogeneity is uncorrected** (12 platforms, three
-  decades of normalization practice).
-- **32 contrasts come from 27 Series**, so a few share subjects. `series_id` is
-  carried on every study row so this is checkable; the pooling does not yet
-  account for it.
-- Sex is `unspecified` for 24 of 32 contrasts; ~22% of probe rows drop at
-  identifier resolution.
+- **Contrasts can share subjects** — 106 of 276 come from a Series that yields
+  more than one (split arrays, several tissues or cell types from the same
+  animals). `series_id` is carried on every study row so this is checkable; the
+  pooling does not yet account for it.
+- Sex is `unspecified` for 158 of 276 contrasts; ~22% of microarray probe rows
+  drop at identifier resolution.
 
 **Clocks and methylation**
 
@@ -545,7 +557,7 @@ testable with the layer below mocked.
 | A cache-miss raises instead of downloading | Network is off by default. `GEROQUERY_ALLOW_NETWORK=1` |
 | biolearn seems to hang for ~2 minutes on first use | Its gallery initialisation. Not a hang |
 | Playwright fails in `gene.spec.js` for no obvious reason | Two suites raced on the preview port. Re-run one at a time |
-| A number differs from CI | You ran `make data` and have the full 485,905-row table; CI has the 40,585-row committed slice. Tests pin `prefer_full=False` — do the same in any new test |
+| A number differs from CI | You ran `make data` and have the full 4,005,748-row table; CI has the 343,808-row committed slice. Tests pin `prefer_full=False` — do the same in any new test |
 | `npm run build` output looks fine but Playwright tests a stale page | Check for a build error; `tail` can hide it. Grep for `error` |
 
 **Do not install GPy** — it breaks all 63 biolearn clocks.
