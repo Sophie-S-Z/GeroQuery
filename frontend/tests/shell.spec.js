@@ -6,6 +6,7 @@ import { ACCESSION, watchForErrors } from "./helpers.js";
 const VIEWS = {
   overview: "overview",
   gene: "gene",
+  list: "gene list",
   landscape: "landscape",
   crossspecies: "cross-species",
   panel: "panel",

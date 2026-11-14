@@ -6,11 +6,20 @@ import { expect, test } from "@playwright/test";
  * was verified by looking at it once. A page that scrolls sideways is the one
  * responsive failure a reader notices immediately, so it is the one asserted.
  */
-const VIEWS = ["overview", "gene", "landscape", "certainty", "crossspecies", "panel", "mortality"];
+const VIEWS = {
+  overview: "",
+  gene: "",
+  list: "&genes=FOXO3,CDKN2A,IGF1,NOTAGENE",
+  landscape: "",
+  certainty: "",
+  crossspecies: "",
+  panel: "",
+  mortality: "",
+};
 
-for (const view of VIEWS) {
+for (const [view, extra] of Object.entries(VIEWS)) {
   test(`the ${view} view does not scroll the page sideways at 393px`, async ({ page }) => {
-    await page.goto(`/?view=${view}`);
+    await page.goto(`/?view=${view}${extra}`);
     await expect(
       page.locator(".chart svg, table tbody tr, .state-title").first(),
     ).toBeVisible({ timeout: 30_000 });

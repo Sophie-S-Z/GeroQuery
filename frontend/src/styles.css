@@ -1040,3 +1040,94 @@ footer {
 footer a {
   color: var(--ink-soft);
 }
+
+/* --- gene list ------------------------------------------------------------ */
+
+.list-field {
+  resize: vertical;
+  min-height: 10rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* On a phone the results sit below the rail, so keep the field short. */
+@media (max-width: 900px) {
+  .list-field {
+    height: 7.5rem;
+    min-height: 0;
+  }
+}
+
+.list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+}
+
+/* One primary action per surface, in ink like the overview search; everything
+   else is a quiet outlined control. Neither borrows a polarity colour. */
+.button-primary,
+.button-quiet {
+  appearance: none;
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+}
+
+.button-primary {
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.button-quiet {
+  background: none;
+  color: var(--ink-soft);
+  border-color: var(--rule-strong);
+}
+
+.button-quiet:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.8rem;
+}
+
+.panel-head .panel-title {
+  margin: 0;
+}
+
+.list-lede {
+  margin: 0.8rem 0 1.4rem;
+}
+
+.list-table {
+  max-width: none;
+}
+
+.missing-list {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+  margin: 0 0 0.6rem;
+}
+
+/* Out-links and the citation/export actions under a gene's readout. */
+.gene-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0 0 1.2rem;
+  font-size: 0.78rem;
+}

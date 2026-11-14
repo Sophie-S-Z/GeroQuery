@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as Plot from "@observablehq/plot";
 import { json } from "../lib/db.js";
 import { css } from "../lib/theme.js";
-import { fmtInt } from "../lib/format.js";
+import { fmtInt, fmtPct } from "../lib/format.js";
 
 /**
  * The orientation view — what this corpus is, and the one honest headline the
@@ -25,6 +25,7 @@ export default function Overview({ onNavigate, onPick }) {
   const [crossspecies, setCrossspecies] = useState(null);
   const [influence, setInfluence] = useState(null);
   const [studies, setStudies] = useState(null);
+  const [curated, setCurated] = useState(null);
 
   useEffect(() => {
     let live = true;
@@ -37,6 +38,7 @@ export default function Overview({ onNavigate, onPick }) {
     load("crossspecies.json", setCrossspecies);
     load("influence_corpus.json", setInfluence);
     load("studies.json", setStudies);
+    load("curated.json", setCurated);
     return () => {
       live = false;
     };
@@ -94,6 +96,16 @@ export default function Overview({ onNavigate, onPick }) {
   const topStudy = top && studies?.find((s) => s.study_id === top.study_id);
 
   const findings = [
+    curated?.available && {
+      view: "list",
+      patch: { genes: curated.genes.map((g) => g.symbol).join(","), species: curated.species },
+      title: `${fmtPct(1 - curated.rate_resolved)} of curated aging genes show no direction here`,
+      body: `Of ${fmtInt(curated.n_measured)} ${curated.database} genes measured in the panel, ${fmtInt(
+        curated.verdicts.increases + curated.verdicts.decreases,
+      )} have a pooled direction with age — ${fmtPct(curated.rate_resolved)}, against ${fmtPct(
+        curated.background.rate_resolved,
+      )} for every ${curated.species} gene. The curated label raises the odds; it does not settle the question.`,
+    },
     crossspecies?.available && {
       view: "crossspecies",
       title: "Human and mouse rarely resolve the same gene",
@@ -175,7 +187,7 @@ export default function Overview({ onNavigate, onPick }) {
           <ol className="findings">
             {findings.map((f, i) => (
               <li key={f.view} style={{ "--i": i }}>
-                <button type="button" onClick={() => onNavigate?.(f.view)}>
+                <button type="button" onClick={() => onNavigate?.(f.view, f.patch)}>
                   <span className="finding-title">{f.title}</span>
                   <span className="finding-body">{f.body}</span>
                   <span className="finding-arrow" aria-hidden="true">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import CrossSpecies from "./components/CrossSpecies.jsx";
+import GeneList from "./components/GeneList.jsx";
 import GeneView from "./components/GeneView.jsx";
 import Landscape from "./components/Landscape.jsx";
 import Mortality from "./components/Mortality.jsx";
@@ -14,6 +15,7 @@ import { useTheme } from "./lib/theme.js";
 const VIEWS = [
   ["overview", "Overview"],
   ["gene", "Gene"],
+  ["list", "Gene list"],
   ["landscape", "Landscape"],
   ["certainty", "Certainty"],
   ["crossspecies", "Cross-species"],
@@ -74,13 +76,19 @@ export default function App() {
   }, []);
 
   // "/" focuses gene search from any view — the convention researchers already
-  // know from GitHub and documentation sites. Ignored while typing in a field.
+  // know from GitHub and documentation sites — and is ignored while typing in a
+  // field. ⌘K / Ctrl+K does the same from anywhere, as in Linear and Notion.
   const focusSearch = useRef(false);
   useEffect(() => {
     const onKey = (event) => {
-      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const commandK =
+        event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey) && !event.altKey;
+      const slash = event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey;
+      if (!commandK && !slash) return;
       const { target } = event;
-      if (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      const typing =
+        target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
+      if (slash && typing) return;
       event.preventDefault();
       const field = document.querySelector("[data-search]");
       if (field) field.focus();
@@ -131,7 +139,7 @@ export default function App() {
       <main key={themeKey}>
         {state.view === "overview" ? (
           <Overview
-            onNavigate={(view) => update({ view })}
+            onNavigate={(view, patch) => update({ view, ...patch })}
             onPick={(gene) => update({ view: "gene", gene })}
           />
         ) : null}
@@ -142,6 +150,15 @@ export default function App() {
             species={state.species}
             onPick={(gene) => update({ gene })}
             onSpecies={(species) => update({ species })}
+          />
+        ) : null}
+
+        {state.view === "list" ? (
+          <GeneList
+            genes={state.genes}
+            species={state.species}
+            onUpdate={update}
+            onPick={(gene) => update({ view: "gene", gene })}
           />
         ) : null}
 
