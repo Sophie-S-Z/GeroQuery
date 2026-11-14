@@ -203,6 +203,14 @@ def _add_corpus_posterior(pooled: pd.DataFrame) -> pd.DataFrame:
     return pooled
 
 
+def _curated_gene_records() -> list[dict]:
+    """The committed curated gene table (``idmap/data/genes.json``)."""
+    from ..config import IDMAP_DATA
+
+    with open(IDMAP_DATA / "genes.json", encoding="utf-8") as handle:
+        return cast(list[dict], json.load(handle)["genes"])
+
+
 def curated_gene_annotations() -> tuple[dict[str, str], dict[str, str]]:
     """Map canonical id → ortholog group and → UniProt, from the bundled table.
 
@@ -214,14 +222,9 @@ def curated_gene_annotations() -> tuple[dict[str, str], dict[str, str]]:
     a gene page can link to its AlphaFold model without GeroQuery asserting any
     structure of its own).
     """
-    from ..config import IDMAP_DATA
-
-    with open(IDMAP_DATA / "genes.json", encoding="utf-8") as handle:
-        records = json.load(handle)["genes"]
-
     ortholog: dict[str, str] = {}
     uniprot: dict[str, str] = {}
-    for rec in records:
+    for rec in _curated_gene_records():
         canonical = rec.get("canonical_id")
         if not canonical:
             continue
@@ -428,6 +431,91 @@ def prediction_interval_headline(pooled: pd.DataFrame) -> dict:
         "n_with_pi": int(has_pi.sum()),
         "n_pi_excludes_zero": int(pi_excludes.sum()),
         "n_ci_excludes_zero": int(ci_excludes.sum()),
+    }
+
+
+def _resolution(frame: pd.DataFrame) -> tuple[int, int]:
+    """(genes whose CI excludes zero, genes whose prediction interval does)."""
+    resolved = int((frame["verdict"] != "no_evidence").sum())
+    pi = (frame["pi_low"] > 0) | (frame["pi_high"] < 0)
+    return resolved, int(pi.sum())
+
+
+def curated_comparison(
+    pooled: pd.DataFrame, genes: list[tuple[str, str]], *, species: str = "human"
+) -> dict:
+    """How a curated gene list fares against the pooled evidence.
+
+    A curated database says a gene is aging-related; this says whether the
+    gene's expression resolves a direction with age across the panel, and sets
+    that rate beside the rate for every gene of the species, so "a quarter of
+    the list resolves" can be read against "a seventh of all genes do". It is a
+    lookup and a pair of rates, deliberately not an enrichment test: a curated
+    list is not a random draw from the panel, so a p-value against it would have
+    no valid null.
+
+    Listed symbols the panel never measured are returned by name. Not measured
+    is not the same finding as no evidence.
+    """
+    here = pooled[pooled["species"] == species]
+    listed = dict(genes)
+    measured = here[here["symbol"].isin(listed)]
+    resolved, pi = _resolution(measured)
+    background_resolved, background_pi = _resolution(here)
+    n, n_bg = len(measured), len(here)
+    counts = measured["verdict"].value_counts()
+    return {
+        "species": species,
+        "n_listed": len(listed),
+        "n_measured": n,
+        "not_measured": sorted(set(listed) - set(measured["symbol"])),
+        "verdicts": {v: int(counts.get(v, 0)) for v in ("increases", "decreases", "no_evidence")},
+        "n_pi_excludes_zero": pi,
+        "rate_resolved": round(resolved / n, 3) if n else None,
+        "rate_pi": round(pi / n, 3) if n else None,
+        "background": {
+            "n": n_bg,
+            "rate_resolved": round(background_resolved / n_bg, 3) if n_bg else None,
+            "rate_pi": round(background_pi / n_bg, 3) if n_bg else None,
+        },
+        "genes": [{"symbol": s, "evidence": listed[s]} for s in sorted(listed)],
+    }
+
+
+def _curated_payload(pooled: pd.DataFrame) -> dict:
+    """GenAge (human) set against the pool, or a stated reason it is absent.
+
+    The list is HAGR's pinned release, fetched and checksum-verified like every
+    other artifact; its licence is non-commercial, so the terms ship with it.
+    """
+    from ..sources.fetch import fetch_artifact
+    from ..sources.hagr import DATABASE_URLS, load_assertions
+    from ..sources.manifest import HAGR
+
+    artifact = HAGR["genage_human"]
+    try:
+        path = fetch_artifact(artifact)
+    except Exception as exc:  # noqa: BLE001 - absent is a stated state, not a crash
+        return {"available": False, "reason": str(exc)}
+    # Join on Entrez, not on the symbol: GenAge still lists genes under names
+    # HGNC has since retired (ARNTL is now BMAL1, CTGF is CCN2), and a symbol
+    # join would report those as never measured when the panel has them.
+    current = {
+        rec["entrez"]: rec["symbol"]
+        for rec in _curated_gene_records()
+        if rec.get("species") == "human" and rec.get("entrez")
+    }
+    assertions = load_assertions({"genage_human": path})
+    symbol = {a.symbol: current.get(a.entrez or "", a.symbol) for a in assertions}
+    genes = [(symbol[a.symbol], a.evidence or "unspecified") for a in assertions]
+    return {
+        "available": True,
+        "database": "GenAge (human)",
+        "url": DATABASE_URLS["GenAge"],
+        "license": artifact.license,
+        "attribution": artifact.attribution,
+        "renamed": {old: new for old, new in sorted(symbol.items()) if old != new},
+        **curated_comparison(pooled, genes),
     }
 
 
@@ -663,6 +751,7 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     (out_dir / "studies.json").write_text(json.dumps(studies), encoding="utf-8")
 
     (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
+    (out_dir / "curated.json").write_text(json.dumps(_curated_payload(pooled)), encoding="utf-8")
 
     crosslayer = _crosslayer_payload()
     (out_dir / "crosslayer.json").write_text(json.dumps(crosslayer), encoding="utf-8")
@@ -718,6 +807,8 @@ def enrich(out_dir: Path | None = None) -> dict:
     pooled = _annotate_pooled(pooled)
     pooled.to_parquet(out_dir / "pooled.parquet", index=False, compression="snappy")
     (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
+    curated = _curated_payload(pooled)
+    (out_dir / "curated.json").write_text(json.dumps(curated), encoding="utf-8")
 
     contrasts, influence_ranking = add_influence(contrasts)
     contrasts.to_parquet(out_dir / "contrasts.parquet", index=False, compression="snappy")
@@ -732,6 +823,7 @@ def enrich(out_dir: Path | None = None) -> dict:
         "enriched": str(out_dir),
         "n_ortholog_groups": int(pooled["ortholog_group"].notna().sum()),
         "n_influence_contrasts": len(influence_ranking),
+        "curated_available": curated["available"],
         "prediction_interval": meta["prediction_interval"],
     }
 

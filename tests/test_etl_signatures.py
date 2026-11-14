@@ -694,3 +694,66 @@ def test_the_committed_crosslayer_caveats_match_their_source():
     if not payload.get("available"):  # pragma: no cover
         pytest.skip("cohort not built")
     assert payload["caveats"] == list(nd.CAVEATS)
+
+
+def test_curated_comparison_counts_a_list_against_its_species_background():
+    """How a curated list fares here, beside the rate for every gene measured.
+
+    Only rows of the list's species count, a listed symbol the panel never
+    measured is reported as such (never as "no evidence"), and the background is
+    the whole species, so the two rates are comparable.
+    """
+    from geroquery.etl.build_frontend_data import curated_comparison
+
+    def row(symbol, verdict, ci, pi, species="human"):
+        return {
+            "symbol": symbol,
+            "species": species,
+            "verdict": verdict,
+            "ci_low": ci[0],
+            "ci_high": ci[1],
+            "pi_low": pi[0],
+            "pi_high": pi[1],
+        }
+
+    pooled = pd.DataFrame(
+        [
+            row("A", "increases", (0.2, 0.9), (0.1, 1.0)),  # clears both
+            row("B", "no_evidence", (-0.3, 0.4), (-0.8, 0.9)),
+            row("C", "decreases", (-0.9, -0.2), (-1.2, 0.1)),  # CI only, not listed
+            row("D", "no_evidence", (-0.1, 0.1), (-0.5, 0.5)),
+            row("A", "decreases", (-0.9, -0.2), (-1.0, -0.1), species="mouse"),
+        ]
+    )
+    out = curated_comparison(pooled, [("A", "mammal"), ("B", "cell"), ("ZZZ", "putative")])
+
+    assert out["n_listed"] == 3
+    assert out["n_measured"] == 2
+    assert out["not_measured"] == ["ZZZ"]
+    assert out["verdicts"] == {"increases": 1, "decreases": 0, "no_evidence": 1}
+    assert out["n_pi_excludes_zero"] == 1
+    assert out["rate_resolved"] == 0.5 and out["rate_pi"] == 0.5
+    assert out["background"] == {"n": 4, "rate_resolved": 0.5, "rate_pi": 0.25}
+    assert out["genes"][0] == {"symbol": "A", "evidence": "mammal"}
+
+
+def test_the_committed_curated_comparison_matches_the_committed_pool():
+    """curated.json must recount exactly from pooled.parquet and its own list."""
+    data = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data"
+    payload = json.loads((data / "curated.json").read_text(encoding="utf-8"))
+    if not payload["available"]:
+        pytest.skip(payload["reason"])
+
+    from geroquery.etl.build_frontend_data import curated_comparison
+
+    pooled = pd.read_parquet(data / "pooled.parquet")
+    genes = [(g["symbol"], g["evidence"]) for g in payload["genes"]]
+    recount = curated_comparison(pooled, genes)
+    for key in ("n_listed", "n_measured", "verdicts", "n_pi_excludes_zero", "background"):
+        assert payload[key] == recount[key], key
+    assert payload["n_listed"] == len(payload["genes"])
+    assert "non-commercial" in payload["license"]  # the HAGR terms travel with the data
+    # Joined on Entrez, so a gene GenAge lists under a retired symbol is found
+    # under its current one rather than reported as never measured.
+    assert payload["renamed"]["ARNTL"] == "BMAL1"
+    assert not set(payload["renamed"]) & set(payload["not_measured"])
