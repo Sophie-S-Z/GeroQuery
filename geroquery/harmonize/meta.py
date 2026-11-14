@@ -93,6 +93,8 @@ class PooledEffect:
     # Prediction interval. None below k == 3, where it is not estimable.
     pi_low: float | None = None
     pi_high: float | None = None
+    # The level the interval was built at; the p-value is judged against it.
+    alpha: float = 0.05
 
     @property
     def direction(self) -> str:
@@ -107,6 +109,22 @@ class PooledEffect:
     def reported_ci_high(self) -> float:
         """``ci_high`` at the precision every caller actually ships."""
         return report_bound(self.ci_high)
+
+    @property
+    def reported_p_value(self) -> float:
+        """``p_value`` at the shipped precision, never contradicting the verdict.
+
+        Rounded on its own, a p of 0.04996 ships as 0.0500 beside an upper bound
+        that ships as -0.0001: the interval excludes zero and the p-value says it
+        does not. At full precision the two agree (same pivot), so where
+        rounding alone carries p across alpha it is held on the verdict's side:
+        one unit of the last place below alpha, or alpha itself. The interval is
+        the authority, as everywhere in this module.
+        """
+        p = round(self.p_value, BOUND_DECIMALS)
+        if self.verdict != "no_evidence":
+            return min(p, round(self.alpha - 10.0**-BOUND_DECIMALS, BOUND_DECIMALS))
+        return max(p, self.alpha)
 
     @property
     def verdict(self) -> str:
@@ -227,4 +245,5 @@ def random_effects(
         ci_high_hk=hk_high,
         pi_low=pi_low,
         pi_high=pi_high,
+        alpha=alpha,
     )

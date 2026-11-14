@@ -20,7 +20,7 @@ from ..exceptions import (
     UnknownSpeciesError,
 )
 from ..harmonize import random_effects
-from ..harmonize.meta import BOUND_DECIMALS, report_bound
+from ..harmonize.meta import report_bound
 from ..idmap import get_resolver
 from ..knowledge import HALLMARKS, REFERENCES
 from ..models import GeneCard, MetaSignature
@@ -88,7 +88,7 @@ class GeroService:
                     # payload and the published site from disagreeing.
                     ci_low=pooled.reported_ci_low,
                     ci_high=pooled.reported_ci_high,
-                    p_value=round(pooled.p_value, BOUND_DECIMALS),
+                    p_value=pooled.reported_p_value,
                     heterogeneity_i2=round(pooled.i2, 2),
                     tau2=round(pooled.tau2, 4),
                     n_studies=pooled.n_studies,

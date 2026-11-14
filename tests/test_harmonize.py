@@ -295,3 +295,35 @@ def test_verdict_still_reads_a_genuinely_negative_interval():
         n_studies=4,
     )
     assert pooled.verdict == "decreases"
+
+
+@pytest.mark.parametrize(
+    ("p", "ci_high", "expected_p"),
+    [
+        # Interval excludes zero (bound rounds to -0.0001) but p rounds onto the
+        # threshold: the shipped p must stay below it, as at full precision.
+        (0.04996, -0.00006, 0.0499),
+        # Interval reaches zero once rounded, while p rounds just under: the
+        # shipped p must not claim what the shipped interval does not.
+        (0.04994, -0.00004, 0.05),
+        # Away from the threshold nothing is nudged.
+        (0.0123456, -0.2, 0.0123),
+        (0.5, 0.3, 0.5),
+    ],
+)
+def test_the_reported_p_value_always_agrees_with_the_reported_interval(p, ci_high, expected_p):
+    from geroquery.harmonize.meta import PooledEffect
+
+    pooled = PooledEffect(
+        pooled_effect=-0.5,
+        standard_error=0.2,
+        ci_low=-1.0,
+        ci_high=ci_high,
+        p_value=p,
+        tau2=0.0,
+        i2=0.0,
+        q=0.0,
+        n_studies=5,
+    )
+    assert pooled.reported_p_value == expected_p
+    assert (pooled.reported_p_value < 0.05) == (pooled.verdict != "no_evidence")
