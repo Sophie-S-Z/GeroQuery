@@ -97,6 +97,27 @@ test.describe("mortality result", () => {
   });
 
   /**
+   * The prose used to type its counts — "better than nine of the ten clocks",
+   * "smaller for every clock" — and both were false for the full cohort (eight,
+   * and two exceptions). Counts in sentences must come from the payload.
+   */
+  test("the counts in the prose are computed from the payload, not typed", async ({ page }) => {
+    const raw = await readFile(new URL("../dist/data/crosslayer.json", import.meta.url), "utf8");
+    const { clocks } = JSON.parse(raw);
+    const outscored = clocks.filter((c) => c.c_clock < c.c_dysregulation).length;
+    const understated = clocks.filter((c) => c.hr_sample < c.hr).length;
+
+    await page.goto("/?view=mortality");
+    await expect(page.locator("ul.caveats li").first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator("main")).toContainText(
+      `better than ${outscored} of the ${clocks.length} clocks`,
+    );
+    await expect(page.locator("main")).toContainText(
+      `smaller than the weighted one for ${understated} of ${clocks.length} clocks`,
+    );
+  });
+
+  /**
    * §4.3 / §3.4. The survival curves and RMST need the full per-subject cohort,
    * which is rebuilt by the full ETL, not committed — so this asserts the
    * rendering when the data is present and skips cleanly when it is not, rather

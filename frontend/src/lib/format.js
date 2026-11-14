@@ -75,3 +75,8 @@ export const VERDICT_SUB = {
 export function fmtInt(value) {
   return value == null ? "—" : Number(value).toLocaleString();
 }
+
+/** A share of a whole, to the nearest percent. */
+export function fmtPct(value) {
+  return value == null || Number.isNaN(value) ? "—" : `${Math.round(value * 100)}%`;
+}

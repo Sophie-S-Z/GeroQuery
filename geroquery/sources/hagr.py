@@ -71,6 +71,8 @@ class GeneAssertion:
     organism: str
     assertion: str
     url: str
+    # HAGR's evidence code where the database records one (GenAge human only).
+    evidence: str | None = None
 
     @property
     def species(self) -> str | None:
@@ -174,6 +176,7 @@ def parse_genage_human(text: str) -> list[GeneAssertion]:
                 organism="Homo sapiens",
                 assertion=f"human ageing-associated (evidence: {evidence})",
                 url=DATABASE_URLS["GenAge"],
+                evidence=evidence,
             )
         )
     return out

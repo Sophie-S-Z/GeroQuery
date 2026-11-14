@@ -92,6 +92,11 @@ export default function Mortality() {
   }
 
   const best = data.clocks[0];
+  // Counted from the payload, never typed: the prose said "nine of ten" and
+  // "every clock" for a sample build, and both were false for the full cohort.
+  const outscored = data.clocks.filter((c) => c.c_clock < c.c_dysregulation).length;
+  const understated = data.clocks.filter((c) => c.hr_sample < c.hr).length;
+  const redundant = data.clocks.filter((c) => c.clock_adds_p > 0.05).map((c) => c.clock);
 
   return (
     <>
@@ -168,18 +173,25 @@ export default function Mortality() {
             </tbody>
           </table>
         </div>
-        <p className="note" style={{ marginTop: "0.9rem" }}>
-          The last column is the one worth reading twice. For{" "}
-          <span className="mono">SkinBloodAge</span>, <span className="mono">LinAge</span> and{" "}
-          <span className="mono">WeidnerAge</span> it is above 0.05: there is no evidence those
-          clocks tell you anything six routine blood tests do not — and that survives weighting.
-        </p>
+        {redundant.length ? (
+          <p className="note" style={{ marginTop: "0.9rem" }}>
+            The last column is the one worth reading twice. For{" "}
+            {redundant.map((name, i) => (
+              <span key={name}>
+                {i ? (i === redundant.length - 1 ? " and " : ", ") : ""}
+                <span className="mono">{name}</span>
+              </span>
+            ))}{" "}
+            it is above 0.05: there is no evidence {redundant.length > 1 ? "those clocks tell" : "that clock tells"}{" "}
+            you anything six routine blood tests do not — and that survives weighting.
+          </p>
+        ) : null}
         <p className="note" style={{ marginTop: "0.6rem" }}>
-          The unweighted column is smaller than the weighted one for every clock. The DNAm
-          subsample under-represents the higher-risk part of the population, so the sample estimate
-          understates the effect rather than exaggerating it. Intervals use the Taylor-linearized
-          design variance; the median design effect is close to 1, so clustering costs little here
-          and almost all of the change is the weighting.
+          The unweighted estimate is smaller than the weighted one for {understated} of{" "}
+          {data.clocks.length} clocks. The DNAm subsample under-represents the higher-risk part of
+          the population, so the sample mostly understates the effect rather than exaggerating it.
+          Intervals use the Taylor-linearized design variance; the median design effect is close to
+          1, so clustering costs little here and almost all of the change is the weighting.
         </p>
       </div>
 
@@ -188,8 +200,8 @@ export default function Mortality() {
         <p className="note">
           Age and sex alone reach C ={" "}
           <strong className="mono">{best?.c_baseline}</strong>. The health state alone reaches{" "}
-          <strong className="mono">{best?.c_dysregulation}</strong> — better than nine of the ten
-          clocks. Together with the strongest clock, C ={" "}
+          <strong className="mono">{best?.c_dysregulation}</strong> — better than {outscored} of
+          the {data.clocks.length} clocks. Together with the strongest clock, C ={" "}
           <strong className="mono">{best?.c_joint}</strong>.
         </p>
         <p className="note" style={{ marginTop: "0.6rem" }}>

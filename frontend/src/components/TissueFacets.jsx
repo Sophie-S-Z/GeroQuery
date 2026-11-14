@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as Plot from "@observablehq/plot";
 import { css } from "../lib/theme.js";
-import { shortLabel } from "./ForestPlot.jsx";
+import { contrastInterval, shortLabel } from "./ForestPlot.jsx";
 
 /**
  * Tissue small-multiples for one gene (§4.6).
@@ -29,19 +29,12 @@ export default function TissueFacets({ contrasts, pooled, symbol }) {
     const c = css();
     const colour = { increases: c.up, decreases: c.down, no_evidence: c.null_ };
 
-    const rows = contrasts.map((row) => {
-      const half = 1.96 * (row.standard_error ?? 0);
-      const low = row.effect_size - half;
-      const high = row.effect_size + half;
-      return {
-        ...row,
-        label: shortLabel(row.study_id),
-        low,
-        high,
-        tissue: row.tissue ?? "unspecified",
-        dir: low > 0 ? "increases" : high < 0 ? "decreases" : "no_evidence",
-      };
-    });
+    const rows = contrasts.map((row) => ({
+      ...row,
+      label: shortLabel(row.study_id),
+      tissue: row.tissue ?? "unspecified",
+      ...contrastInterval(row),
+    }));
 
     // One shared x domain across every tissue, so a dot's position means the
     // same thing in every panel.

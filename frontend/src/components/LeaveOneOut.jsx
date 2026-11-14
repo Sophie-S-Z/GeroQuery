@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as Plot from "@observablehq/plot";
 import { css } from "../lib/theme.js";
 import { shortLabel } from "./ForestPlot.jsx";
@@ -27,7 +27,9 @@ import { shortLabel } from "./ForestPlot.jsx";
 export default function LeaveOneOut({ contrasts, pooled, symbol }) {
   const host = useRef(null);
 
-  const usable = (contrasts ?? []).filter((row) => row?.loo_g != null);
+  // Memoised: a fresh array each render would re-run the chart effect below on
+  // every parent render, not only when the contrasts change.
+  const usable = useMemo(() => (contrasts ?? []).filter((row) => row?.loo_g != null), [contrasts]);
 
   useEffect(() => {
     if (!host.current || !usable.length || !pooled) return undefined;

@@ -1,16 +1,23 @@
 # Cloudflare Pages headers.
 #
-# Parquet must be range-requestable: the whole no-backend design rests on
-# DuckDB fetching row groups rather than files, and a proxy that strips
-# Accept-Ranges turns every gene lookup into a 4.4 MB download.
+# The data files are fetched whole, once, by hyparquet (see src/lib/db.js for
+# why range requests were dropped), so they need only a revalidating cache.
 /data/*
-  Accept-Ranges: bytes
   Cache-Control: public, max-age=3600, must-revalidate
 
 # Hashed filenames, so these are safe to cache forever.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# A static page with no backend, no third-party code and no user content still
+# gets a locked-down policy: everything loads from this origin, scripts only
+# from bundled files (the build emits no inline script), and nothing may frame
+# the page. 'unsafe-inline' is for styles only — Observable Plot writes inline
+# style attributes and a <style> element into every chart it draws.
 /*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin

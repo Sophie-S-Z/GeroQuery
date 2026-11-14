@@ -54,7 +54,7 @@ test.describe("gene readout", () => {
   test("a gene with a UniProt id links out to its AlphaFold structure", async ({ page }) => {
     await page.goto("/?view=gene&gene=CDKN2A&species=human");
     await waitForGene(page);
-    const link = page.locator(".structure-link");
+    const link = page.getByRole("link", { name: /AlphaFold/ });
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute("href", /alphafold\.ebi\.ac\.uk\/entry\/[A-Z0-9]+/);
     await expect(link).toHaveAttribute("target", "_blank");

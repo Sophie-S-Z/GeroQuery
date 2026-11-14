@@ -79,3 +79,22 @@ def test_weighting_shifts_the_curve_toward_the_upweighted_subjects():
     base = rmst(time, event, tau=12.0).value
     up = rmst(time, event, tau=12.0, weight=heavy_long).value
     assert up > base
+
+
+def test_rmst_refuses_a_horizon_beyond_the_last_follow_up():
+    """RMST to τ needs the curve up to τ; past the last observation it is a guess.
+
+    Everyone censored by t = 2 with τ = 5 used to return RMST = 5.0, silently
+    extrapolating the last survival value across three unobserved years.
+    """
+    import pytest
+
+    with pytest.raises(ValueError, match="beyond the last follow-up"):
+        rmst([1.0, 1.5, 2.0], [0.0, 0.0, 0.0], tau=5.0)
+
+
+def test_empty_input_is_rejected_with_a_clear_message():
+    import pytest
+
+    with pytest.raises(ValueError, match="at least one subject"):
+        weighted_kaplan_meier([], [])

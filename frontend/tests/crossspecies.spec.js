@@ -30,6 +30,21 @@ test.describe("cross-species (§4.2)", () => {
     expect(problems).toEqual([]);
   });
 
+  /**
+   * The Deming slope once assumed equal error in both species and shipped 3.13
+   * where the measured error ratio gives 0.31, and its line was drawn far past
+   * the frame. The page must show the shipped fit and keep the line clipped.
+   */
+  test("shows the shipped Deming fit and keeps its line inside the frame", async ({ page }) => {
+    await page.goto("/?view=crossspecies");
+    const payload = await crossSpeciesJson();
+    const said = page.locator(".panel", { hasText: "What the picture says" });
+    await expect(said).toContainText(payload.deming.slope.toFixed(2), { timeout: 30_000 });
+    await expect(said).toContainText(payload.correlation.toFixed(2));
+    expect(payload.deming.delta).toBeGreaterThan(1); // measured, not assumed
+    await expect(page.locator(".chart svg [clip-path]").first()).toBeAttached();
+  });
+
   test("the resolved-genes table matches the shipped verdicts", async ({ page }) => {
     await page.goto("/?view=crossspecies");
     await expect(page.locator("h1.section-title")).toBeVisible({ timeout: 30_000 });

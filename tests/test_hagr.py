@@ -60,6 +60,8 @@ def test_genage_human_carries_the_evidence_code_into_the_assertion():
     assert out[0].species == "human"
     assert "mammal" in out[0].assertion
     assert "functional,putative" in out[1].assertion
+    # Kept as its own field too, so a consumer never has to parse the sentence.
+    assert [a.evidence for a in out] == ["mammal", "functional,putative"]
 
 
 def test_genage_models_leaves_non_mammalian_species_unresolved():

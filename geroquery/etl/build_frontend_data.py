@@ -203,6 +203,14 @@ def _add_corpus_posterior(pooled: pd.DataFrame) -> pd.DataFrame:
     return pooled
 
 
+def _curated_gene_records() -> list[dict]:
+    """The committed curated gene table (``idmap/data/genes.json``)."""
+    from ..config import IDMAP_DATA
+
+    with open(IDMAP_DATA / "genes.json", encoding="utf-8") as handle:
+        return cast(list[dict], json.load(handle)["genes"])
+
+
 def curated_gene_annotations() -> tuple[dict[str, str], dict[str, str]]:
     """Map canonical id → ortholog group and → UniProt, from the bundled table.
 
@@ -214,14 +222,9 @@ def curated_gene_annotations() -> tuple[dict[str, str], dict[str, str]]:
     a gene page can link to its AlphaFold model without GeroQuery asserting any
     structure of its own).
     """
-    from ..config import IDMAP_DATA
-
-    with open(IDMAP_DATA / "genes.json", encoding="utf-8") as handle:
-        records = json.load(handle)["genes"]
-
     ortholog: dict[str, str] = {}
     uniprot: dict[str, str] = {}
-    for rec in records:
+    for rec in _curated_gene_records():
         canonical = rec.get("canonical_id")
         if not canonical:
             continue
@@ -244,11 +247,12 @@ def add_influence(contrasts: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
         and how far that is from the full pooled effect. The forest plot already
         reads this table per gene, so the leave-one-out strip shares its rows.
     the corpus ranking (§4.5)
-        One row per ``study_id``, the aggregate absolute shift it is responsible
-        for across every gene it appears in. Because the panel is near-balanced
-        (every gene is measured in nearly the same contrasts), this answers which
-        of the panel's contrasts is bending the whole corpus — a question about
-        the panel itself.
+        One row per ``study_id``: the absolute shift it is responsible for,
+        totalled and averaged over every gene it measures. Ranked by the
+        *mean* shift per gene, because coverage varies twentyfold between
+        contrasts (1,007 to 20,897 genes, set by the array platform) and the
+        total largely ranks array size — it correlates 0.75 with gene count.
+        The mean asks how hard a contrast pulls on the genes it touches.
 
     Only the leave-one-out *estimate* is a new number; it is
     :func:`geroquery.harmonize.leave_one_out`, i.e. the same DerSimonian-Laird /
@@ -270,7 +274,7 @@ def add_influence(contrasts: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
 
     usable = contrasts.dropna(subset=["effect_size", "standard_error"])
     for _key, group in usable.groupby(["gene_id", "species"], observed=True):
-        if len(group) < MIN_CONTRASTS or (group["standard_error"] <= 0).any():
+        if len(group) < MIN_CONTRASTS:
             continue
         loo = leave_one_out(group["effect_size"].tolist(), group["standard_error"].tolist())
         contrasts.loc[group.index, "loo_g"] = np.round(loo.estimates, 4) + 0.0
@@ -294,7 +298,7 @@ def add_influence(contrasts: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
             }
             for study in total_shift
         ),
-        key=lambda row: -cast(float, row["total_abs_shift"]),
+        key=lambda row: -cast(float, row["mean_abs_shift"]),
     )
     return contrasts, ranking
 
@@ -323,10 +327,13 @@ def cross_species(pooled: pd.DataFrame) -> dict:
     orthology group — the best-measured one (largest k) represents it, so the
     pairing is one-to-one and never silently averages two different genes.
 
-    The fitted line is Deming/orthogonal, computed here and shipped so the
-    browser draws it: an OLS line would be biased flat by the error on the x-axis
-    and would understate conservation. Concordance is read off the *verdicts*
-    (interval excludes zero), not the raw sign of a near-zero effect.
+    The fitted line is Deming, computed here and shipped so the browser draws
+    it: an OLS line would be biased flat by the error on the x-axis and would
+    understate conservation. Its error-variance ratio is measured from the pooled
+    standard errors, not assumed to be 1 — mouse estimates are much noisier than
+    human ones here, and assuming equal error turned a slope of 0.31 into 3.13.
+    Concordance is read off the *verdicts* (interval excludes zero), not the raw
+    sign of a near-zero effect.
     """
     from ..harmonize.deming import deming_regression
 
@@ -342,12 +349,20 @@ def cross_species(pooled: pd.DataFrame) -> dict:
     )
 
     pairs = []
+    se_pairs: list[tuple[float, float]] = []
     for group in annotated.index.get_level_values(0).unique():
         try:
             h = annotated.loc[(group, "human")]
             m = annotated.loc[(group, "mouse")]
         except KeyError:
             continue  # not in both species
+        vh, vm = h["verdict"], m["verdict"]
+        if vh == "no_evidence" or vm == "no_evidence":
+            quadrant = "unresolved"
+        elif vh == vm:
+            quadrant = "both_up" if vh == "increases" else "both_down"
+        else:
+            quadrant = "discordant"
         pairs.append(
             {
                 "ortholog_group": group,
@@ -355,29 +370,26 @@ def cross_species(pooled: pd.DataFrame) -> dict:
                 "symbol_mouse": m["symbol"],
                 "g_human": float(h["g"]),
                 "g_mouse": float(m["g"]),
-                "verdict_human": h["verdict"],
-                "verdict_mouse": m["verdict"],
+                "verdict_human": vh,
+                "verdict_mouse": vm,
+                "quadrant": quadrant,
             }
         )
+        se_pairs.append((float(h["se"]), float(m["se"])))
 
     if len(pairs) < 3:
         return {"available": False, "reason": f"only {len(pairs)} orthologous pairs"}
 
     gx = np.array([p["g_human"] for p in pairs])
     gy = np.array([p["g_mouse"] for p in pairs])
-    fit = deming_regression(gx, gy)
-
-    def _quadrant(p: dict) -> str:
-        vh, vm = p["verdict_human"], p["verdict_mouse"]
-        if vh == "no_evidence" or vm == "no_evidence":
-            return "unresolved"
-        if vh == vm:
-            return "both_up" if vh == "increases" else "both_down"
-        return "discordant"
+    se = np.array(se_pairs)
+    # Deming's delta is Var(error in y) / Var(error in x): mouse over human.
+    delta = float(np.mean(se[:, 1] ** 2) / np.mean(se[:, 0] ** 2))
+    fit = deming_regression(gx, gy, delta=delta)
 
     quadrants: dict[str, int] = {"both_up": 0, "both_down": 0, "discordant": 0, "unresolved": 0}
     for p in pairs:
-        quadrants[_quadrant(p)] += 1
+        quadrants[p["quadrant"]] += 1
 
     return {
         "available": True,
@@ -387,7 +399,9 @@ def cross_species(pooled: pd.DataFrame) -> dict:
             "intercept": round(fit.intercept, 4),
             "slope_ci_low": round(fit.slope_ci_low, 4),
             "slope_ci_high": round(fit.slope_ci_high, 4),
+            "delta": round(delta, 3),
         },
+        "correlation": round(float(np.corrcoef(gx, gy)[0, 1]), 3),
         "quadrants": quadrants,
         # Rounded for transport; the scatter draws these, it does not refit.
         "pairs": [
@@ -417,6 +431,91 @@ def prediction_interval_headline(pooled: pd.DataFrame) -> dict:
         "n_with_pi": int(has_pi.sum()),
         "n_pi_excludes_zero": int(pi_excludes.sum()),
         "n_ci_excludes_zero": int(ci_excludes.sum()),
+    }
+
+
+def _resolution(frame: pd.DataFrame) -> tuple[int, int]:
+    """(genes whose CI excludes zero, genes whose prediction interval does)."""
+    resolved = int((frame["verdict"] != "no_evidence").sum())
+    pi = (frame["pi_low"] > 0) | (frame["pi_high"] < 0)
+    return resolved, int(pi.sum())
+
+
+def curated_comparison(
+    pooled: pd.DataFrame, genes: list[tuple[str, str]], *, species: str = "human"
+) -> dict:
+    """How a curated gene list fares against the pooled evidence.
+
+    A curated database says a gene is aging-related; this says whether the
+    gene's expression resolves a direction with age across the panel, and sets
+    that rate beside the rate for every gene of the species, so "a quarter of
+    the list resolves" can be read against "a seventh of all genes do". It is a
+    lookup and a pair of rates, deliberately not an enrichment test: a curated
+    list is not a random draw from the panel, so a p-value against it would have
+    no valid null.
+
+    Listed symbols the panel never measured are returned by name. Not measured
+    is not the same finding as no evidence.
+    """
+    here = pooled[pooled["species"] == species]
+    listed = dict(genes)
+    measured = here[here["symbol"].isin(listed)]
+    resolved, pi = _resolution(measured)
+    background_resolved, background_pi = _resolution(here)
+    n, n_bg = len(measured), len(here)
+    counts = measured["verdict"].value_counts()
+    return {
+        "species": species,
+        "n_listed": len(listed),
+        "n_measured": n,
+        "not_measured": sorted(set(listed) - set(measured["symbol"])),
+        "verdicts": {v: int(counts.get(v, 0)) for v in ("increases", "decreases", "no_evidence")},
+        "n_pi_excludes_zero": pi,
+        "rate_resolved": round(resolved / n, 3) if n else None,
+        "rate_pi": round(pi / n, 3) if n else None,
+        "background": {
+            "n": n_bg,
+            "rate_resolved": round(background_resolved / n_bg, 3) if n_bg else None,
+            "rate_pi": round(background_pi / n_bg, 3) if n_bg else None,
+        },
+        "genes": [{"symbol": s, "evidence": listed[s]} for s in sorted(listed)],
+    }
+
+
+def _curated_payload(pooled: pd.DataFrame) -> dict:
+    """GenAge (human) set against the pool, or a stated reason it is absent.
+
+    The list is HAGR's pinned release, fetched and checksum-verified like every
+    other artifact; its licence is non-commercial, so the terms ship with it.
+    """
+    from ..sources.fetch import fetch_artifact
+    from ..sources.hagr import DATABASE_URLS, load_assertions
+    from ..sources.manifest import HAGR
+
+    artifact = HAGR["genage_human"]
+    try:
+        path = fetch_artifact(artifact)
+    except Exception as exc:  # noqa: BLE001 - absent is a stated state, not a crash
+        return {"available": False, "reason": str(exc)}
+    # Join on Entrez, not on the symbol: GenAge still lists genes under names
+    # HGNC has since retired (ARNTL is now BMAL1, CTGF is CCN2), and a symbol
+    # join would report those as never measured when the panel has them.
+    current = {
+        rec["entrez"]: rec["symbol"]
+        for rec in _curated_gene_records()
+        if rec.get("species") == "human" and rec.get("entrez")
+    }
+    assertions = load_assertions({"genage_human": path})
+    symbol = {a.symbol: current.get(a.entrez or "", a.symbol) for a in assertions}
+    genes = [(symbol[a.symbol], a.evidence or "unspecified") for a in assertions]
+    return {
+        "available": True,
+        "database": "GenAge (human)",
+        "url": DATABASE_URLS["GenAge"],
+        "license": artifact.license,
+        "attribution": artifact.attribution,
+        "renamed": {old: new for old, new in sorted(symbol.items()) if old != new},
+        **curated_comparison(pooled, genes),
     }
 
 
@@ -652,6 +751,7 @@ def build(out_dir: Path | None = None, *, store: GeroStore | None = None) -> dic
     (out_dir / "studies.json").write_text(json.dumps(studies), encoding="utf-8")
 
     (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
+    (out_dir / "curated.json").write_text(json.dumps(_curated_payload(pooled)), encoding="utf-8")
 
     crosslayer = _crosslayer_payload()
     (out_dir / "crosslayer.json").write_text(json.dumps(crosslayer), encoding="utf-8")
@@ -707,6 +807,8 @@ def enrich(out_dir: Path | None = None) -> dict:
     pooled = _annotate_pooled(pooled)
     pooled.to_parquet(out_dir / "pooled.parquet", index=False, compression="snappy")
     (out_dir / "crossspecies.json").write_text(json.dumps(cross_species(pooled)), encoding="utf-8")
+    curated = _curated_payload(pooled)
+    (out_dir / "curated.json").write_text(json.dumps(curated), encoding="utf-8")
 
     contrasts, influence_ranking = add_influence(contrasts)
     contrasts.to_parquet(out_dir / "contrasts.parquet", index=False, compression="snappy")
@@ -721,6 +823,7 @@ def enrich(out_dir: Path | None = None) -> dict:
         "enriched": str(out_dir),
         "n_ortholog_groups": int(pooled["ortholog_group"].notna().sum()),
         "n_influence_contrasts": len(influence_ranking),
+        "curated_available": curated["available"],
         "prediction_interval": meta["prediction_interval"],
     }
 

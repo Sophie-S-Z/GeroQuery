@@ -78,13 +78,3 @@ class ResilienceCSDRequest(BaseModel):
 
 class ResilienceRecoveryRequest(BaseModel):
     series: list[float] = Field(..., min_length=4)
-
-
-class ErrorBody(BaseModel):
-    code: str
-    message: str
-    detail: Any | None = None
-
-
-class ErrorEnvelope(BaseModel):
-    error: ErrorBody

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CorpusInfluence from "./CorpusInfluence.jsx";
 import { json } from "../lib/db.js";
 
@@ -15,6 +15,12 @@ export default function Panel() {
   const [studies, setStudies] = useState(null);
   const [influence, setInfluence] = useState(null);
   const [error, setError] = useState(null);
+  // Memoised above the early returns (hook order) so the chart, which depends
+  // on it, redraws when the data changes rather than on every render.
+  const byStudy = useMemo(
+    () => Object.fromEntries((studies ?? []).map((s) => [s.study_id, s])),
+    [studies],
+  );
 
   useEffect(() => {
     let live = true;
@@ -52,7 +58,6 @@ export default function Panel() {
   const series = new Set(withSeries.map((s) => s.series_id));
   const shared = withSeries.length - series.size;
 
-  const byStudy = Object.fromEntries(studies.map((s) => [s.study_id, s]));
   const influenceByStudy = Object.fromEntries((influence ?? []).map((r) => [r.study_id, r]));
   const hasInfluence = influence && influence.length > 0;
 
@@ -62,11 +67,14 @@ export default function Panel() {
         <div className="panel">
           <h2 className="panel-title">Which contrast bends the corpus</h2>
           <p className="note" style={{ marginBottom: "0.8rem" }}>
-            Every gene is pooled from very nearly the same contrasts, so a single contrast&rsquo;s
-            leave-one-out shift — summed across all {influence.length === 32 ? "~42,000" : "the"}{" "}
-            pooled genes — measures how much that one contrast moves the <em>whole</em> published
-            corpus. This is not a per-gene question; it is a question about the panel itself, and
-            nothing in a curated database can answer it.
+            Each bar is how far the pooled estimate moves, on average, when that one contrast is
+            dropped from a gene it measures. A contrast covers only the genes its array measures —
+            between {Math.min(...influence.map((r) => r.n_genes)).toLocaleString()} and{" "}
+            {Math.max(...influence.map((r) => r.n_genes)).toLocaleString()} here — so the average,
+            not the total, is shown: a total would mostly rank array size. The species are drawn apart
+            because a mouse gene is pooled from fewer, noisier contrasts, so dropping one moves it
+            further by construction — compare contrasts within a species. This is a question about
+            the panel itself, and nothing in a curated database can answer it.
           </p>
           <CorpusInfluence ranking={influence} byStudy={byStudy} />
         </div>
@@ -108,7 +116,7 @@ export default function Panel() {
                 <th>Species</th>
                 <th>Tissue</th>
                 <th className="num">n</th>
-                {hasInfluence ? <th className="num">corpus shift</th> : null}
+                {hasInfluence ? <th className="num">mean shift</th> : null}
                 <th>Platform</th>
                 <th>Source</th>
               </tr>
@@ -130,9 +138,9 @@ export default function Panel() {
                   <td>{study.tissue ?? "—"}</td>
                   <td className="num">{study.sample_size ?? "—"}</td>
                   {hasInfluence ? (
-                    <td className="num" title="total leave-one-out shift across every pooled gene">
+                    <td className="num" title="mean leave-one-out shift per gene this contrast measures">
                       {influenceByStudy[study.study_id]
-                        ? influenceByStudy[study.study_id].total_abs_shift.toFixed(1)
+                        ? influenceByStudy[study.study_id].mean_abs_shift.toFixed(3)
                         : "—"}
                     </td>
                   ) : null}

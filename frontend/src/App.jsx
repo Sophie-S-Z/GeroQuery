@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CrossSpecies from "./components/CrossSpecies.jsx";
+import GeneList from "./components/GeneList.jsx";
 import GeneView from "./components/GeneView.jsx";
 import Landscape from "./components/Landscape.jsx";
 import Mortality from "./components/Mortality.jsx";
@@ -14,6 +15,7 @@ import { useTheme } from "./lib/theme.js";
 const VIEWS = [
   ["overview", "Overview"],
   ["gene", "Gene"],
+  ["list", "Gene list"],
   ["landscape", "Landscape"],
   ["certainty", "Certainty"],
   ["crossspecies", "Cross-species"],
@@ -73,6 +75,38 @@ export default function App() {
     json("meta.json").then(setMeta).catch(() => setMeta(null));
   }, []);
 
+  // "/" focuses gene search from any view — the convention researchers already
+  // know from GitHub and documentation sites — and is ignored while typing in a
+  // field. ⌘K / Ctrl+K does the same from anywhere, as in Linear and Notion.
+  const focusSearch = useRef(false);
+  useEffect(() => {
+    const onKey = (event) => {
+      const commandK =
+        event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey) && !event.altKey;
+      const slash = event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey;
+      if (!commandK && !slash) return;
+      const { target } = event;
+      const typing =
+        target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
+      if (slash && typing) return;
+      event.preventDefault();
+      const field = document.querySelector("[data-search]");
+      if (field) field.focus();
+      else {
+        focusSearch.current = true;
+        update({ view: "gene" });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [update]);
+
+  useEffect(() => {
+    if (!focusSearch.current) return;
+    focusSearch.current = false;
+    document.querySelector("[data-search]")?.focus();
+  }, [state.view]);
+
   // Charts resolve CSS custom properties at draw time, so a theme change has to
   // force a redraw. Keying the view subtree on the theme is the cheapest
   // correct way to do that.
@@ -104,7 +138,10 @@ export default function App() {
 
       <main key={themeKey}>
         {state.view === "overview" ? (
-          <Overview onNavigate={(view) => update({ view })} />
+          <Overview
+            onNavigate={(view, patch) => update({ view, ...patch })}
+            onPick={(gene) => update({ view: "gene", gene })}
+          />
         ) : null}
 
         {state.view === "gene" ? (
@@ -113,6 +150,15 @@ export default function App() {
             species={state.species}
             onPick={(gene) => update({ gene })}
             onSpecies={(species) => update({ species })}
+          />
+        ) : null}
+
+        {state.view === "list" ? (
+          <GeneList
+            genes={state.genes}
+            species={state.species}
+            onUpdate={update}
+            onPick={(gene) => update({ view: "gene", gene })}
           />
         ) : null}
 

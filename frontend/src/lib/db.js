@@ -89,11 +89,29 @@ function table(name) {
 const pooledTable = () => table("pooled.parquet");
 const contrastsTable = () => table("contrasts.parquet");
 
-/** Static JSON fetched whole — all of these are a few KB. */
-export async function json(name) {
-  const response = await fetch(`${DATA_BASE}/${name}`);
-  if (!response.ok) throw new Error(`Could not load ${name} (${response.status})`);
-  return response.json();
+/**
+ * Static JSON fetched whole — all of these are a few KB — and memoized like the
+ * tables: the masthead and the overview both read meta.json, and several views
+ * share crosslayer.json and studies.json, so each is fetched once per page.
+ * Callers share the parsed object and must not mutate it.
+ */
+export function json(name) {
+  const key = `json:${name}`;
+  if (!cache.has(key)) {
+    cache.set(
+      key,
+      fetch(`${DATA_BASE}/${name}`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`Could not load ${name} (${response.status})`);
+          return response.json();
+        })
+        .catch((error) => {
+          cache.delete(key); // a transient failure must not poison later reads
+          throw error;
+        }),
+    );
+  }
+  return cache.get(key);
 }
 
 // --- queries -----------------------------------------------------------------
@@ -124,6 +142,13 @@ export async function pooledForSymbol(symbol) {
   return rows
     .filter((row) => row.symbol?.toUpperCase() === needle)
     .sort((a, b) => a.species.localeCompare(b.species));
+}
+
+/** Pooled rows for a pasted gene list in one species. Matching ignores case. */
+export async function pooledForSymbols(symbols, species) {
+  const wanted = new Set(symbols.map((symbol) => symbol.toUpperCase()));
+  const rows = await pooledTable();
+  return rows.filter((row) => row.species === species && wanted.has(row.symbol?.toUpperCase()));
 }
 
 /** Per-study contrasts behind a pooled estimate. This is the forest plot. */
@@ -206,13 +231,22 @@ export async function panelSummary() {
   for (const row of rows) {
     let entry = bySpecies.get(row.species);
     if (!entry) {
-      entry = { species: row.species, n_pooled: 0, n_up: 0, n_down: 0, n_null: 0, widths: [] };
+      entry = {
+        species: row.species,
+        n_pooled: 0,
+        n_up: 0,
+        n_down: 0,
+        n_null: 0,
+        n_pi: 0,
+        widths: [],
+      };
       bySpecies.set(row.species, entry);
     }
     entry.n_pooled += 1;
     if (row.verdict === "increases") entry.n_up += 1;
     else if (row.verdict === "decreases") entry.n_down += 1;
     else entry.n_null += 1;
+    if (row.pi_low > 0 || row.pi_high < 0) entry.n_pi += 1;
     entry.widths.push(row.ci_high - row.ci_low);
   }
   return [...bySpecies.values()]

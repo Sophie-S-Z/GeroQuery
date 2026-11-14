@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const DEFAULTS = { view: "overview", gene: "CDKN2A", species: "human", dir: "up" };
+const DEFAULTS = { view: "overview", gene: "CDKN2A", species: "human", dir: "up", genes: "" };
 
 function read() {
   const params = new URLSearchParams(window.location.search);

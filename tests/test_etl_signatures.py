@@ -561,6 +561,8 @@ def test_cross_species_pairs_by_ortholog_group_and_counts_concordance():
             "species": species,
             "symbol": symbol,
             "g": g,
+            # Mouse estimates twice as noisy as human: the error ratio is 4.
+            "se": 0.2 if species == "mouse" else 0.1,
             "k": k,
             "verdict": verdict,
             "ortholog_group": group,
@@ -593,6 +595,18 @@ def test_cross_species_pairs_by_ortholog_group_and_counts_concordance():
     assert deming["slope_ci_low"] <= deming["slope"] <= deming["slope_ci_high"]
     groups = {p["ortholog_group"] for p in result["pairs"]}
     assert groups == {"UP", "DOWN", "MIX"}
+    # The Deming error ratio comes from the measured SEs, not an assumed 1. The
+    # first version assumed 1 and shipped a slope of 3.13 where the data's own
+    # ratio (3.63) gives 0.31.
+    assert deming["delta"] == 4.0
+    # Each pair carries its quadrant, so the browser reads it instead of
+    # re-deriving the rule.
+    assert {p["ortholog_group"]: p["quadrant"] for p in result["pairs"]} == {
+        "UP": "both_up",
+        "DOWN": "both_down",
+        "MIX": "unresolved",
+    }
+    assert -1 <= result["correlation"] <= 1
 
 
 def test_the_committed_cross_species_is_internally_consistent():
@@ -654,10 +668,92 @@ def test_the_committed_influence_is_internally_consistent():
     ranking = json.loads((data / "influence_corpus.json").read_text())
     assert {r["study_id"] for r in ranking} == set(contrasts["study_id"].unique())
     assert all(
-        a["total_abs_shift"] >= b["total_abs_shift"]
+        a["mean_abs_shift"] >= b["mean_abs_shift"]
         for a, b in zip(ranking, ranking[1:], strict=False)
     )
 
     meta = json.loads((data / "meta.json").read_text())
     pi = meta["prediction_interval"]
     assert pi["n_pi_excludes_zero"] <= pi["n_ci_excludes_zero"] <= pi["n_with_pi"]
+
+
+def test_the_committed_crosslayer_caveats_match_their_source():
+    """The shipped caveats are a copy of ``nhanes_dnam.CAVEATS`` and must not drift.
+
+    One of them said the unweighted hazard ratio was smaller "in every case";
+    the full cohort contradicts that for HorvathAge and LinAge. Fixing the
+    constant alone would have left the shipped copy saying the old thing, which
+    is why the two are pinned together here.
+    """
+    from geroquery.sources import nhanes_dnam as nd
+
+    path = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data" / "crosslayer.json"
+    if not path.exists():  # pragma: no cover
+        pytest.skip("crosslayer.json is not present")
+    payload = json.loads(path.read_text())
+    if not payload.get("available"):  # pragma: no cover
+        pytest.skip("cohort not built")
+    assert payload["caveats"] == list(nd.CAVEATS)
+
+
+def test_curated_comparison_counts_a_list_against_its_species_background():
+    """How a curated list fares here, beside the rate for every gene measured.
+
+    Only rows of the list's species count, a listed symbol the panel never
+    measured is reported as such (never as "no evidence"), and the background is
+    the whole species, so the two rates are comparable.
+    """
+    from geroquery.etl.build_frontend_data import curated_comparison
+
+    def row(symbol, verdict, ci, pi, species="human"):
+        return {
+            "symbol": symbol,
+            "species": species,
+            "verdict": verdict,
+            "ci_low": ci[0],
+            "ci_high": ci[1],
+            "pi_low": pi[0],
+            "pi_high": pi[1],
+        }
+
+    pooled = pd.DataFrame(
+        [
+            row("A", "increases", (0.2, 0.9), (0.1, 1.0)),  # clears both
+            row("B", "no_evidence", (-0.3, 0.4), (-0.8, 0.9)),
+            row("C", "decreases", (-0.9, -0.2), (-1.2, 0.1)),  # CI only, not listed
+            row("D", "no_evidence", (-0.1, 0.1), (-0.5, 0.5)),
+            row("A", "decreases", (-0.9, -0.2), (-1.0, -0.1), species="mouse"),
+        ]
+    )
+    out = curated_comparison(pooled, [("A", "mammal"), ("B", "cell"), ("ZZZ", "putative")])
+
+    assert out["n_listed"] == 3
+    assert out["n_measured"] == 2
+    assert out["not_measured"] == ["ZZZ"]
+    assert out["verdicts"] == {"increases": 1, "decreases": 0, "no_evidence": 1}
+    assert out["n_pi_excludes_zero"] == 1
+    assert out["rate_resolved"] == 0.5 and out["rate_pi"] == 0.5
+    assert out["background"] == {"n": 4, "rate_resolved": 0.5, "rate_pi": 0.25}
+    assert out["genes"][0] == {"symbol": "A", "evidence": "mammal"}
+
+
+def test_the_committed_curated_comparison_matches_the_committed_pool():
+    """curated.json must recount exactly from pooled.parquet and its own list."""
+    data = Path(__file__).resolve().parents[1] / "frontend" / "public" / "data"
+    payload = json.loads((data / "curated.json").read_text(encoding="utf-8"))
+    if not payload["available"]:
+        pytest.skip(payload["reason"])
+
+    from geroquery.etl.build_frontend_data import curated_comparison
+
+    pooled = pd.read_parquet(data / "pooled.parquet")
+    genes = [(g["symbol"], g["evidence"]) for g in payload["genes"]]
+    recount = curated_comparison(pooled, genes)
+    for key in ("n_listed", "n_measured", "verdicts", "n_pi_excludes_zero", "background"):
+        assert payload[key] == recount[key], key
+    assert payload["n_listed"] == len(payload["genes"])
+    assert "non-commercial" in payload["license"]  # the HAGR terms travel with the data
+    # Joined on Entrez, so a gene GenAge lists under a retired symbol is found
+    # under its current one rather than reported as never measured.
+    assert payload["renamed"]["ARNTL"] == "BMAL1"
+    assert not set(payload["renamed"]) & set(payload["not_measured"])

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import ForestPlot from "./ForestPlot.jsx";
 import LeaveOneOut from "./LeaveOneOut.jsx";
 import TissueFacets from "./TissueFacets.jsx";
-import { contrastsForSymbol, pooledForSymbol, searchGenes } from "../lib/db.js";
+import { contrastsForSymbol, json, pooledForSymbol, searchGenes } from "../lib/db.js";
+import { downloadCsv } from "../lib/export.js";
 import {
   VERDICT_LABEL,
   VERDICT_SUB,
@@ -10,6 +11,56 @@ import {
   fmtInterval,
   fmtP,
 } from "../lib/format.js";
+
+const CONTRAST_COLUMNS = [
+  "study_id",
+  "tissue",
+  "age_range",
+  "sex",
+  "effect_size",
+  "standard_error",
+  "q_value",
+  "loo_g",
+];
+
+/**
+ * The same gene elsewhere. GeroQuery answers one question — does expression
+ * change with age — so it points at the resources that answer the next ones
+ * rather than restating them: structure, curation, tissue expression, the
+ * gene record. GenAge is linked only for genes it actually lists, under the
+ * name it lists them by.
+ */
+function outLinks(symbol, species, row, genageName) {
+  const links = [];
+  if (row?.uniprot) {
+    links.push([
+      "AlphaFold structure",
+      `https://alphafold.ebi.ac.uk/entry/${row.uniprot}`,
+      `Predicted 3D structure for UniProt ${row.uniprot} at AlphaFold DB`,
+    ]);
+  }
+  if (genageName) {
+    links.push([
+      "GenAge",
+      `https://genomics.senescence.info/genes/entry.php?hgnc=${encodeURIComponent(genageName)}`,
+      "Curated human aging gene entry at Human Ageing Genomic Resources",
+    ]);
+  }
+  if (species === "human") {
+    links.push([
+      "GTEx",
+      `https://gtexportal.org/home/gene/${encodeURIComponent(symbol)}`,
+      "Expression across human tissues at the GTEx Portal",
+    ]);
+  }
+  const organism = species === "human" ? "Homo sapiens" : "Mus musculus";
+  links.push([
+    "NCBI Gene",
+    `https://www.ncbi.nlm.nih.gov/gene/?term=${encodeURIComponent(`${symbol}[sym] AND ${organism}[orgn]`)}`,
+    "Gene record at NCBI",
+  ]);
+  return links;
+}
 
 /** Debounce so a fast typist does not queue a query per keystroke. */
 function useDebounced(value, delay = 160) {
@@ -59,6 +110,7 @@ function QueryRail({ symbol, onPick }) {
       </label>
       <input
         id="gene-search"
+        data-search
         className="search-field"
         value={term}
         placeholder="CDKN2A"
@@ -70,7 +122,10 @@ function QueryRail({ symbol, onPick }) {
         }}
       />
       <p className="rail-hint">
-        Symbol or alias. 41,983 genes have three or more contrasts and can be pooled.
+        Symbol or alias. 41,983 genes have three or more contrasts and can be pooled.{" "}
+        <span className="keyboard-only">
+          Press <span className="kbd">/</span> to search from any view.
+        </span>
       </p>
       {error ? <p className="error">{error}</p> : null}
       {bySymbol.length ? (
@@ -102,6 +157,20 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
   const [contrasts, setContrasts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [meta, setMeta] = useState(null);
+  const [curated, setCurated] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    json("meta.json").then(setMeta).catch(() => {});
+    json("curated.json").then(setCurated).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!copied) return undefined;
+    const timer = setTimeout(() => setCopied(false), 1800);
+    return () => clearTimeout(timer);
+  }, [copied]);
 
   useEffect(() => {
     let live = true;
@@ -123,6 +192,33 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
   const here = pooled?.find((row) => row.species === species) ?? null;
   const other = pooled?.filter((row) => row.species !== species) ?? [];
   const availableSpecies = pooled?.map((row) => row.species) ?? [];
+  const name = here?.symbol ?? symbol;
+
+  let genageName = null;
+  if (species === "human" && curated?.available) {
+    const renamedFrom = Object.keys(curated.renamed).find((old) => curated.renamed[old] === name);
+    if (renamedFrom) genageName = renamedFrom;
+    else if (curated.genes.some((g) => g.symbol === name)) genageName = name;
+  }
+
+  // The citation states the estimate exactly as shown and the data version it
+  // came from, so a reader can recover the same number from the same release.
+  const cite = () => {
+    const text =
+      `${name} (${species}): pooled g = ${fmtEffect(here.g, 3)}, 95% CI ` +
+      `${fmtInterval(here.ci_low, here.ci_high)}, 95% prediction interval ` +
+      `${fmtInterval(here.pi_low, here.pi_high)}, k = ${here.k}. GeroQuery, data version ` +
+      `${meta?.data_version ?? "unknown"}. ${window.location.href} ` +
+      `(accessed ${new Date().toISOString().slice(0, 10)}).`;
+    navigator.clipboard?.writeText(text).then(() => setCopied(true), () => {});
+  };
+
+  const downloadContrasts = () =>
+    downloadCsv(
+      `geroquery-${name}-${species}-${meta?.data_version ?? "data"}.csv`,
+      CONTRAST_COLUMNS,
+      contrasts,
+    );
 
   return (
     <div className="split">
@@ -160,20 +256,6 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                 <p className="gene-meta">
                   {species} · {contrasts?.length ?? 0} contrasts
                   {here ? ` · I² ${here.i2}% · ${here.n_tissues} tissues` : ""}
-                  {here?.uniprot ? (
-                    <>
-                      {" · "}
-                      <a
-                        className="structure-link"
-                        href={`https://alphafold.ebi.ac.uk/entry/${here.uniprot}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        title={`Predicted 3D structure for UniProt ${here.uniprot} at AlphaFold DB`}
-                      >
-                        3D structure ↗
-                      </a>
-                    </>
-                  ) : null}
                 </p>
               </div>
               {here ? (
@@ -182,6 +264,31 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                   <span className="verdict-sub">{VERDICT_SUB[here.verdict]}</span>
                 </p>
               ) : null}
+            </div>
+
+            <div className="gene-actions">
+              {here ? (
+                <button type="button" className="button-quiet" onClick={cite} aria-live="polite">
+                  {copied ? "Citation copied" : "Copy citation"}
+                </button>
+              ) : null}
+              {contrasts?.length ? (
+                <button type="button" className="button-quiet" onClick={downloadContrasts}>
+                  Download contrasts (CSV)
+                </button>
+              ) : null}
+              {outLinks(name, species, here, genageName).map(([label, href, title]) => (
+                <a
+                  key={label}
+                  className="structure-link"
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={title}
+                >
+                  {label} ↗
+                </a>
+              ))}
             </div>
 
             {availableSpecies.length > 1 ? (

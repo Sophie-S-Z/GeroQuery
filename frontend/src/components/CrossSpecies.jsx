@@ -9,7 +9,7 @@ import { fmtEffect } from "../lib/format.js";
  *
  * Human pooled effect against mouse pooled effect, one point per ortholog group
  * present in both species. The primary mark is the **y = x identity line**: the
- * question is agreement, not slope. A Deming/orthogonal fit is drawn too —
+ * question is agreement, not slope. A Deming fit is drawn too —
  * computed in Python (`deming_regression`) and shipped, because both axes carry
  * measurement error and an OLS line would be biased flat and understate
  * conservation. Points are coloured by whether the two species agree, using the
@@ -33,13 +33,6 @@ export default function CrossSpecies({ onPick }) {
     };
   }, []);
 
-  const quadrant = (p) => {
-    const { verdict_human: h, verdict_mouse: m } = p;
-    if (h === "no_evidence" || m === "no_evidence") return "unresolved";
-    if (h === m) return h === "increases" ? "both_up" : "both_down";
-    return "discordant";
-  };
-
   useEffect(() => {
     if (!host.current || !data?.available) return undefined;
     const c = css();
@@ -50,7 +43,7 @@ export default function CrossSpecies({ onPick }) {
       unresolved: c.null_,
     };
 
-    const pts = data.pairs.map((p) => ({ ...p, q: quadrant(p) }));
+    const pts = data.pairs.map((p) => ({ ...p, q: p.quadrant }));
     const xs = pts.map((p) => p.g_human);
     const ys = pts.map((p) => p.g_mouse);
     const lo = Math.min(-1, ...xs, ...ys) - 0.1;
@@ -92,6 +85,9 @@ export default function CrossSpecies({ onPick }) {
           stroke: c.inkFaint,
           strokeWidth: 1.5,
           strokeDasharray: "5,4",
+          // A shallow fit leaves the frame long before it reaches lo/hi; clip it
+          // rather than draw across the margins and the axis labels.
+          clip: true,
         }),
         Plot.dot(pts, {
           x: "g_human",
@@ -135,9 +131,7 @@ export default function CrossSpecies({ onPick }) {
   }
 
   const q = data.quadrants;
-  const resolved = data.pairs.filter(
-    (p) => p.verdict_human !== "no_evidence" && p.verdict_mouse !== "no_evidence",
-  );
+  const resolved = data.pairs.filter((p) => p.quadrant !== "unresolved");
   const d = data.deming;
 
   return (
@@ -154,9 +148,9 @@ export default function CrossSpecies({ onPick }) {
       <p className="note" style={{ maxWidth: "70ch" }}>
         Each point is one gene&rsquo;s pooled age effect in human against its ortholog&rsquo;s in
         mouse. The solid line is <strong>y = x</strong> — perfect agreement — and the question is how
-        close the cloud sits to it, not its slope. The dashed line is a Deming (orthogonal) fit,
-        computed in Python because both axes carry error and an ordinary least-squares line would be
-        biased toward flat and understate conservation.
+        close the cloud sits to it, not its slope. The dashed line is a Deming fit, computed in
+        Python because both axes carry error — each weighted by its own measured size — and an
+        ordinary least-squares line would be biased toward flat and understate conservation.
       </p>
 
       <div className="panel">
@@ -184,13 +178,18 @@ export default function CrossSpecies({ onPick }) {
       <div className="panel">
         <h2 className="panel-title">What the picture says</h2>
         <p className="note" style={{ maxWidth: "70ch" }}>
-          Deming slope <span className="mono">{fmtEffect(d.slope, 2).replace("+", "")}</span>{" "}
+          Across all {data.n_pairs.toLocaleString()} pairs the two species&rsquo; effects barely
+          correlate (r = <span className="mono">{data.correlation.toFixed(2)}</span>). Allowing for
+          each species&rsquo; own measurement error — mouse estimates carry{" "}
+          {d.delta.toFixed(1)}× the error variance of human ones — the Deming slope is{" "}
+          <span className="mono">{d.slope.toFixed(2)}</span>{" "}
           <span className="interval">
             [{d.slope_ci_low.toFixed(2)}, {d.slope_ci_high.toFixed(2)}]
           </span>
-          . Only <strong>{resolved.length}</strong> of {data.n_pairs.toLocaleString()} ortholog
-          groups have an interval that excludes zero in <em>both</em> species at once — and among
-          those, <strong>{q.discordant}</strong> point in opposite directions. The honest reading is
+          : mouse effects track human ones only weakly. Only <strong>{resolved.length}</strong> of{" "}
+          {data.n_pairs.toLocaleString()} ortholog groups have an interval that excludes zero in{" "}
+          <em>both</em> species at once, and <strong>{q.discordant}</strong> of those point in
+          opposite directions. The honest reading is
           less &ldquo;human and mouse agree&rdquo; than &ldquo;for almost every gene, at least one of
           the two species cannot tell&rdquo;. That is a statement about statistical power across two
           independently pooled corpora, not about biology.
