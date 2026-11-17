@@ -202,6 +202,7 @@ npm run dev                         # http://localhost:5173
 | **Cross-species** | Human vs mouse pooled effect, one point per ortholog group, with a **Deming fit** (each species' measured error) and the honest concordance count |
 | **Panel** | The **corpus-influence** chart — how far each contrast moves the genes it measures, compared within each species — above the full provenance table |
 | **Mortality** | The survey-weighted hazard ratios, plus **weighted survival curves + RMST** by dysregulation quartile (populated by a full ETL build) |
+| **Perturbation** | A separate layer, from public CRISPRi screens: what happens when a gene is **switched off**, which of the 3,503 resolved aging genes have ever been tested that way (995 have, 1,352 are absent entirely), and the two cell lines' disagreement — they agree on direction for 54.6% of genes, so only the 32 that replicate in both tails are shown as leads. Never folded into a gene's aging verdict. See `docs/PERTURBATION.md` |
 
 Every number is computed in Python by the estimator the API serves and shipped
 in the Parquet/JSON; the browser renders it and never re-derives it. New charts

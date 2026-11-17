@@ -263,6 +263,21 @@ All support `format=json|csv|parquet`; list endpoints support `limit`/`offset`.
     `frontend/validate_palette.js` in CI. The 2026-11 revamp is documented in
     `docs/HANDOFF_REVAMP_2026-11.md`.
 
+28. **The perturbation layer is modelled against a cell line, not aged tissue.**
+    The CRISPRi screens (Replogle 2022, CC BY 4.0) are RPE1 and K562, both
+    immortalized dividing cells. Its alignment score is adjusted for how hard a
+    knockdown hit the cell, because the raw version correlates +0.4 to +0.5 with
+    the size of the response — damage looks like age whatever caused it. Even
+    adjusted, the two cell lines agree on direction for only 54.6% of genes and
+    no gene reaches significance, so only genes extreme in both screens are
+    surfaced, and nothing from the layer alters an aging verdict.
+    See `docs/PERTURBATION.md`.
+29. **A knockdown predictor does not beat its own baseline here.** Predicting the
+    single average knockdown profile, ignoring which gene was switched off, gets
+    85.2% (RPE1) and 76.1% (K562) of the top-25 directions right; a trained ridge
+    model with honest penalty selection adds 0.7 points. The benchmark is kept in
+    `geroquery/etl/perturbation_benchmark.py` and ships nothing into the product.
+
 ---
 
 ## 5. Things to note

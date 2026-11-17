@@ -25,6 +25,7 @@ the same thing.
 | Multi-species meta-analyses | A 2026 Nature study integrating >11,000 transcriptomes across four mammals into transcriptomic clocks *(seen only via a community summary; not verified against the paper)* | Conserved hallmarks, clocks | A per-gene, queryable answer |
 | Clocks and biomarkers | **Biomarkers of Aging Consortium** open challenge (>550 clocks from 37 teams; established clocks err by ~5–8.5 years on the shared data), **biolearn**, organ-specific **plasma proteomic clocks** in UK Biobank (Nature Aging, 2025–26) | Biological-age estimates | Gene-level evidence |
 | Agents and MCP | **BioMCP**, **BioContextAI**, **gget-mcp**, the **MCPmed** proposal (GEO, STRING, UCSC over MCP), **Biomni**, NIH **GeneAgent** | Natural-language access to many databases | Aging-specific, uncertainty-aware answers |
+| Perturbation and "virtual cell" | **scPerturb**, the Replogle/Weissman Perturb-seq releases, and the several virtual-cell efforts training on them | What a cell does when one gene is switched off; predicted knockdown profiles | A link to aging, and usually a published comparison against the obvious baseline |
 | Commercial | **Generation Lab** (SystemAge, $11M seed, Oct 2025), **Deep Longevity**, **BioAge** (Nasdaq), Longevity.Technology's **DLT** data platform | Diagnostics and market intelligence | Open, reproducible gene-level evidence |
 
 Two field-wide problems recur in these sources and shape what was built:
@@ -49,6 +50,7 @@ Two field-wide problems recur in these sources and shape what was built:
 | **Contrasts CSV** per gene | Supplementary tables, teaching, re-analysis |
 | **Links out** to AlphaFold, GenAge (only for genes it lists, under the name it lists them by), GTEx and NCBI Gene | GeroQuery answers one question. The links hand off the next ones without restating them. Open Genes is not linked: its pages answer 200 for any symbol, so a link cannot be verified to lead anywhere. |
 | **⌘K / Ctrl+K** jumps to gene search from any view, beside the existing `/` | The command-key convention from Linear and Notion |
+| **Perturbation layer** (CRISPRi screens, CC BY 4.0): coverage of which aging genes have ever been switched off, an alignment score adjusted for knockdown damage, cross-cell-line replication, and a published prediction benchmark | The panel is observational and cannot say what a gene *does*. Perturbation data can, in principle — and the layer reports, with the measurements behind it, how little of that promise this public data currently delivers |
 
 The API (`POST /v1/geneset/signature`) and the MCP tool
 (`geneset_aging_signature`) already answered list queries for agents. The new
@@ -82,6 +84,7 @@ deployment needs this audit first:
 | NHANES (NCHS) | 15 | US public domain | Usable |
 | HAGR (GenAge, CellAge, LongevityMap, DrugAge, GenDR) | 7 | Free for **non-commercial** use, attribution required | **Must be licensed or removed** in a paid product. That covers the GenAge comparison, the overview finding built on it, and the GenAge links/evidence column |
 | ARCHS4 (processed RNA-seq counts) | 2 files, pinned by release + size | The licence of the processed files is not stated; the underlying GEO/SRA samples are public | Confirm terms with the Ma'ayan Laboratory before a paid product ships the ARCHS4 contrasts |
+| Perturb-seq (Replogle 2022, processed) | 2 | **CC BY 4.0** | Usable commercially; attribute Replogle et al. |
 | Clocks (via biolearn / pyaging) | — | Per clock. Some widely used clocks are distributed by their developers under academic or non-commercial terms | Check each clock's terms before selling clock output |
 
 A model consistent with those terms: the static site, API and MCP server stay
@@ -99,13 +102,17 @@ a server, which is the property a company's unpublished target list needs.
    combined per GEO Series (rho = 1, the conservative bound) before pooling, so
    k counts independent Series. A three-level model that estimates the
    within-Series correlation instead of bounding it is the refinement.
-3. **A single-cell layer** from CELLxGENE Census / Tabula Muris Senis, kept as a
+3. **A three-level or mixed model for the perturbation score**, estimating the
+   shared damage axis rather than regressing it out, and a third cell line.
+   Two screens agreeing 54.6% of the time is too thin a base for the ranking to
+   be worth publishing as more than leads; see `PERTURBATION.md`.
+4. **A single-cell layer** from CELLxGENE Census / Tabula Muris Senis, kept as a
    separate pool per cell type (cross-dataset comparison there needs batch
    correction; it must not be pooled with bulk).
-4. **Open Genes as a pinned snapshot**: its API returns JSON per symbol
+5. **Open Genes as a pinned snapshot**: its API returns JSON per symbol
    (`open-genes.com/api/gene/{symbol}`), so it can be checksum-pinned like HAGR,
    which would make its links verifiable.
-5. The deferred **Schoenfeld proportional-hazards diagnostic** for the mortality
+6. The deferred **Schoenfeld proportional-hazards diagnostic** for the mortality
    layer, and the **Vite 5→8** upgrade.
 
 ## Sources
