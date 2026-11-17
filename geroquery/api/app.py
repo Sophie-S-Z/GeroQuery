@@ -133,6 +133,10 @@ def create_app(service: GeroService | None = None) -> FastAPI:
             return _formatted(result["signatures"], format, f"{gene_id}_signatures")
         return result
 
+    @app.get(f"{API_PREFIX}/gene/{{gene_id}}/perturbation")
+    def gene_perturbation(gene_id: str):
+        return svc().gene_perturbation(gene_id)
+
     @app.get(f"{API_PREFIX}/gene/{{gene_id}}/card")
     def gene_card(gene_id: str, species: str | None = None):
         return svc().gene_card(gene_id, species)

@@ -12,9 +12,10 @@ from collections.abc import Sequence
 
 import pandas as pd
 
-from .. import __version__
+from .. import __version__, config
 from ..clocks import ClockService
 from ..exceptions import (
+    DataUnavailableError,
     GeneNotFoundError,
     InterventionNotFoundError,
     ResilienceInputError,
@@ -252,6 +253,61 @@ class GeroService:
         ]
         out.sort(key=lambda r: (-len(r["databases"]), -r["n_assertions"], r["symbol"]))
         return out[:limit] if limit else out
+
+    @functools.cached_property
+    def _perturbation(self) -> pd.DataFrame | None:
+        """The exported knockdown layer, or None when it has not been built.
+
+        Read from the export rather than recomputed: the screens are 470 MB and
+        the scores are already the ETL's output, so the API serves the same
+        numbers the site shows by construction.
+        """
+        path = config.FRONTEND_DATA / "perturbation.parquet"
+        if not path.exists():
+            return None
+        return pd.read_parquet(path).set_index("gene_id")
+
+    def gene_perturbation(self, gene_query: str) -> dict:
+        """What the CRISPRi screens show for one gene, with their limits attached.
+
+        A separate surface from :meth:`gene_signature` on purpose. A knockdown
+        in a cell line is a different experiment from an age contrast in tissue,
+        so this never alters a gene's aging verdict, and the caveat travels with
+        the numbers rather than living in documentation.
+        """
+        gene = self.resolver.resolve_gene(gene_query, "human")
+        table = self._perturbation
+        if table is None:
+            raise DataUnavailableError(
+                "The perturbation layer has not been built. "
+                "Run python -m geroquery.etl.build_perturbation."
+            )
+        row = table.loc[gene.canonical_id] if gene.canonical_id in table.index else None
+        screens = {}
+        for line in ("rpe1", "k562"):
+            screens[line] = {
+                "perturbed": bool(row[f"{line}_perturbed"]) if row is not None else False,
+                "scored": bool(row[f"{line}_scored"]) if row is not None else False,
+                "adjusted_score": (
+                    float(row[f"{line}_z"])
+                    if row is not None and pd.notna(row[f"{line}_z"])
+                    else None
+                ),
+                "readout_gene": bool(row[f"{line}_readout"]) if row is not None else False,
+            }
+        return {
+            "gene": gene.to_dict(),
+            "screens": screens,
+            "replicates": bool(row["replicates"]) if row is not None else False,
+            "direction": str(row["direction"]) if row is not None else "",
+            "caveat": (
+                "CRISPRi knockdown in immortalized human cell lines (RPE1, K562), not aged "
+                "tissue. The score is relative to other knockdowns of similar magnitude; no "
+                "gene reaches significance, and the two cell lines agree on direction for "
+                "about half of genes. Treat a replicating gene as a lead, not as evidence "
+                "about aging. See docs/PERTURBATION.md."
+            ),
+        }
 
     def references(self) -> list[dict]:
         """The literature citation layer. Real papers; never an invented PMID."""

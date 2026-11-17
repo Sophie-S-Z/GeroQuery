@@ -237,6 +237,49 @@ def intervention_effect(name: str, service: GeroService | None = None) -> dict[s
     }
 
 
+def gene_knockdown_effect(gene: str, service: GeroService | None = None) -> dict[str, Any]:
+    """What switching one gene off does, from public CRISPRi screens.
+
+    A different experiment from :func:`gene_aging_signature`, kept separate: it
+    measures consequence in a cell line, not association with age in tissue. It
+    never changes a gene's aging verdict, and the result carries the reasons it
+    cannot carry more weight than it does.
+
+    Args:
+        gene: symbol, alias, Ensembl or Entrez id. Human only — both screens are
+            human cell lines.
+    """
+    svc = service or get_service()
+    try:
+        raw = svc.gene_perturbation(gene)
+    except GeroQueryError as exc:
+        return {
+            "query": gene,
+            "status": "unavailable",
+            "error": {"code": exc.code, "message": exc.message},
+        }
+
+    screens = raw["screens"]
+    scored = [name for name, s in screens.items() if s["scored"]]
+    if not scored:
+        attempted = any(s["perturbed"] for s in screens.values())
+        status = "no_measurable_effect" if attempted else "never_tested"
+    elif raw["replicates"]:
+        status = raw["direction"]
+    elif raw["direction"] == "discordant":
+        status = "screens_disagree"
+    else:
+        status = "scored_without_replication"
+    return {
+        "query": gene,
+        "gene": raw["gene"],
+        "status": status,
+        "screens": screens,
+        "replicates_across_cell_lines": raw["replicates"],
+        "caveat": raw["caveat"],
+    }
+
+
 def list_studies(service: GeroService | None = None) -> dict[str, Any]:
     """Every contrast in the panel, with full provenance.
 
@@ -298,6 +341,12 @@ TOOLS: dict[str, tuple[Any, str]] = {
     "intervention_effect": (
         intervention_effect,
         "Lifespan effect of a compound, per organism, mammals first.",
+    ),
+    "gene_knockdown_effect": (
+        gene_knockdown_effect,
+        "What switching one gene off does in public CRISPRi screens, and whether two "
+        "cell lines agree. Separate from the aging verdict; returns 'never_tested' "
+        "when no screen knocked the gene down.",
     ),
     "list_studies": (
         list_studies,

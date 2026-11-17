@@ -170,3 +170,35 @@ def test_server_instructions_tell_a_model_not_to_override_a_null():
     assert "no_evidence" in SERVER_INSTRUCTIONS
     assert "not_measured" in SERVER_INSTRUCTIONS
     assert "background knowledge" in SERVER_INSTRUCTIONS
+
+
+# --- knockdown layer ---------------------------------------------------------
+
+
+def test_knockdown_tool_separates_never_tested_from_tested_and_silent():
+    """The two answers mean opposite things to someone choosing an experiment,
+    and a tool that blurs them is worse than one that omits the layer."""
+    never = tools.gene_knockdown_effect("CDKN1A")
+    silent = tools.gene_knockdown_effect("TP53")
+    if never.get("status") == "unavailable":  # pragma: no cover - layer not built
+        pytest.skip("no perturbation layer committed")
+    assert never["status"] == "never_tested"
+    assert not any(s["perturbed"] for s in never["screens"].values())
+    assert silent["status"] == "no_measurable_effect"
+    assert any(s["perturbed"] for s in silent["screens"].values())
+
+
+def test_a_replicating_knockdown_names_its_direction_and_still_carries_the_caveat():
+    result = tools.gene_knockdown_effect("DICER1")
+    if result.get("status") == "unavailable":  # pragma: no cover - layer not built
+        pytest.skip("no perturbation layer committed")
+    assert result["status"] in {"toward_aging", "away_from_aging"}
+    assert result["replicates_across_cell_lines"]
+    # The limits travel with the number rather than living in documentation.
+    assert "cell line" in result["caveat"] and "lead" in result["caveat"]
+
+
+def test_an_unknown_gene_is_an_error_envelope_not_a_fabricated_answer():
+    result = tools.gene_knockdown_effect("NOT_A_REAL_GENE_XYZ")
+    assert result["status"] == "unavailable"
+    assert result["error"]["code"]
