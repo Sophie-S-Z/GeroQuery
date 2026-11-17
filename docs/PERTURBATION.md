@@ -175,6 +175,7 @@ the useful artifact.
 ## Reproducing
 
 ```
+pip install -e ".[perturbation]"                    # h5py, to read the screens
 python -m geroquery.etl.build_perturbation          # the layer and its artifact
 python -m geroquery.etl.perturbation_benchmark      # section 4 (~3 minutes)
 ```

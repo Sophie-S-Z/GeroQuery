@@ -10,12 +10,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import h5py
 import numpy as np
 import pytest
 
 from geroquery.exceptions import SourceError
 from geroquery.sources import perturbseq
+
+h5py = pytest.importorskip("h5py", reason="perturbation extra not installed")
 
 
 def _plant(path: Path, *, responses, readout, index, effect_p) -> Path:

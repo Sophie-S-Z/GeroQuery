@@ -38,11 +38,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import h5py
 import numpy as np
 
 from ..exceptions import SourceError
+
+if TYPE_CHECKING:
+    import h5py
 
 # The screen's own test that a knockdown did anything at all.
 EFFECT_P = 0.05
@@ -137,6 +140,15 @@ def read_screen(path: Path | str, key: str) -> Screen:
     cell_line = SCREENS.get(key)
     if cell_line is None:
         raise SourceError(f"Unknown Perturb-seq screen {key!r}. Known: {sorted(SCREENS)}.")
+    # Imported here, as in archs4: only reading a screen file needs HDF5, so the
+    # API and the exporter's scoring can run without the optional package.
+    try:
+        import h5py
+    except ImportError as exc:  # pragma: no cover - depends on the environment
+        raise SourceError(
+            "Reading a Perturb-seq screen needs the optional 'h5py' package: "
+            "pip install 'geroquery[perturbation]'."
+        ) from exc
     with h5py.File(path, "r") as handle:
         responses = handle["X"][:]
         readout = _text(handle["var/gene_id"][:])
