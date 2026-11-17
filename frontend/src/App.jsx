@@ -6,6 +6,7 @@ import Landscape from "./components/Landscape.jsx";
 import Mortality from "./components/Mortality.jsx";
 import Overview from "./components/Overview.jsx";
 import Panel from "./components/Panel.jsx";
+import Perturbation from "./components/Perturbation.jsx";
 import Volcano from "./components/Volcano.jsx";
 import { json } from "./lib/db.js";
 import { fmtInt } from "./lib/format.js";
@@ -21,6 +22,7 @@ const VIEWS = [
   ["crossspecies", "Cross-species"],
   ["panel", "Panel"],
   ["mortality", "Mortality"],
+  ["perturbation", "Perturbation"],
 ];
 
 function Masthead({ meta, theme, onToggleTheme, onHome }) {
@@ -170,6 +172,10 @@ export default function App() {
             onSpecies={(species) => update({ species })}
             onDirection={(dir) => update({ dir })}
           />
+        ) : null}
+
+        {state.view === "perturbation" ? (
+          <Perturbation onPick={(gene) => update({ view: "gene", gene })} />
         ) : null}
 
         {state.view === "certainty" ? (

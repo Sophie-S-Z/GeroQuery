@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import ForestPlot from "./ForestPlot.jsx";
 import LeaveOneOut from "./LeaveOneOut.jsx";
 import TissueFacets from "./TissueFacets.jsx";
-import { contrastsForSymbol, json, pooledForSymbol, searchGenes } from "../lib/db.js";
+import {
+  contrastsForSymbol,
+  json,
+  perturbationForGene,
+  pooledForSymbol,
+  searchGenes,
+} from "../lib/db.js";
 import { downloadCsv } from "../lib/export.js";
 import {
   VERDICT_LABEL,
@@ -157,6 +163,89 @@ function QueryRail({ symbol, onPick, nPooled }) {
           ))}
         </ul>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * What is known about switching this gene off, from the CRISPRi screens.
+ *
+ * Deliberately separate from the verdict above: a knockdown in a cell line is a
+ * different experiment from an age contrast in tissue, and the two cell lines
+ * agree with each other only about half the time. The panel therefore reports
+ * what was done and declines to draw a conclusion from one screen.
+ */
+function Knockdown({ geneId }) {
+  const [row, setRow] = useState(undefined);
+
+  useEffect(() => {
+    let live = true;
+    setRow(undefined);
+    perturbationForGene(geneId)
+      .then((found) => live && setRow(found))
+      .catch(() => live && setRow(null));
+    return () => {
+      live = false;
+    };
+  }, [geneId]);
+
+  if (!geneId || row === undefined) return null;
+
+  const screens = [
+    ["RPE1", "rpe1"],
+    ["K562", "k562"],
+  ];
+  const everPerturbed = row && screens.some(([, tag]) => row[`${tag}_perturbed`]);
+
+  return (
+    <div className="panel">
+      <h2 className="panel-title">Switching this gene off</h2>
+      {!everPerturbed ? (
+        <p className="note" style={{ maxWidth: "70ch" }}>
+          This gene has not been switched off in either screen, so there is nothing to report.
+          {row ? " It is measured as a readout gene, so it responds to other knockdowns." : ""}
+        </p>
+      ) : (
+        <>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cell line</th>
+                  <th className="num">Adjusted score</th>
+                  <th>What was measured</th>
+                </tr>
+              </thead>
+              <tbody>
+                {screens.map(([name, tag]) => (
+                  <tr key={tag}>
+                    <td>{name}</td>
+                    <td className="num">
+                      {row[`${tag}_scored`] ? row[`${tag}_z`].toFixed(2) : "—"}
+                    </td>
+                    <td className={row[`${tag}_scored`] ? "" : "null"}>
+                      {row[`${tag}_scored`]
+                        ? row[`${tag}_z`] > 0
+                          ? "the cell moved toward the aging signature"
+                          : "the cell moved away from the aging signature"
+                        : row[`${tag}_perturbed`]
+                          ? "switched off, nothing measurable changed"
+                          : "never switched off in this screen"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="note" style={{ marginTop: "0.7rem", maxWidth: "70ch" }}>
+            {row.replicates
+              ? "Both screens rank this knockdown in their most extreme tenth and agree on the direction, which is the strongest this layer gets. It is a lead for an experiment, not evidence about aging."
+              : row.direction === "discordant"
+                ? "The two cell lines disagree about the direction, so neither reading is supported."
+                : "Scores are relative to other knockdowns that disturbed the cell about as much. No single gene reaches significance in these screens, and the two cell lines agree on direction only about half the time, so one score on its own means little."}
+          </p>
+        </>
+      )}
     </div>
   );
 }
@@ -379,6 +468,8 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                 </p>
               </div>
             ) : null}
+
+            {species === "human" ? <Knockdown geneId={here?.gene_id} /> : null}
 
             <div className="panel">
               <h2 className="panel-title">Per-study evidence</h2>
