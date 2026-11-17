@@ -866,6 +866,51 @@ ANAGE = RemoteArtifact(
     description="AnAge: maximum longevity and life-history traits across species.",
 )
 
+# --- Perturb-seq (Replogle et al., Cell 2022) -------------------------------
+#
+# CRISPRi knockdown of one gene at a time in a human cell line, with the whole
+# transcriptome read out. Two screens are pinned, in two different cell lines,
+# because agreement between them is the only replication this layer has.
+#
+# The pseudobulk ("bulk") files are the per-perturbation averages, 95-375 MB.
+# The single-cell versions of the same screens are 8.7 and 66 GB and would add
+# nothing here: every number this layer computes is an average over cells.
+_REPLOGLE_LICENSE = "CC BY 4.0"
+_REPLOGLE_ATTRIBUTION = (
+    "Replogle JM, Saunders RA, Pogson AN, et al. Mapping information-rich "
+    "genotype-phenotype landscapes with genome-scale Perturb-seq. Cell. "
+    "2022;185(14):2559-2575.e28. Processed data deposited at plus.figshare.com."
+)
+
+PERTURB_SEQ: dict[str, RemoteArtifact] = {
+    "replogle_rpe1": RemoteArtifact(
+        key="replogle_rpe1",
+        url="https://ndownloader.figshare.com/files/35775512",
+        sha256="a3c5bfd0f15d63938bc80c9b8874b9cd761e3a23caf5ffe7966bae4e887ec89d",
+        n_bytes=95350546,
+        release="Replogle 2022 processed Perturb-seq, rpe1_normalized_bulk_01",
+        license=_REPLOGLE_LICENSE,
+        attribution=_REPLOGLE_ATTRIBUTION,
+        description=(
+            "RPE1 (retinal pigment epithelium, non-cancer) essential-gene screen: "
+            "2,679 CRISPRi knockdowns x 8,749 readout genes, pseudobulk."
+        ),
+    ),
+    "replogle_k562_gwps": RemoteArtifact(
+        key="replogle_k562_gwps",
+        url="https://ndownloader.figshare.com/files/35773217",
+        sha256="37e48c474d8b5dead4151f96ea8f5fe7bbe6beb10eeea48685b740c3f74490a2",
+        n_bytes=374587922,
+        release="Replogle 2022 processed Perturb-seq, K562_gwps_normalized_bulk_01",
+        license=_REPLOGLE_LICENSE,
+        attribution=_REPLOGLE_ATTRIBUTION,
+        description=(
+            "K562 (chronic myeloid leukaemia) genome-wide screen: 11,258 CRISPRi "
+            "knockdowns x 8,248 readout genes, pseudobulk."
+        ),
+    ),
+}
+
 # Flat lookup across every collection, for the generic fetch CLI.
 MANIFEST: dict[str, RemoteArtifact] = {
     **NHANES_2017_2018,
@@ -874,6 +919,7 @@ MANIFEST: dict[str, RemoteArtifact] = {
     **GEO_AGING_PANEL,
     **METHYLATION_PANEL,
     **HAGR,
+    **PERTURB_SEQ,
     "anage": ANAGE,
     "nhanes_dnam": NHANES_DNAM,
 }
