@@ -304,7 +304,7 @@ export default function GeneList({ genes, species, onUpdate, onPick }) {
                         <th className="num" title="95% prediction interval: where one more study would land">
                           next study
                         </th>
-                        <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
+                        <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">Series</th>
                         <th className="num" title="local false sign rate: the probability the direction is wrong">
                           P(wrong sign)
                         </th>

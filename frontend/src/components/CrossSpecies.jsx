@@ -59,7 +59,7 @@ export default function CrossSpecies({ onPick }) {
       height: 680,
       marginLeft: 54,
       marginBottom: 48,
-      marginTop: 12,
+      marginTop: 30,
       marginRight: 16,
       style: { background: "transparent", color: c.inkFaint, fontFamily: c.mono, fontSize: "11px" },
       x: { domain: [lo, hi], label: "human pooled g →", grid: true, nice: true },
@@ -203,8 +203,8 @@ export default function CrossSpecies({ onPick }) {
             <thead>
               <tr>
                 <th>Ortholog</th>
-                <th className="num">human g</th>
-                <th className="num">mouse g</th>
+                <th className="num">Human g</th>
+                <th className="num">Mouse g</th>
                 <th>Agreement</th>
               </tr>
             </thead>

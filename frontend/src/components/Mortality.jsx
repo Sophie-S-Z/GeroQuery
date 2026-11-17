@@ -147,11 +147,11 @@ export default function Mortality() {
                 <th>Trained on</th>
                 <th className="num">HR / SD</th>
                 <th className="num">95% CI</th>
-                <th className="num">unweighted</th>
+                <th className="num">Unweighted</th>
                 <th className="num">C clock</th>
                 <th className="num">C joint</th>
-                <th className="num">health state adds</th>
-                <th className="num">clock adds</th>
+                <th className="num">Health state adds</th>
+                <th className="num">Clock adds</th>
               </tr>
             </thead>
             <tbody>

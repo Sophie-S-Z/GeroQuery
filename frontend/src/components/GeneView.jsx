@@ -368,7 +368,13 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
 
             <div className="gene-actions">
               {here ? (
-                <button type="button" className="button-quiet" onClick={cite} aria-live="polite">
+                <button
+                  type="button"
+                  className="button-quiet"
+                  onClick={cite}
+                  aria-live="polite"
+                  data-done={copied || undefined}
+                >
                   {copied ? "Citation copied" : "Copy citation"}
                 </button>
               ) : null}
@@ -439,7 +445,7 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                         <th>Platform</th>
                         <th className="num">g</th>
                         <th className="num">95% CI</th>
-                        <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
+                        <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">Series</th>
                         <th>Verdict</th>
                       </tr>
                     </thead>
@@ -498,7 +504,7 @@ export default function GeneView({ symbol, species, onPick, onSpecies }) {
                         <th>Species</th>
                         <th className="num">g</th>
                         <th className="num">95% CI</th>
-                        <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
+                        <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">Series</th>
                         <th>Verdict</th>
                       </tr>
                     </thead>

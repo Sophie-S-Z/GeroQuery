@@ -224,9 +224,9 @@ export default function Volcano({ species, onPick, onSpecies }) {
               <tr>
                 <th>Gene</th>
                 <th className="num">g</th>
-                <th className="num">shrunk</th>
+                <th className="num">Shrunk</th>
                 <th className="num">lfsr</th>
-                <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
+                <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">Series</th>
               </tr>
             </thead>
             <tbody>

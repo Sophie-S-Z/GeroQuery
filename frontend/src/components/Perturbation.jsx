@@ -72,8 +72,16 @@ export default function Perturbation({ onPick }) {
     return () => chart.remove();
   }, [both]);
 
-  if (error) return <p className="note">Could not load the perturbation layer: {error}</p>;
-  if (!meta || !both || !hits) return <p className="note">Loading…</p>;
+  if (error) return <p className="error">Could not load the perturbation layer: {error}</p>;
+  if (!meta || !both || !hits) {
+    return (
+      <div className="panel" aria-busy="true">
+        <div className="skeleton" style={{ width: "45%", height: "1.6rem" }} />
+        <div className="skeleton" style={{ width: "70%" }} />
+        <div className="skeleton" style={{ width: "60%" }} />
+      </div>
+    );
+  }
 
   const [rpe1, k562] = meta.screens;
   const coverage = meta.coverage;
@@ -104,7 +112,7 @@ export default function Perturbation({ onPick }) {
             <thead>
               <tr>
                 <th>Of the {coverage.resolved_genes.toLocaleString()} genes with a direction</th>
-                <th className="num">genes</th>
+                <th className="num">Genes</th>
               </tr>
             </thead>
             <tbody>

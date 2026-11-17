@@ -1,17 +1,38 @@
-import { useEffect, useRef, useState } from "react";
-import CrossSpecies from "./components/CrossSpecies.jsx";
-import GeneList from "./components/GeneList.jsx";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import GeneView from "./components/GeneView.jsx";
-import Landscape from "./components/Landscape.jsx";
-import Mortality from "./components/Mortality.jsx";
 import Overview from "./components/Overview.jsx";
-import Panel from "./components/Panel.jsx";
-import Perturbation from "./components/Perturbation.jsx";
-import Volcano from "./components/Volcano.jsx";
 import { json } from "./lib/db.js";
 import { fmtInt } from "./lib/format.js";
 import { useUrlState } from "./lib/state.js";
 import { useTheme } from "./lib/theme.js";
+
+// The landing view and the gene view ship in the entry bundle: one is where a
+// reader arrives, the other is the primary action and the target of the `/` and
+// ⌘K shortcuts, which must find its search field the moment they fire. Every
+// other view is fetched the first time it is opened.
+const CrossSpecies = lazy(() => import("./components/CrossSpecies.jsx"));
+const GeneList = lazy(() => import("./components/GeneList.jsx"));
+const Landscape = lazy(() => import("./components/Landscape.jsx"));
+const Mortality = lazy(() => import("./components/Mortality.jsx"));
+const Panel = lazy(() => import("./components/Panel.jsx"));
+const Perturbation = lazy(() => import("./components/Perturbation.jsx"));
+const Volcano = lazy(() => import("./components/Volcano.jsx"));
+
+/**
+ * Apply a state change inside a view transition, so the outgoing view leaves
+ * while the incoming one arrives and the tab marker slides between tabs.
+ * Without browser support, or for a reader who asked for reduced motion, the
+ * change simply happens.
+ */
+function withTransition(change) {
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!document.startViewTransition || reduced) {
+    change();
+    return;
+  }
+  document.startViewTransition(() => flushSync(change));
+}
 
 const VIEWS = [
   ["overview", "Overview"],
@@ -58,13 +79,24 @@ function Masthead({ meta, theme, onToggleTheme, onHome }) {
               : "Built from the committed curated slice, not the full table. Counts are smaller than the reported corpus."
           }
         >
-          {meta.signature_mode === "full" ? "full corpus" : "curated slice"}
+          {meta.signature_mode === "full" ? "Full corpus" : "Curated slice"}
         </span>
       ) : null}
       <button type="button" className="theme-toggle" onClick={onToggleTheme}>
-        {theme === "dark" ? "light" : "dark"}
+        {theme === "dark" ? "Light" : "Dark"}
       </button>
     </header>
+  );
+}
+
+/** Shown for the moment a view's code is in flight: the shape, not a spinner. */
+function ViewSkeleton() {
+  return (
+    <div className="panel" aria-busy="true" aria-label="Loading view">
+      <div className="skeleton" style={{ width: "45%", height: "1.6rem" }} />
+      <div className="skeleton" style={{ width: "70%" }} />
+      <div className="skeleton" style={{ width: "60%" }} />
+    </div>
   );
 }
 
@@ -119,7 +151,7 @@ export default function App() {
       <Masthead
         meta={meta}
         theme={resolvedTheme}
-        onToggleTheme={toggleTheme}
+        onToggleTheme={() => withTransition(toggleTheme)}
         onHome={() => update({ view: "overview" })}
       />
 
@@ -131,67 +163,70 @@ export default function App() {
             role="tab"
             className="tab"
             aria-selected={state.view === key}
-            onClick={() => update({ view: key })}
+            onClick={() => withTransition(() => update({ view: key }))}
           >
             {label}
+            {state.view === key ? <span className="tab-indicator" aria-hidden="true" /> : null}
           </button>
         ))}
       </nav>
 
       <main key={themeKey}>
-        {state.view === "overview" ? (
-          <Overview
-            onNavigate={(view, patch) => update({ view, ...patch })}
-            onPick={(gene) => update({ view: "gene", gene })}
-          />
-        ) : null}
+        <Suspense fallback={<ViewSkeleton />}>
+          {state.view === "overview" ? (
+            <Overview
+              onNavigate={(view, patch) => update({ view, ...patch })}
+              onPick={(gene) => update({ view: "gene", gene })}
+            />
+          ) : null}
 
-        {state.view === "gene" ? (
-          <GeneView
-            symbol={state.gene}
-            species={state.species}
-            onPick={(gene) => update({ gene })}
-            onSpecies={(species) => update({ species })}
-          />
-        ) : null}
+          {state.view === "gene" ? (
+            <GeneView
+              symbol={state.gene}
+              species={state.species}
+              onPick={(gene) => update({ gene })}
+              onSpecies={(species) => update({ species })}
+            />
+          ) : null}
 
-        {state.view === "list" ? (
-          <GeneList
-            genes={state.genes}
-            species={state.species}
-            onUpdate={update}
-            onPick={(gene) => update({ view: "gene", gene })}
-          />
-        ) : null}
+          {state.view === "list" ? (
+            <GeneList
+              genes={state.genes}
+              species={state.species}
+              onUpdate={update}
+              onPick={(gene) => update({ view: "gene", gene })}
+            />
+          ) : null}
 
-        {state.view === "landscape" ? (
-          <Landscape
-            species={state.species}
-            direction={state.dir}
-            onPick={(gene) => update({ view: "gene", gene })}
-            onSpecies={(species) => update({ species })}
-            onDirection={(dir) => update({ dir })}
-          />
-        ) : null}
+          {state.view === "landscape" ? (
+            <Landscape
+              species={state.species}
+              direction={state.dir}
+              onPick={(gene) => update({ view: "gene", gene })}
+              onSpecies={(species) => update({ species })}
+              onDirection={(dir) => update({ dir })}
+            />
+          ) : null}
 
-        {state.view === "perturbation" ? (
-          <Perturbation onPick={(gene) => update({ view: "gene", gene })} />
-        ) : null}
+          {state.view === "perturbation" ? (
+            <Perturbation onPick={(gene) => update({ view: "gene", gene })} />
+          ) : null}
 
-        {state.view === "certainty" ? (
-          <Volcano
-            species={state.species}
-            onPick={(gene) => update({ view: "gene", gene })}
-            onSpecies={(species) => update({ species })}
-          />
-        ) : null}
+          {state.view === "certainty" ? (
+            <Volcano
+              species={state.species}
+              onPick={(gene) => update({ view: "gene", gene })}
+              onSpecies={(species) => update({ species })}
+            />
+          ) : null}
 
-        {state.view === "crossspecies" ? (
-          <CrossSpecies onPick={(gene) => update({ view: "gene", gene })} />
-        ) : null}
+          {state.view === "crossspecies" ? (
+            <CrossSpecies onPick={(gene) => update({ view: "gene", gene })} />
+          ) : null}
 
-        {state.view === "panel" ? <Panel /> : null}
-        {state.view === "mortality" ? <Mortality /> : null}
+          {state.view === "panel" ? <Panel /> : null}
+          {state.view === "mortality" ? <Mortality /> : null}
+        </Suspense>
       </main>
 
       <footer>
