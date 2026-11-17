@@ -581,5 +581,62 @@
     "Zfp827"
    ]
   }
+ },
+ "perturbation": {
+  "release": "Replogle et al. 2022 processed Perturb-seq (pseudobulk)",
+  "license": "CC BY 4.0",
+  "attribution": "Replogle JM, Saunders RA, Pogson AN, et al. Mapping information-rich genotype-phenotype landscapes with genome-scale Perturb-seq. Cell. 2022;185(14):2559-2575.e28. Processed data deposited at plus.figshare.com.",
+  "screens": [
+   {
+    "key": "replogle_rpe1",
+    "cell_line": "RPE1",
+    "n_perturbations": 2679,
+    "n_scored": 2174,
+    "n_aging_genes": 1814,
+    "on_target_median": -0.6478,
+    "on_target_fraction_down": 0.9927,
+    "magnitude_confound": 0.525,
+    "n_controls": 130,
+    "control_alignment_sd": 0.0719,
+    "knockdown_alignment_sd": 0.1077
+   },
+   {
+    "key": "replogle_k562_gwps",
+    "cell_line": "K562",
+    "n_perturbations": 11258,
+    "n_scored": 5183,
+    "n_aging_genes": 1614,
+    "on_target_median": -0.4982,
+    "on_target_fraction_down": 0.9862,
+    "magnitude_confound": 0.4099,
+    "n_controls": 585,
+    "control_alignment_sd": 0.0717,
+    "knockdown_alignment_sd": 0.1264
+   }
+  ],
+  "n_scored_in_both": 1973,
+  "cross_screen_spearman": 0.1357,
+  "cross_screen_sign_agreement": 0.5464,
+  "n_replicating": 32,
+  "extreme_quantile": 0.1,
+  "coverage": {
+   "resolved_genes": 3503,
+   "resolved_scored": 995,
+   "resolved_no_effect": 821,
+   "resolved_readout_only": 335,
+   "resolved_absent": 1352
+  },
+  "cross_modality": {
+   "rpe1": {
+    "n": 383,
+    "spearman": -0.0403,
+    "p": 0.43130708638587395
+   },
+   "k562": {
+    "n": 968,
+    "spearman": -0.092,
+    "p": 0.004191347845020305
+   }
+  }
  }
 }

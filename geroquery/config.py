@@ -16,6 +16,9 @@ PACKAGE_ROOT = Path(__file__).resolve().parent
 IDMAP_DATA = PACKAGE_ROOT / "idmap" / "data"
 SOURCES_DATA = PACKAGE_ROOT / "sources" / "data"
 
+# Where the ETL writes the artifacts the static site and the API both read.
+FRONTEND_DATA: Path = PACKAGE_ROOT.parent / "frontend" / "public" / "data"
+
 
 def _flag(name: str, default: bool) -> bool:
     raw = os.environ.get(name)
