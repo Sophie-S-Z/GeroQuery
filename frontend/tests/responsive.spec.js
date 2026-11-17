@@ -15,6 +15,7 @@ const VIEWS = {
   crossspecies: "",
   panel: "",
   mortality: "",
+  perturbation: "",
 };
 
 for (const [view, extra] of Object.entries(VIEWS)) {

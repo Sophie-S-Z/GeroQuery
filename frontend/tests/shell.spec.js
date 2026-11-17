@@ -55,9 +55,11 @@ test.describe("shell", () => {
 
     const before = await chart.getAttribute("style");
     await page.locator(".theme-toggle").click();
-    await expect(page.locator(".chart svg").first()).toBeVisible();
-    const after = await page.locator(".chart svg").first().getAttribute("style");
-    expect(after).not.toBe(before);
+    // The toggle runs inside a view transition, so the redraw lands a frame
+    // later; poll rather than read once.
+    await expect
+      .poll(() => page.locator(".chart svg").first().getAttribute("style"))
+      .not.toBe(before);
   });
 
   test("the landscape table lists symbols, never Ensembl accessions", async ({ page }) => {

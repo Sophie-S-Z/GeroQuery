@@ -130,12 +130,12 @@ export default function Landscape({ species, direction, onPick, onSpecies, onDir
               <tr>
                 <th>Gene</th>
                 <th className="num">g</th>
-                <th className="num">shrunk</th>
+                <th className="num">Shrunk</th>
                 <th className="num">95% CI</th>
                 <th className="num">lfsr</th>
-                <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">series</th>
+                <th className="num" title="independent GEO Series pooled; contrasts from one Series share subjects">Series</th>
                 <th className="num">I²</th>
-                <th className="num">tissues</th>
+                <th className="num">Tissues</th>
               </tr>
             </thead>
             <tbody>

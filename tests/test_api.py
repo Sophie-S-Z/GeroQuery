@@ -368,3 +368,33 @@ def test_the_api_and_the_static_exporter_agree_gene_for_gene(service):
             # What the exporter writes for the same pooled estimate.
             assert meta["ci_low"] == report_bound(meta["ci_low"])
             assert meta["ci_high"] == report_bound(meta["ci_high"])
+
+
+def test_gene_perturbation_endpoint_reports_both_screens(client):
+    r = client.get("/v1/gene/DICER1/perturbation")
+    if r.status_code == 503:  # pragma: no cover - layer not built
+        pytest.skip("no perturbation layer committed")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["gene"]["symbol"] == "DICER1"
+    assert set(body["screens"]) == {"rpe1", "k562"}
+    for screen in body["screens"].values():
+        assert set(screen) == {"perturbed", "scored", "adjusted_score", "readout_gene"}
+    assert body["caveat"]
+
+
+def test_perturbation_never_reports_a_score_for_a_gene_no_screen_touched(client):
+    r = client.get("/v1/gene/CDKN1A/perturbation")
+    if r.status_code == 503:  # pragma: no cover - layer not built
+        pytest.skip("no perturbation layer committed")
+    body = r.json()
+    assert all(s["adjusted_score"] is None for s in body["screens"].values())
+    assert body["replicates"] is False
+
+
+def test_every_response_carries_the_baseline_security_headers(client):
+    for path in ("/healthz", "/v1/gene/NOT_A_REAL_GENE_XYZ/card"):
+        headers = client.get(path).headers
+        assert headers["x-content-type-options"] == "nosniff"
+        assert headers["x-frame-options"] == "DENY"
+        assert headers["referrer-policy"] == "strict-origin-when-cross-origin"

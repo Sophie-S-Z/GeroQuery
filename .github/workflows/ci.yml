@@ -38,7 +38,9 @@ jobs:
           # silently skips all ten AppTest cases — the ones that would have
           # caught the three UI bugs in HANDOFF.md §6 (#9, #10, #11). A skipped
           # guard is a guard that is not there.
-          pip install -e ".[dev,ui]"
+          # `perturbation` likewise: tests/test_perturbseq.py reads planted HDF5
+          # files and skips without h5py.
+          pip install -e ".[dev,ui,perturbation]"
       - name: Lint (ruff)
         run: ruff check geroquery tests
       - name: Format check (black)

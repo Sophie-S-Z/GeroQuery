@@ -21,8 +21,8 @@ dependencies = [
   "numpy>=1.24",
   "scipy>=1.10",
   "pandas>=2.0",
-  "pyarrow>=14",
-  "duckdb>=0.10",
+  "pyarrow>=23.0.1",  # older releases carry PYSEC-2024-161 (IPC deserialization) and PYSEC-2026-113
+  "duckdb>=1.1.0",  # PYSEC-2024-203
   "fastapi>=0.110",
   "pydantic>=2.5",
   "uvicorn>=0.27",
@@ -33,6 +33,8 @@ dependencies = [
 ui = ["streamlit>=1.30", "plotly>=5.18"]
 # ARCHS4 is read over HTTP range requests (64 GB file, a few hundred MB read).
 archs4 = ["h5py>=3.10", "fsspec[http]>=2024.2"]
+# The Perturb-seq screens are pinned HDF5 (.h5ad) files, read locally.
+perturbation = ["h5py>=3.10"]
 # pyyaml is a test dependency, not a runtime one: tests/test_panel_diff.py
 # parses the living-evidence workflow to assert it can never auto-merge.
 dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.3", "black>=24.1", "mypy>=1.8", "pyyaml>=6.0"]

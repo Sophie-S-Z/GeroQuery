@@ -69,6 +69,17 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
         },
         "required": ["gene"],
     },
+    "gene_knockdown_effect": {
+        "type": "object",
+        "properties": {
+            "gene": {
+                "type": "string",
+                "description": "Symbol, alias, Ensembl or Entrez id. Human only: both "
+                "screens are human cell lines.",
+            },
+        },
+        "required": ["gene"],
+    },
     "geneset_aging_signature": {
         "type": "object",
         "properties": {

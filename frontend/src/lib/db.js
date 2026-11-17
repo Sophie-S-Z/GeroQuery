@@ -244,6 +244,40 @@ export async function volcanoPoints(species) {
   return rows.filter((row) => row.species === species && row.lfsr != null);
 }
 
+const perturbationTable = () => table("perturbation.parquet");
+
+/**
+ * Knockdown rows for one gene, keyed by Ensembl id rather than symbol.
+ *
+ * The screens carry their own symbols, which drift from the panel's; both
+ * sides carry Ensembl ids, which do not. Returns null when the gene appears in
+ * neither screen, which the gene view reports as "never tested" — distinct
+ * from a knockdown that was done and changed nothing.
+ */
+export async function perturbationForGene(geneId) {
+  if (!geneId) return null;
+  const rows = await perturbationTable();
+  return rows.find((row) => row.gene_id === geneId) ?? null;
+}
+
+/**
+ * Genes whose knockdown lands in the extreme tail of both screens and agrees on
+ * direction. The `replicates` flag and the direction are both computed in
+ * Python; this only reads and orders them.
+ */
+export async function replicatingKnockdowns() {
+  const rows = await perturbationTable();
+  return rows
+    .filter((row) => row.replicates)
+    .sort((a, b) => (a.rpe1_z + a.k562_z) / 2 - (b.rpe1_z + b.k562_z) / 2);
+}
+
+/** Every gene scored in both screens, for the cross-screen agreement plot. */
+export async function knockdownsScoredTwice() {
+  const rows = await perturbationTable();
+  return rows.filter((row) => row.n_screens === 2);
+}
+
 /** Corpus-level counts, computed rather than typed into the masthead. */
 export async function panelSummary() {
   const rows = await pooledTable();

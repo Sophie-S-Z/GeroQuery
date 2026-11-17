@@ -59,6 +59,16 @@ class InterventionNotFoundError(GeroQueryError):
     http_status = 404
 
 
+class DataUnavailableError(GeroQueryError):
+    """A derived artifact the request needs has not been built yet.
+
+    Not a source failure: nothing upstream is wrong, the ETL simply has not run.
+    """
+
+    code = "data_unavailable"
+    http_status = 503
+
+
 class SourceError(GeroQueryError):
     """An upstream adapter failed (network, parse, rate limit)."""
 

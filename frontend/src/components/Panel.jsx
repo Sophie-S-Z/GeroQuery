@@ -128,7 +128,7 @@ export default function Panel() {
                 <th>Species</th>
                 <th>Tissue</th>
                 <th className="num">n</th>
-                {hasInfluence ? <th className="num">mean shift</th> : null}
+                {hasInfluence ? <th className="num">Mean shift</th> : null}
                 <th>Platform</th>
                 <th>Source</th>
               </tr>

@@ -97,6 +97,17 @@ def create_app(service: GeroService | None = None) -> FastAPI:
             _state["service"] = service_
         return service_
 
+    # The static site sends these from its host config (frontend/public/_headers);
+    # the API is served by uvicorn directly, so it sets them itself. No CSP here:
+    # the API returns JSON, and a policy would break the bundled /docs page.
+    @app.middleware("http")
+    async def _security_headers(request: Request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        return response
+
     @app.exception_handler(GeroQueryError)
     async def _domain_error(_: Request, exc: GeroQueryError):
         return JSONResponse(
@@ -132,6 +143,10 @@ def create_app(service: GeroService | None = None) -> FastAPI:
         if format != "json":
             return _formatted(result["signatures"], format, f"{gene_id}_signatures")
         return result
+
+    @app.get(f"{API_PREFIX}/gene/{{gene_id}}/perturbation")
+    def gene_perturbation(gene_id: str):
+        return svc().gene_perturbation(gene_id)
 
     @app.get(f"{API_PREFIX}/gene/{{gene_id}}/card")
     def gene_card(gene_id: str, species: str | None = None):
