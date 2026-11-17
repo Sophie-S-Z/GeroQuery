@@ -238,7 +238,8 @@ python -m streamlit run geroquery/ui/streamlit_app.py --server.port 8502
 ### Docker
 
 ```bash
-docker compose up                   # API on :8000, dashboard on :8501
+docker compose up                   # API on :8000
+docker compose --profile legacy up  # also the legacy dashboard, on 127.0.0.1:8501
 ```
 
 ---

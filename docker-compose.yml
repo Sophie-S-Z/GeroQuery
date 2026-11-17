@@ -8,13 +8,17 @@ services:
     volumes:
       - geroquery-data:/data
 
+  # The deprecated Streamlit dashboard. Not started by `docker compose up`, and
+  # reachable from this machine only: it is a legacy surface on stale data, not
+  # something to expose. Start it with `docker compose --profile legacy up`.
   dashboard:
+    profiles: ["legacy"]
     build: .
     command: >
       sh -c "pip install --no-cache-dir streamlit plotly &&
              streamlit run geroquery/ui/streamlit_app.py --server.port 8501 --server.address 0.0.0.0"
     ports:
-      - "8501:8501"
+      - "127.0.0.1:8501:8501"
     depends_on:
       - api
 

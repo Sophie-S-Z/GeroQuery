@@ -390,3 +390,11 @@ def test_perturbation_never_reports_a_score_for_a_gene_no_screen_touched(client)
     body = r.json()
     assert all(s["adjusted_score"] is None for s in body["screens"].values())
     assert body["replicates"] is False
+
+
+def test_every_response_carries_the_baseline_security_headers(client):
+    for path in ("/healthz", "/v1/gene/NOT_A_REAL_GENE_XYZ/card"):
+        headers = client.get(path).headers
+        assert headers["x-content-type-options"] == "nosniff"
+        assert headers["x-frame-options"] == "DENY"
+        assert headers["referrer-policy"] == "strict-origin-when-cross-origin"
